@@ -10,4 +10,4 @@ TBD Description
     * Cindy Li: c52li@uwaterloo.ca
     * Derek Yuan: d5yuan@uwaterloo.ca
     * Jeri Fan: j22fan@uwaterloo.ca
-* Link to your Team Contract wiki page.
+* Link to Team Contract wiki page: https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/team-contract
