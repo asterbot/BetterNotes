@@ -1,7 +1,7 @@
-# TBD Project Name
+# Notetaking App
 
-## TBD Title
-TBD Description
+## Notetaking App Title
+An app for Notetaking
 
 ## Team Details
 * Team number: 12
