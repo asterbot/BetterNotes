@@ -1,7 +1,7 @@
 # Notetaking App
 
 ## Notetaking App Title
-An app for Notetaking
+An app for notetaking for CS and math
 
 ## Team Details
 * Team number: 12
