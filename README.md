@@ -6,7 +6,7 @@ An app for notetaking for CS and math
 ## Team Details
 * Team number: 12
 * Team members:
-    * Arjun Sodhi: as5@uwaterloo.ca
+    * Arjun Sodhi: as5sodhi@uwaterloo.ca
     * Cindy Li: c52li@uwaterloo.ca
     * Derek Yuan: d5yuan@uwaterloo.ca
     * Jeri Fan: j22fan@uwaterloo.ca
