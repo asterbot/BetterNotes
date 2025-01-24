@@ -1,5 +1,8 @@
 # Notetaking App
 
+## Project Proposal
+Link to project proposal: https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/project-proposal
+
 ## Notetaking App Title
 An app for notetaking for CS and math
 
