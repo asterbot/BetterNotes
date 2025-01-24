@@ -13,3 +13,4 @@ An app for notetaking for CS and math
 * Link to Team Contract wiki page: https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/team-contract
 * Link to Weekly Agenda wiki page: https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/weekly-agenda
 * Link to Meeting Minutes wiki page: https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/meeting-minutes
+* Link to Project Proposal wiki page: https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/project-proposal
