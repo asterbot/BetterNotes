@@ -1,5 +1,8 @@
 # Notetaking App
 
+## Design Proposal
+Link to design proposal: https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/design-proposal
+
 ## Project Proposal
 Link to project proposal: https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/project-proposal
 
@@ -17,3 +20,4 @@ An app for notetaking for CS and math
 * Link to Weekly Agenda wiki page: https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/weekly-agenda
 * Link to Meeting Minutes wiki page: https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/meeting-minutes
 * Link to Project Proposal wiki page: https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/project-proposal
+* Link to Design Proposal wiki page: https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/design-proposal
