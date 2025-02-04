@@ -26,6 +26,8 @@ fun App() {
 
     println("I made it (Derek)")
     println("I am alive (Cindy)")
+    println("MR trial")
+    println("Second commit")
 }
 
 fun main() = application {
