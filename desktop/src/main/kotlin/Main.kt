@@ -17,13 +17,14 @@ fun App() {
 
     MaterialTheme {
         Button(onClick = {
-            text = "Hello, Desktop!"
+            text = "Goodbye, Desktop!"
         }) {
             Text(text)
         }
     }
 
     println("I made it (Derek)")
+    println("I am alive (Cindy)")
 }
 
 fun main() = application {
