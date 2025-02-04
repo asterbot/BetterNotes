@@ -23,6 +23,8 @@ fun App() {
             Text(text)
         }
     }
+
+    println("I made it (Derek)")
 }
 
 fun main() = application {
