@@ -1,37 +1,16 @@
-import androidx.compose.desktop.ui.tooling.preview.Preview
-import androidx.compose.material.Button
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
+import androidx.compose.ui.window.Window
+import model.Model
+import view.ViewModel
+import view.App
 
-@Composable
-@Preview
-fun App() {
-    var text by remember { mutableStateOf("Hello, World!") }
+fun main() {
+    var model = Model()
+    var viewModel = ViewModel(model)
 
-    MaterialTheme {
-        Button(onClick = {
-            text = "Hello, February!"
-        })
-        {
-            Text(text)
+    application {
+        Window(onCloseRequest = ::exitApplication) {
+            App()
         }
-    }
-
-    println("I made it (Derek)")
-    println("I am alive (Cindy)")
-    println("MR trial")
-    println("Second commit")
-}
-
-fun main() = application {
-    Window(onCloseRequest = ::exitApplication) {
-        App()
     }
 }
