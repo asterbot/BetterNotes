@@ -13,4 +13,5 @@ pluginManagement {
     }
 }
 
-rootProject.name = "desktop"
+rootProject.name = "cs-346-project"
+include("desktop")
