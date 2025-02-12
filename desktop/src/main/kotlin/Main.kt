@@ -2,16 +2,16 @@ import androidx.compose.ui.window.application
 import androidx.compose.ui.window.Window
 import model.Model
 import view.ViewModel
-import view.App
 import view.MainView
+import model.BoardModel
 
 fun main() {
-    var model = Model()
-    var viewModel = ViewModel(model)
+    var boardModel = BoardModel()
+    var boardViewModel = ViewModel(boardModel)
 
     application {
         Window(onCloseRequest = ::exitApplication) {
-            MainView()
+            MainView(boardViewModel = boardViewModel)
         }
     }
 }

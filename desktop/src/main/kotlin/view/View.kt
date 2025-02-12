@@ -13,14 +13,36 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.window.Window
-import androidx.compose.ui.window.application
+import entities.Board
 
 @Composable
-fun App(onNavigate: () -> Unit) {
-    val courses = mutableListOf("CS 346", "CS 341", "CS 350", "CS 370", "CS 375")
-    val courseDescriptions = mutableListOf("App Development", "Algorithms", "Operating Systems", "Numerical Computation", "Idk")
-    val numCourses: Int = courses.size
+fun BoardButton(board: Board, onLeftClickBoard: (Int) -> Unit) {
+    Button(
+        modifier = Modifier.padding(15.dp),
+        colors = ButtonDefaults.buttonColors(Color(0xffB1CCD3)),
+        onClick = {
+            println("Clicked ${board.name}")
+            onLeftClickBoard(board.id)
+        }
+    ) {
+        Column(
+            modifier = Modifier.padding(15.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text("${board.name} \n", textAlign = TextAlign.Center)
+            Text(board.desc, textAlign = TextAlign.Center)
+        }
+    }
+}
+
+
+@Composable
+fun BoardsView(
+    onIndividualBoard: (Int) -> Unit,
+    boardViewModel: ViewModel
+) {
+
+    val boardList by remember { mutableStateOf(boardViewModel.boardList.toList()) }
 
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -40,22 +62,9 @@ fun App(onNavigate: () -> Unit) {
                 columns = GridCells.Fixed(3),
                 state = state
             ) {
-                items(numCourses) { index ->
-                    Button(
-                        modifier = Modifier.padding(15.dp),
-                        colors = ButtonDefaults.buttonColors(Color(0xffB1CCD3)),
-                        onClick = {
-                            println("Clicked ${courses[index]}")
-                            onNavigate() // Switch to View2
-                        }
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(15.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text("${courses[index]} \n", textAlign = TextAlign.Center)
-                            Text(courseDescriptions[index], textAlign = TextAlign.Center)
-                        }
+                for (board in boardList) {
+                    item {
+                        BoardButton(board = board, onLeftClickBoard = onIndividualBoard)
                     }
                 }
             }
@@ -68,24 +77,35 @@ fun App(onNavigate: () -> Unit) {
 }
 
 @Composable
-fun View2(onBack: () -> Unit) {
+fun IndividualBoardView(onBoardsView: () -> Unit, boardName: String) {
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("This is View2", style = MaterialTheme.typography.h2)
-        Button(onClick = onBack) {
-            Text("Back to Main View")
+        Text("Selected Board: $boardName", style = MaterialTheme.typography.h2)
+        Button(onClick = onBoardsView) {
+            Text("Back to All Boards")
         }
     }
 }
 
 @Composable
-fun MainView() {
-    var currentView by remember { mutableStateOf("App") }
+fun MainView(boardViewModel: ViewModel) {
+    var currentView by remember { mutableStateOf("BoardsView") }
+    var currentIndividualBoard by remember { mutableStateOf("") }
 
     when (currentView) {
-        "App" -> App(onNavigate = { currentView = "View2" })
-        "View2" -> View2(onBack = { currentView = "App" })
+        "BoardsView" -> BoardsView(
+            onIndividualBoard = { selectedBoardId ->
+                currentIndividualBoard = selectedBoardId.toString()
+                currentView = "IndividualBoardView"
+            },
+            boardViewModel = boardViewModel
+        )
+
+        "IndividualBoardView" -> IndividualBoardView(
+            onBoardsView = { currentView = "BoardsView" },
+            boardName = currentIndividualBoard
+        )
     }
 }
