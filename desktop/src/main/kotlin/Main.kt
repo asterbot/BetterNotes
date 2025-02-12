@@ -1,12 +1,15 @@
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.Window
-import model.Model
-import view.ViewModel
-import view.MainView
-import model.BoardModel
+
+// Boards page imports
+import boards.view.ViewModel
+import boards.model.Model
+
+// Main View
+import mainview.MainView
 
 fun main() {
-    var boardModel = BoardModel()
+    var boardModel = Model()
     var boardViewModel = ViewModel(boardModel)
 
     application {
