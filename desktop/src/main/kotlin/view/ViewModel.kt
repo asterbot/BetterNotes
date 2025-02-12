@@ -1,15 +1,25 @@
 package view
+import androidx.compose.runtime.mutableStateListOf
+
 
 import model.ISubscriber
 import model.Model
+import model.BoardModel;
+import entities.Board
 
-class ViewModel(private val model: Model): ISubscriber {
+
+class ViewModel(private val model: BoardModel): ISubscriber {
+    val boardList = mutableStateListOf<Board>()
+
     init{
         model.subscribe(this)
     }
 
     override fun update(){
-        println("Update called")
+        boardList.clear()
+        for (board in model.boardList){
+            boardList.add(board)
+        }
     }
 
 }
