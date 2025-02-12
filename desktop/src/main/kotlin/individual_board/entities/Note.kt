@@ -1,11 +1,12 @@
-package entities
+package individual_board.entities
 
 /* Notes */
 
 open class Note(
+
     var id: Int = 0,
     var title: String,
-    var desc: String,
+    var desc: String? = "",
     var parentNotes: MutableList<Note>? = null,
     var relatedNotes: MutableList<Note>? = null
 )
