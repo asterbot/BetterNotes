@@ -14,6 +14,17 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.ui.text.style.TextAlign
 import boards.entities.Board
+import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
+import individual_board.view.IndividualBoardScreen
+
+data class BoardViewScreen(val boardView: ViewModel): Screen{
+    @Composable
+    override fun Content() {
+        BoardsView(boardView)
+    }
+}
 
 @Composable
 fun BoardButton(board: Board, onLeftClickBoard: (Int) -> Unit) {
@@ -38,11 +49,11 @@ fun BoardButton(board: Board, onLeftClickBoard: (Int) -> Unit) {
 
 @Composable
 fun BoardsView(
-    onIndividualBoard: (Int) -> Unit,
     boardViewModel: ViewModel
 ) {
 
     val boardList by remember { mutableStateOf(boardViewModel.boardList.toList()) }
+    val navigator = LocalNavigator.currentOrThrow
 
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -64,7 +75,9 @@ fun BoardsView(
             ) {
                 for (board in boardList) {
                     item {
-                        BoardButton(board = board, onLeftClickBoard = onIndividualBoard)
+                        BoardButton(board = board, onLeftClickBoard = {
+                            navigator.push(IndividualBoardScreen(board.name, boardViewModel))
+                        })
                     }
                 }
             }
