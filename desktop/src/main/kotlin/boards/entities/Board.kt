@@ -1,4 +1,6 @@
-package entities
+package boards.entities
+
+// Entities holds the main data for the class and provides manipulator functions
 
 data class Board(
     var id: Int = 0,

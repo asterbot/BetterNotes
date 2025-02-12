@@ -1,14 +1,13 @@
-package view
+package boards.view
 import androidx.compose.runtime.mutableStateListOf
 
 
-import model.ISubscriber
-import model.Model
-import model.BoardModel;
-import entities.Board
+import shared.ISubscriber
+import boards.model.Model;
+import boards.entities.Board
 
 
-class ViewModel(private val model: BoardModel): ISubscriber {
+class ViewModel(private val model: Model): ISubscriber {
     val boardList = mutableStateListOf<Board>()
 
     init{

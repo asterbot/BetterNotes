@@ -1,4 +1,4 @@
-package model
+package shared
 
 abstract class IPublisher {
     private val subscribers = mutableListOf<ISubscriber>()

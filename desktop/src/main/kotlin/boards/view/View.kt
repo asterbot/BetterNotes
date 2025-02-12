@@ -1,4 +1,4 @@
-package view
+package boards.view
 
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.layout.*
@@ -13,7 +13,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.ui.text.style.TextAlign
-import entities.Board
+import boards.entities.Board
 
 @Composable
 fun BoardButton(board: Board, onLeftClickBoard: (Int) -> Unit) {
@@ -21,7 +21,7 @@ fun BoardButton(board: Board, onLeftClickBoard: (Int) -> Unit) {
         modifier = Modifier.padding(15.dp),
         colors = ButtonDefaults.buttonColors(Color(0xffB1CCD3)),
         onClick = {
-            println("Clicked ${board.name}")
+            println("DEBUG: Clicked ${board.name}")
             onLeftClickBoard(board.id)
         }
     ) {
@@ -73,39 +73,5 @@ fun BoardsView(
                 adapter = rememberScrollbarAdapter(scrollState = state)
             )
         }
-    }
-}
-
-@Composable
-fun IndividualBoardView(onBoardsView: () -> Unit, boardName: String) {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text("Selected Board: $boardName", style = MaterialTheme.typography.h2)
-        Button(onClick = onBoardsView) {
-            Text("Back to All Boards")
-        }
-    }
-}
-
-@Composable
-fun MainView(boardViewModel: ViewModel) {
-    var currentView by remember { mutableStateOf("BoardsView") }
-    var currentIndividualBoard by remember { mutableStateOf("") }
-
-    when (currentView) {
-        "BoardsView" -> BoardsView(
-            onIndividualBoard = { selectedBoardId ->
-                currentIndividualBoard = selectedBoardId.toString()
-                currentView = "IndividualBoardView"
-            },
-            boardViewModel = boardViewModel
-        )
-
-        "IndividualBoardView" -> IndividualBoardView(
-            onBoardsView = { currentView = "BoardsView" },
-            boardName = currentIndividualBoard
-        )
     }
 }

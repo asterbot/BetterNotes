@@ -1,9 +1,10 @@
-package model;
-import entities.Board;
-import entities.addBoard;
-import entities.removeBoard;
+package boards.model;
+import boards.entities.Board;
+import boards.entities.addBoard;
+import boards.entities.removeBoard;
+import shared.IPublisher
 
-class BoardModel : IPublisher(){
+class Model : IPublisher(){
     var boardList = mutableListOf<Board>();
 
     init {
