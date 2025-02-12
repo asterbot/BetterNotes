@@ -3,7 +3,6 @@ import boards.entities.Board;
 import boards.entities.addBoard;
 import boards.entities.removeBoard;
 import shared.IPublisher
-import java.io.File
 
 class Model : IPublisher(){
     var boardList = mutableListOf<Board>();
