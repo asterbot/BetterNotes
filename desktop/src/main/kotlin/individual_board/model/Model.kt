@@ -11,28 +11,23 @@ import shared.IPublisher
 
 
 class Model() : IPublisher() {
-    var noteList = mutableListOf<Note>()
 
-    fun getNoteListFromBoardId(boardId: Int): MutableList<Note> {
-        noteList = getNoteListFromBoardId(boardId)
-        if (boardId == 0) {
-            var sampleNote1 = Section(
+    var noteDict = mutableMapOf<Int, MutableList<Note>>(
+        1 to mutableListOf(
+            Section(
                 id = 1,
                 title = "CS346 Course Logistics",
                 desc = "Course Outline, Course Schedule, Grading Policy, etc.",
-            )
-
-            var sampleNote2 = Section(
+            ),
+            Section(
                 id = 2,
                 title = "Agile Development",
                 desc = "I LOVE AGILE DEVELOPMENT <3",
-            )
-
-            val sampleNote3 = Article(
+            ),
+            Article(
                 id = 3,
                 title = "Stand-Up Meetings",
                 desc = "\uD83E\uDDCD",
-                parentNotes = mutableListOf(sampleNote2),
                 contentBlocks = mutableListOf(
                     MarkdownBlock(
                         text = "Stand-up meetings are a daily ritual in the agile development process. They are short, focused meetings that are intended to keep the team on track and moving forward. The idea is to have a quick, 15-minute meeting every day to discuss what each team member is working on, what they plan to work on next, and any obstacles they are facing. The goal is to keep the team in sync and to identify and address any issues that may be slowing down progress."
@@ -42,34 +37,25 @@ class Model() : IPublisher() {
                     )
                 )
             )
-
-            return mutableListOf(
-                sampleNote1,
-                sampleNote2,
-                sampleNote3
-            )
-        }
-        else {
-            return mutableListOf()
-        }
-    }
+        )
+    )
 
     init {
-        println("DEBUG: noteList, $noteList")
+        println("DEBUG: noteList, $noteDict")
     }
 
-    fun addSection(section: Section) {
-        noteList.addNote(section)
+    fun addSection(section: Section, boardId: Int) {
+        noteDict[boardId]?.addNote(section)
+        notifySubscribers()
+    }
+    fun addArticle(article: Article, boardId: Int) {
+        noteDict[boardId]?.addNote(article)
         notifySubscribers()
     }
 
-    fun addArticle(article: Article) {
-        noteList.addNote(article)
+    fun del(note: Note, boardId: Int) {
+        noteDict[boardId]?.removeNote(note)
         notifySubscribers()
     }
 
-    fun del(note: Note) {
-        noteList.removeNote(note)
-        notifySubscribers()
-    }
 }

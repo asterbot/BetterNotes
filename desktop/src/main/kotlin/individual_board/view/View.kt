@@ -94,7 +94,8 @@ fun IndividualBoardView(
 ) {
     var navigator = LocalNavigator.currentOrThrow
 
-    val noteList by remember { mutableStateOf(individualBoardViewModel.noteList.toList()) }
+    val noteList by remember { mutableStateOf(individualBoardModel.noteDict[board.id]?.toList()) }
+
     println("DEBUG: noteList, $noteList")
 
     Column(
@@ -106,7 +107,7 @@ fun IndividualBoardView(
         LazyColumn (
             contentPadding = PaddingValues(10.dp),
         ){
-            for (note in noteList) {
+            for (note in noteList!!) {
                 item {
                     NoteRowView(note)
                 }

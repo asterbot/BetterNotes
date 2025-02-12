@@ -6,16 +6,13 @@ import individual_board.entities.Note
 
 
 class ViewModel(private val model: Model): ISubscriber {
-    val noteList = mutableStateListOf<Note>()
+    val noteList = mutableMapOf<Int, MutableList<Note>>()
 
     init{
         model.subscribe(this)
     }
 
-    override fun update(){
-        noteList.clear()
-        for (note in model.noteList){
-            noteList.add(note)
-        }
+    override fun update() {
+        println("IDK")
     }
 }
