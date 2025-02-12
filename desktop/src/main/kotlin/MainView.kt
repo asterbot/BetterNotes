@@ -3,12 +3,14 @@ package mainview
 import androidx.compose.runtime.*
 import boards.view.BoardsView
 import individual_board.view.IndividualBoardView
-import boards.view.ViewModel
+import boards.view.ViewModel as BoardViewModel
+import individual_board.view.ViewModel as IndividualBoardViewModel
 
 @Composable
-fun MainView(boardViewModel: ViewModel) {
+fun MainView(boardViewModel: BoardViewModel, individualBoardViewModel: IndividualBoardViewModel) {
     var currentView by remember { mutableStateOf("BoardsView") }
     var currentIndividualBoard by remember { mutableStateOf("") }
+    var individualBoardViewModel = individualBoardViewModel
 
     when (currentView) {
         "BoardsView" -> BoardsView(
@@ -21,7 +23,12 @@ fun MainView(boardViewModel: ViewModel) {
 
         "IndividualBoardView" -> IndividualBoardView(
             onBoardsView = { currentView = "BoardsView" },
-            boardName = currentIndividualBoard
+            onIndividualNote = {
+                selectedNoteId -> selectedNoteId.toString()
+                currentView = "IndividualNoteView"
+            },
+            boardName = currentIndividualBoard,
+            individualBoardViewModel = individualBoardViewModel
         )
     }
 }

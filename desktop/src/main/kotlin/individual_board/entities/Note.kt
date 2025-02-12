@@ -31,7 +31,7 @@ class Section(
     desc: String,
     parentNotes: MutableList<Note>? = null,
     relatedNotes: MutableList<Note>? = null,
-    children: MutableList<Note>? = null
+//    childrenNotes: MutableList<Note>? = null // to be implemented (some circular dependency things)
 ) : Note(id, title, desc, parentNotes, relatedNotes)
 
 /* Articles */
@@ -42,7 +42,7 @@ class Article(
     desc: String,
     parentNotes: MutableList<Note>? = null,
     relatedNotes: MutableList<Note>? = null,
-    contentBlocks: MutableList<ContentBlock>
+    var contentBlocks: MutableList<ContentBlock>
 ) : Note(id, title, desc, parentNotes, relatedNotes)
 
 // Content Blocks

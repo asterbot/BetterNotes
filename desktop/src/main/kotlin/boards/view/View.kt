@@ -16,7 +16,10 @@ import androidx.compose.ui.text.style.TextAlign
 import boards.entities.Board
 
 @Composable
-fun BoardButton(board: Board, onLeftClickBoard: (Int) -> Unit) {
+fun BoardButton(
+    board: Board,
+    onLeftClickBoard: (Int) -> Unit
+) {
     Button(
         modifier = Modifier.padding(15.dp),
         colors = ButtonDefaults.buttonColors(Color(0xffB1CCD3)),
