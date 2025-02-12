@@ -6,6 +6,7 @@ import shared.IPublisher
 
 class Model : IPublisher(){
     var boardList = mutableListOf<Board>();
+    val file = File(File("data"),"data.csv")
 
     init {
         boardList = mutableListOf(

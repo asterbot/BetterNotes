@@ -2,30 +2,20 @@ import androidx.compose.ui.window.application
 import androidx.compose.ui.window.Window
 
 // Boards page imports
-import boards.view.ViewModel as BoardViewModel
-import boards.model.Model as BoardModel
+import boards.view.ViewModel
+import boards.model.Model
+import boards.view.BoardViewScreen
 
-// Individual Board page imports
-import individual_board.view.ViewModel as IndividualBoardViewModel
-import individual_board.model.Model as IndividualBoardModel
-
-// Main View
-import mainview.MainView
+import cafe.adriel.voyager.navigator.Navigator
 
 fun main() {
-    var boardModel = BoardModel()
-    var boardViewModel = BoardViewModel(boardModel)
-
-    var individualBoardModel = IndividualBoardModel(0)
-    var individualBoardViewModel = IndividualBoardViewModel(individualBoardModel)
+    val boardModel = Model()
+    val boardViewModel = ViewModel(boardModel)
 
     application {
         Window(onCloseRequest = ::exitApplication) {
-            MainView(
-                boardViewModel = boardViewModel,
-                individualBoardViewModel = individualBoardViewModel
-            )
+            // Starting screen
+            Navigator(BoardViewScreen(boardViewModel))
         }
     }
 }
-

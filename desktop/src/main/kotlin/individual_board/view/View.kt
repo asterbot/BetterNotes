@@ -1,18 +1,5 @@
 package individual_board.view
-import androidx.compose.foundation.VerticalScrollbar
-import androidx.compose.foundation.layout.*
-import androidx.compose.material.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.*
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.background
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.rememberScrollbarAdapter
-import androidx.compose.ui.text.style.TextAlign
-import boards.entities.Board
+
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,6 +10,12 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import boards.view.BoardViewScreen
+import boards.view.ViewModel
+import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.navigator.Navigator
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import individual_board.entities.Note
 import individual_board.entities.Article
 import individual_board.entities.MarkdownBlock
@@ -62,7 +55,16 @@ fun NoteRowView(
     }
 }
 
+data class IndividualBoardScreen(val boardName: String, val boardView: ViewModel): Screen{
+    @Composable
+    override fun Content() {
+        IndividualBoardView(boardName, boardView)
+    }
+}
+
 @Composable
+fun IndividualBoardView(boardName: String, boardView: ViewModel) {
+    var navigator = LocalNavigator.currentOrThrow
 fun IndividualBoardView(
     onBoardsView: () -> Unit,
     onIndividualNote: (Int) -> Unit,
@@ -79,6 +81,11 @@ fun IndividualBoardView(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text("Selected Board: $boardName", style = MaterialTheme.typography.h2)
+        Button(
+            onClick = {
+                navigator.push(BoardViewScreen(boardView))
+        })
+        {
 
         Button(onClick = onBoardsView) {
             Text("Back to All Boards")
