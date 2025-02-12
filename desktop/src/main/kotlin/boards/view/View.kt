@@ -1,5 +1,6 @@
 package boards.view
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
@@ -8,10 +9,14 @@ import androidx.compose.ui.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.rememberScrollbarAdapter
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.style.TextAlign
 import boards.entities.Board
 import cafe.adriel.voyager.core.screen.Screen
@@ -25,6 +30,73 @@ data class BoardViewScreen(val boardView: ViewModel): Screen{
         BoardsView(boardView)
     }
 }
+
+@Composable
+fun CanvasButton(
+    onToggleCanvas: () -> Unit,
+    isCanvasOpen: Boolean
+) {
+    Button(
+        modifier = Modifier.padding(15.dp),
+        colors = ButtonDefaults.buttonColors(Color(0xff74C365)),
+        onClick = {
+            println("Toggling canvas")
+            onToggleCanvas()
+        }
+    ) {
+        Text(if (isCanvasOpen) "Close Canvas" else "New Canvas", textAlign = TextAlign.Center)
+    }
+}
+
+@Composable
+fun DrawingCanvas() {
+    val paths = remember { mutableStateListOf<Path>() }
+    var currentPath by remember { mutableStateOf(Path()) }
+    var isDrawing by remember { mutableStateOf(false) }
+
+    Box(
+        modifier = Modifier.fillMaxSize()
+            .background(Color.White)
+            .pointerInput(Unit) {
+                detectDragGestures(
+                    onDragStart = { offset ->
+                        isDrawing = true
+                        currentPath = Path().apply { moveTo(offset.x, offset.y) }
+                    },
+                    onDrag = { change, _ ->
+                        currentPath = Path().apply {
+                            addPath(currentPath)
+                            lineTo(change.position.x, change.position.y)
+                        }
+                    },
+                    onDragEnd = {
+                        isDrawing = false
+                        paths.add(currentPath)
+                        currentPath = Path()
+                    }
+                )
+            }
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            paths.forEach { path ->
+                drawPath(
+                    path = path,
+                    color = Color.Black,
+                    style = Stroke(width = 2f)
+                )
+            }
+            if (isDrawing) {
+                drawPath(
+                    path = currentPath,
+                    color = Color.Black,
+                    style = Stroke(width = 2f)
+                )
+            }
+        }
+    }
+}
+
+
 
 @Composable
 fun BoardButton(board: Board, onLeftClickBoard: (Int) -> Unit) {
