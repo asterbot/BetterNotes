@@ -10,10 +10,11 @@ import individual_board.entities.MarkdownBlock
 import shared.IPublisher
 
 
-class Model(boardId: Int) : IPublisher() {
+class Model() : IPublisher() {
     var noteList = mutableListOf<Note>()
 
     fun getNoteListFromBoardId(boardId: Int): MutableList<Note> {
+        noteList = getNoteListFromBoardId(boardId)
         if (boardId == 0) {
             var sampleNote1 = Section(
                 id = 1,
@@ -54,7 +55,6 @@ class Model(boardId: Int) : IPublisher() {
     }
 
     init {
-        noteList = getNoteListFromBoardId(boardId)
         println("DEBUG: noteList, $noteList")
     }
 
