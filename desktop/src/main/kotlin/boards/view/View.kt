@@ -41,208 +41,38 @@ import org.intellij.markdown.flavours.commonmark.CommonMarkFlavourDescriptor
 import org.intellij.markdown.parser.MarkdownParser
 
 
-data class BoardViewScreen(val boardView: ViewModel): Screen{
+// Globals
+import globals.boardViewModel
+import globals.boardModel
+import globals.individualBoardModel
+import globals.individualBoardViewModel
+
+class BoardViewScreen: Screen{
     @Composable
     override fun Content() {
-        BoardsView(boardView)
+        BoardsView()
     }
 }
 
 @Composable
-fun CanvasButton(
-    onToggleCanvas: () -> Unit,
-    isCanvasOpen: Boolean,
-    // isEraserOn: Boolean
+fun BoardButton(
+    board: Board,
+    onBoardDeleted: () -> Unit
 ) {
+    val navigator = LocalNavigator.currentOrThrow
     Button(
         modifier = Modifier.padding(15.dp),
-        colors = ButtonDefaults.buttonColors(Color(0xff74C365)),
+        colors = ButtonDefaults.buttonColors(if (!board.canDelete) Color(0xffB1CCD3) else Color(0xffffd7d4)),
         onClick = {
-            println("Toggling canvas")
-            onToggleCanvas()
-        }
-    ) {
-        Text(if (isCanvasOpen) "Close Canvas" else "New Canvas", textAlign = TextAlign.Center)
-    }
-}
-
-@Composable
-fun DrawingCanvas() {
-    val paths = remember { mutableStateListOf<Path>() }
-    var currentPath by remember { mutableStateOf(Path()) }
-    var isDrawing by remember { mutableStateOf(false) }
-
-    Box(
-        modifier = Modifier.fillMaxSize()
-            .background(Color.White)
-            .pointerInput(Unit) {
-                detectDragGestures(
-                    onDragStart = { offset ->
-                        isDrawing = true
-                        currentPath = Path().apply { moveTo(offset.x, offset.y) }
-                    },
-                    onDrag = { change, _ ->
-                        currentPath = Path().apply {
-                            addPath(currentPath)
-                            lineTo(change.position.x, change.position.y)
-                        }
-                    },
-                    onDragEnd = {
-                        isDrawing = false
-                        paths.add(currentPath)
-                        currentPath = Path()
-                    }
-                )
+            if (board.canDelete) {
+                println("DEBUG: Deleting ${board.name}")
+                onBoardDeleted()
             }
-    ) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            paths.forEach { path ->
-                drawPath(
-                    path = path,
-                    color = Color.Black,
-                    style = Stroke(width = 2f)
-                )
+            else{
+                println("DEBUG: Clicked ${board.name}")
+                navigator.push(IndividualBoardScreen(board))
             }
-            if (isDrawing) {
-                drawPath(
-                    path = currentPath,
-                    color = Color.Black,
-                    style = Stroke(width = 2f)
-                )
-            }
-        }
-    }
-}
 
-@Composable
-fun MarkdownButton(
-    onToggleRender: () -> Unit,
-) {
-    Button(
-        modifier = Modifier.padding(15.dp),
-        colors = ButtonDefaults.buttonColors(Color(0xffB1CCD3)),
-        onClick = {
-            onToggleRender()
-        }
-    ) { Text("Toggle Markdown") }
-}
-
-@Composable
-fun EditableTextBox(
-    onTextChange: (String) -> Unit,
-) {
-    var text by remember { mutableStateOf("") } // Holds user input
-    val focusRequester = remember { FocusRequester() } // Controls focus
-    var keyPressed by remember { mutableStateOf<Key?>(null) }
-
-
-    // Effect to continuously add characters when a key is held down
-//    LaunchedEffect(keyPressed) {
-//        keyPressed?.let { key ->
-//            while (keyPressed == key) {
-//                // text += key.toString()[5] // Append the pressed key (you can customize this)
-//                delay(100L) // Adjust delay for input repeat speed
-//            }
-//        }
-//    }
-
-    Column(
-        modifier = Modifier
-            .padding(16.dp)
-            .clickable { focusRequester.requestFocus() } // Ensure click brings focus (highlights when hovering)
-    ) {
-        BasicTextField(
-            value = text,
-            onValueChange = {
-                text = it
-                onTextChange(text) }, // Updates state
-            modifier = Modifier
-                    .fillMaxWidth()
-                    // .focusRequester(focusRequester) // Attach focus requester
-                    // .focusable(true) // Allow focus
-                    .onKeyEvent { event -> // Handle key events
-                        when {
-                            event.type == KeyDown -> {
-                                keyPressed = event.key // Start tracking key hold
-                                true
-                            }
-                            event.type == KeyUp -> {
-                                keyPressed = null // Stop key repeat
-                                true
-                            }
-                            else -> false
-                        }
-                    }
-        )
-    }
-}
-
-@Composable
-fun MarkdownRenderer(rawText: String) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        // first, parse the raw text into an Abstract Syntax Tree (AST)
-        val flavour = CommonMarkFlavourDescriptor()
-        val parsedTree = MarkdownParser(flavour).buildMarkdownTreeFromString(rawText)
-
-        parsedTree.children.forEach{node ->
-            println("-----------------------------")
-            printASTNode(node, rawText)
-            renderMarkdownNode(node, rawText)
-        }
-    }
-}
-
-fun printASTNode(node: ASTNode, rawText: String) {
-    print(node.type.toString() + " (text: [" + extractText(node, rawText) + "])\n")
-
-    node.children.forEach {
-        printASTNode(it, rawText)
-    }
-}
-
-@Composable
-fun renderMarkdownNode(node: ASTNode, rawText: String) {
-    val headerTypes = arrayOf(MarkdownElementTypes.ATX_1, MarkdownElementTypes.ATX_2, MarkdownElementTypes.ATX_3)
-    var t = extractText(node, rawText)
-    when (node.type) {
-        in headerTypes -> {
-            t = t.trimStart('#', ' ')
-            val fontSize = when (node.type) {
-                MarkdownElementTypes.ATX_1 -> 30.sp
-                MarkdownElementTypes.ATX_2 -> 24.sp
-                MarkdownElementTypes.ATX_3 -> 18.sp
-                else -> 0.sp // should never reach here
-            }
-            Text(
-                text = t,
-                fontSize = fontSize,
-                fontWeight = FontWeight.Bold
-            )
-        }
-        MarkdownTokenTypes.EOL -> {}
-        else -> Text(
-            text = extractText(node, rawText)
-        )
-    }
-}
-
-fun extractText(node: ASTNode, rawText: String): String {
-    return rawText.substring(node.startOffset, node.endOffset)
-}
-
-
-@Composable
-fun BoardButton(board: Board, onLeftClickBoard: (Int) -> Unit) {
-    Button(
-        modifier = Modifier.padding(15.dp),
-        colors = ButtonDefaults.buttonColors(Color(0xffB1CCD3)),
-        onClick = {
-            println("DEBUG: Clicked ${board.name}")
-            onLeftClickBoard(board.id)
         }
     ) {
         Column(
@@ -258,11 +88,16 @@ fun BoardButton(board: Board, onLeftClickBoard: (Int) -> Unit) {
 
 @Composable
 fun BoardsView(
-    boardViewModel: ViewModel
 ) {
 
-    val boardList by remember { mutableStateOf(boardViewModel.boardList.toList()) }
-    val navigator = LocalNavigator.currentOrThrow
+    var boardList by remember { mutableStateOf(boardViewModel.boardList.toList()) }
+
+    // possible values: "addBoard" (doing it this way so we can have more alerts if needed)
+    var currAlert by remember { mutableStateOf("") }
+
+    // Received by form
+    var newCourse by remember { mutableStateOf("") }
+    var newDescription by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -274,6 +109,7 @@ fun BoardsView(
             Modifier.fillMaxSize()
                 .padding(15.dp)
                 .background(Color(0xFFF0EDEE))
+                .weight(1f)
         ) {
             val state = rememberLazyGridState()
             LazyVerticalGrid(
@@ -284,8 +120,13 @@ fun BoardsView(
             ) {
                 for (board in boardList) {
                     item {
-                        BoardButton(board = board, onLeftClickBoard = {
-                            navigator.push(IndividualBoardScreen(board.name, boardViewModel))
+                        BoardButton(board = board, onBoardDeleted = {
+                            board.canDelete = false // need to do this so it is found
+                            boardModel.del(board)
+                            boardList = boardViewModel.boardList.toList()
+                            boardList = boardList.map{ it.copy(canDelete = false) }
+                            individualBoardModel.removeBoard(board.id)
+
                         })
                     }
                 }
@@ -295,5 +136,87 @@ fun BoardsView(
                 adapter = rememberScrollbarAdapter(scrollState = state)
             )
         }
+
+        Row(modifier = Modifier.padding(vertical = 8.dp)) {
+            Button(
+                onClick = {
+                    currAlert="addBoard"
+                }
+            ) {
+                Text("Add Board")
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Button(
+                onClick = {
+                    boardList = boardList.map{ it.copy(canDelete = true) }
+                }
+            ) {
+                Text("Remove Board")
+            }
+        }
     }
+    if (currAlert!=""){
+        AlertDialog(
+            onDismissRequest = {
+                currAlert=""
+
+                newCourse = ""
+                newDescription = ""
+            },
+            title = { Text(text =
+                when(currAlert){
+                    "addBoard" -> "Add Board"
+                    "removeBoard" -> "Remove Board"
+                    else -> "Invalid op... how did you get here?"
+                })
+            },
+            text = {
+                Column {
+                    TextField(
+                        value = newCourse,
+                        onValueChange = { newCourse = it },
+                        label = { Text("Course Code") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    TextField(
+                        value = newDescription,
+                        onValueChange = { newDescription = it },
+                        label = { Text("Description") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        when (currAlert){
+                            "addBoard" -> {
+                                boardModel.add(Board(boardModel.newBoardId(), newCourse, newDescription))
+                                individualBoardModel.addBlankBoard(boardModel.newBoardId())
+                            }
+                        }
+                        boardList = boardModel.boardList.toList()
+                        currAlert = ""
+                        newCourse = ""
+                        newDescription = ""
+                    }
+                ) {
+                    Text("Add")
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = {
+                        currAlert = ""
+                        newCourse = ""
+                        newDescription = ""
+                    }
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
 }
