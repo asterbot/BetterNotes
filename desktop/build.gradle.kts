@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "ca.uwaterloo"
-version = "1.0-SNAPSHOT"
+version = "0.10"
 
 repositories {
     mavenCentral()
