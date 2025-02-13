@@ -18,22 +18,32 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import individual_board.view.IndividualBoardScreen
+import individual_board.view.ViewModel as IndividualBoardViewModel
+import boards.view.ViewModel as BoardViewModel
+import globals.boardViewModel
+import globals.boardModel
+import globals.individualBoardModel
+import globals.individualBoardViewModel
 
-data class BoardViewScreen(val boardView: ViewModel): Screen{
+class BoardViewScreen(): Screen{
     @Composable
     override fun Content() {
-        BoardsView(boardView)
+        BoardsView()
     }
 }
 
 @Composable
-fun BoardButton(board: Board, onLeftClickBoard: (Int) -> Unit) {
+fun BoardButton(
+    board: Board,
+) {
+    val navigator = LocalNavigator.currentOrThrow
     Button(
         modifier = Modifier.padding(15.dp),
         colors = ButtonDefaults.buttonColors(Color(0xffB1CCD3)),
         onClick = {
             println("DEBUG: Clicked ${board.name}")
-            onLeftClickBoard(board.id)
+//            onLeftClickBoard(board.id)
+            navigator.push(IndividualBoardScreen(board))
         }
     ) {
         Column(
@@ -49,11 +59,10 @@ fun BoardButton(board: Board, onLeftClickBoard: (Int) -> Unit) {
 
 @Composable
 fun BoardsView(
-    boardViewModel: ViewModel
 ) {
 
     val boardList by remember { mutableStateOf(boardViewModel.boardList.toList()) }
-    val navigator = LocalNavigator.currentOrThrow
+
 
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -75,9 +84,7 @@ fun BoardsView(
             ) {
                 for (board in boardList) {
                     item {
-                        BoardButton(board = board, onLeftClickBoard = {
-                            navigator.push(IndividualBoardScreen(board.name, boardViewModel))
-                        })
+                        BoardButton(board = board)
                     }
                 }
             }
