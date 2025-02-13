@@ -1,5 +1,6 @@
 package individual_board.view
-
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.Button
@@ -34,6 +35,8 @@ import globals.boardModel
 import globals.individualBoardModel
 import globals.individualBoardViewModel
 import androidx.compose.foundation.lazy.items
+import androidx.compose.ui.input.pointer.pointerInput
+
 
 data class IndividualBoardScreen(
     val board: Board
@@ -63,18 +66,6 @@ fun NoteRowView(
 
             note.desc?.let { Text(it, textAlign = TextAlign.Center) }
 
-//            if (note is Article) {
-//                for (contentBlock in note.contentBlocks) {
-//                    when (contentBlock) {
-//                        is MarkdownBlock -> {
-//                            Text(contentBlock.text)
-//                        }
-//                        is CodeBlock -> {
-//                            // Implement here
-//                        }
-//                    }
-//                }
-//            }
         }
     }
 }
@@ -95,12 +86,14 @@ fun IndividualBoardView(
     // Flag: true = adding Article, false = adding Section
     var addingArticle by remember { mutableStateOf(false) }
 
+    var deleteMode by remember { mutableStateOf(false) }
+
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "${board.name}",
+            text = board.name,
             style = MaterialTheme.typography.h2,
             modifier = Modifier.padding(16.dp)
         )
@@ -121,7 +114,23 @@ fun IndividualBoardView(
                 contentPadding = PaddingValues(10.dp)
             ) {
                 items(noteList) { note ->
-                    NoteRowView(note)
+                    if (deleteMode) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color(0x33FF0000))
+                                .clickable {
+                                    println("Deleting note: ${note.title}")
+                                    individualBoardModel.del(note, board.id)
+                                    noteList = individualBoardModel.noteDict[board.id]?.toList() ?: emptyList()
+                                    deleteMode = false
+                                }
+                        ) {
+                            NoteRowView(note)
+                        }
+                    } else {
+                        NoteRowView(note)
+                    }
                 }
             }
         }
@@ -146,13 +155,22 @@ fun IndividualBoardView(
             }
         }
 
-        Button(
-            onClick = {
-                navigator.push(BoardViewScreen())
-            },
-            modifier = Modifier.padding(bottom = 16.dp)
-        ) {
-            Text("Back to All Boards")
+        Row(modifier = Modifier.padding(bottom = 16.dp)) {
+            Button(
+                onClick = {
+                    deleteMode = true
+                }
+            ) {
+                Text("Delete Note")
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Button(
+                onClick = {
+                    navigator.push(BoardViewScreen())
+                }
+            ) {
+                Text("Back to All Boards")
+            }
         }
     }
 
@@ -186,7 +204,7 @@ fun IndividualBoardView(
                     onClick = {
                         if (addingArticle) {
                             val newArticle = Article(
-                                id = 0, // TODO: Placeholder
+                                id = 0, // TODO: Use a proper unique ID
                                 title = newTitle,
                                 desc = newDesc,
                                 contentBlocks = mutableListOf()
@@ -194,7 +212,7 @@ fun IndividualBoardView(
                             individualBoardModel.addArticle(newArticle, board.id)
                         } else {
                             val newSection = Section(
-                                id = 0, // TODO: Placeholder
+                                id = 0, // TODO: Use a proper unique ID
                                 title = newTitle,
                                 desc = newDesc
                             )
@@ -223,4 +241,3 @@ fun IndividualBoardView(
         )
     }
 }
-
