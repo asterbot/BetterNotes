@@ -7,6 +7,7 @@ import shared.IPublisher
 class Model : IPublisher(){
     var boardList = mutableListOf<Board>();
 
+    // Convention: id's start from 1
     init {
         boardList = mutableListOf(
             Board(id=1, name="CS346", desc="App Development"),
@@ -23,6 +24,11 @@ class Model : IPublisher(){
     fun del(board: Board) {
         boardList.removeBoard(board);
         notifySubscribers();
+    }
+
+    fun newBoardId(): Int{
+        // The board ID for a new board to be added
+        return boardList.size + 1
     }
 
     fun save() {
