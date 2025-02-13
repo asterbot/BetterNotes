@@ -1,5 +1,10 @@
 # Notetaking App
 
+## Demo 1 Release
+
+Wiki: https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/Releases/v0.1.0
+
+
 ## Design Proposal
 
 Link to design proposal: https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/design-proposal
