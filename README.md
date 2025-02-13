@@ -25,3 +25,6 @@ An app for notetaking for CS and math
 * Link to Meeting Minutes wiki page: https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/meeting-minutes
 * Link to Project Proposal wiki page: https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/project-proposal
 * Link to Design Proposal wiki page: https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/design-proposal
+
+### Meeting Notes
+https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/meeting-minutes
