@@ -36,6 +36,7 @@ import globals.individualBoardModel
 import globals.individualBoardViewModel
 import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.input.pointer.pointerInput
+import article.view.ArticleScreen
 
 
 data class IndividualBoardScreen(
@@ -51,6 +52,7 @@ data class IndividualBoardScreen(
 fun NoteRowView(
     note: Note,
 ) {
+    val navigator = LocalNavigator.currentOrThrow
     Button (
         modifier = Modifier.padding(15.dp),
         colors = ButtonDefaults.buttonColors(
@@ -59,6 +61,7 @@ fun NoteRowView(
         onClick = {
             println("DEBUG: Clicked ${note.title}")
             // Implement navigator soon
+            navigator.push(ArticleScreen())
         }
     ) {
         Column {
