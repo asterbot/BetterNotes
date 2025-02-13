@@ -51,17 +51,16 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import boards.view.BoardsView
-import individual_board.view.IndividualBoardScreen
 import org.intellij.markdown.MarkdownElementTypes
 import org.intellij.markdown.MarkdownTokenTypes
 import org.intellij.markdown.ast.ASTNode
 import org.intellij.markdown.flavours.commonmark.CommonMarkFlavourDescriptor
 import org.intellij.markdown.parser.MarkdownParser
 
-data class ArticleScreen(val board: Board): Screen{
+class ArticleScreen: Screen{
     @Composable
     override fun Content() {
-        Article(board)
+        Article()
     }
 }
 
@@ -255,7 +254,7 @@ fun extractText(node: ASTNode, rawText: String): String {
 
 
 @Composable
-fun Article(board: Board){
+fun Article(){
     var isDrawingCanvasOpen by remember { mutableStateOf(false) }
     var markdownRendered by remember { mutableStateOf(false) }
     var navigator = LocalNavigator.currentOrThrow
@@ -276,10 +275,10 @@ fun Article(board: Board){
 
             Button(
                 onClick = {
-                    navigator.push(IndividualBoardScreen(board))
+                    navigator.push(BoardViewScreen())
                 })
             {
-                Text("Back to the course")
+                Text("Back to All Boards")
             }
 
             MarkdownButton(
