@@ -24,6 +24,8 @@ dependencies {
 
     val voyagerVersion = "1.1.0-beta02"
     implementation("cafe.adriel.voyager:voyager-navigator:$voyagerVersion")
+
+    implementation("org.jetbrains:markdown-jvm:0.7.3")
 }
 
 compose.desktop {
