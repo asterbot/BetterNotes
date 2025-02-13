@@ -42,7 +42,7 @@ class Article(
     desc: String,
     parentNotes: MutableList<Note>? = null,
     relatedNotes: MutableList<Note>? = null,
-    var contentBlocks: MutableList<ContentBlock>
+    var contentBlocks: MutableList<ContentBlock> = mutableListOf()
 ) : Note(id, title, desc, parentNotes, relatedNotes)
 
 // Content Blocks

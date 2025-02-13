@@ -11,7 +11,6 @@ import shared.IPublisher
 
 
 class Model() : IPublisher() {
-
     var noteDict = mutableMapOf<Int, MutableList<Note>>(
         1 to mutableListOf(
             Section(
