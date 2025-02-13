@@ -5,7 +5,8 @@ package boards.entities
 data class Board(
     var id: Int = 0,
     var name: String,
-    var desc: String
+    var desc: String,
+    var canDelete: Boolean = false,
 )
 
 fun MutableList<Board>.addBoard(element: Board): Boolean {
@@ -21,7 +22,7 @@ fun MutableList<Board>.removeBoard(element: Board): Boolean {
 }
 
 private fun MutableList<Board>.reindex() {
-    var count = 0
+    var count = 1
     for (board in this) {
         board.id = count++
     }

@@ -11,6 +11,7 @@ import shared.IPublisher
 
 
 class Model() : IPublisher() {
+    // maps board ID to list of notes
     var noteDict = mutableMapOf<Int, MutableList<Note>>(
         1 to mutableListOf(
             Section(
@@ -36,6 +37,30 @@ class Model() : IPublisher() {
                     )
                 )
             )
+        ),
+        2 to mutableListOf(
+            Section(
+                id = 1,
+                title = "CS 341",
+                desc = "Divide and Conquer",
+            ),
+            Article(
+                id = 2,
+                title = "I LOVE MERGE SORT",
+                desc = "... and the other ones too",
+            ),
+        ),
+        3 to mutableListOf(
+            Section(
+                id = 1,
+                title = "CS 370",
+                desc = "Course Outline, Course Schedule, Grading Policy, etc.",
+            ),
+            Section(
+                id = 2,
+                title = "Floating point numbers",
+                desc = "All you need is to add a decimal",
+            ),
         )
     )
 
@@ -55,6 +80,14 @@ class Model() : IPublisher() {
     fun del(note: Note, boardId: Int) {
         noteDict[boardId]?.removeNote(note)
         notifySubscribers()
+    }
+
+    fun addBlankBoard(boardId: Int) {
+        noteDict[boardId] = mutableListOf()
+    }
+
+    fun removeBoard(boardId: Int) {
+        noteDict.remove(boardId)
     }
 
 }

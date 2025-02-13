@@ -18,14 +18,14 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import individual_board.view.IndividualBoardScreen
-import individual_board.view.ViewModel as IndividualBoardViewModel
-import boards.view.ViewModel as BoardViewModel
+
+// Globals
 import globals.boardViewModel
 import globals.boardModel
 import globals.individualBoardModel
 import globals.individualBoardViewModel
 
-class BoardViewScreen(): Screen{
+class BoardViewScreen: Screen{
     @Composable
     override fun Content() {
         BoardsView()
@@ -35,15 +35,22 @@ class BoardViewScreen(): Screen{
 @Composable
 fun BoardButton(
     board: Board,
+    onBoardDeleted: () -> Unit
 ) {
     val navigator = LocalNavigator.currentOrThrow
     Button(
         modifier = Modifier.padding(15.dp),
-        colors = ButtonDefaults.buttonColors(Color(0xffB1CCD3)),
+        colors = ButtonDefaults.buttonColors(if (!board.canDelete) Color(0xffB1CCD3) else Color(0xffffd7d4)),
         onClick = {
-            println("DEBUG: Clicked ${board.name}")
-//            onLeftClickBoard(board.id)
-            navigator.push(IndividualBoardScreen(board))
+            if (board.canDelete) {
+                println("DEBUG: Deleting ${board.name}")
+                onBoardDeleted()
+            }
+            else{
+                println("DEBUG: Clicked ${board.name}")
+                navigator.push(IndividualBoardScreen(board))
+            }
+
         }
     ) {
         Column(
@@ -61,8 +68,14 @@ fun BoardButton(
 fun BoardsView(
 ) {
 
-    val boardList by remember { mutableStateOf(boardViewModel.boardList.toList()) }
+    var boardList by remember { mutableStateOf(boardViewModel.boardList.toList()) }
 
+    // possible values: "addBoard" (doing it this way so we can have more alerts if needed)
+    var currAlert by remember { mutableStateOf("") }
+
+    // Received by form
+    var newCourse by remember { mutableStateOf("") }
+    var newDescription by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -74,6 +87,7 @@ fun BoardsView(
             Modifier.fillMaxSize()
                 .padding(15.dp)
                 .background(Color(0xFFF0EDEE))
+                .weight(1f)
         ) {
             val state = rememberLazyGridState()
             LazyVerticalGrid(
@@ -84,7 +98,14 @@ fun BoardsView(
             ) {
                 for (board in boardList) {
                     item {
-                        BoardButton(board = board)
+                        BoardButton(board = board, onBoardDeleted = {
+                            board.canDelete = false // need to do this so it is found
+                            boardModel.del(board)
+                            boardList = boardViewModel.boardList.toList()
+                            boardList = boardList.map{ it.copy(canDelete = false) }
+                            individualBoardModel.removeBoard(board.id)
+
+                        })
                     }
                 }
             }
@@ -93,5 +114,87 @@ fun BoardsView(
                 adapter = rememberScrollbarAdapter(scrollState = state)
             )
         }
+
+        Row(modifier = Modifier.padding(vertical = 8.dp)) {
+            Button(
+                onClick = {
+                    currAlert="addBoard"
+                }
+            ) {
+                Text("Add Board")
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Button(
+                onClick = {
+                    boardList = boardList.map{ it.copy(canDelete = true) }
+                }
+            ) {
+                Text("Remove Board")
+            }
+        }
     }
+    if (currAlert!=""){
+        AlertDialog(
+            onDismissRequest = {
+                currAlert=""
+
+                newCourse = ""
+                newDescription = ""
+            },
+            title = { Text(text =
+                when(currAlert){
+                    "addBoard" -> "Add Board"
+                    "removeBoard" -> "Remove Board"
+                    else -> "Invalid op... how did you get here?"
+                })
+            },
+            text = {
+                Column {
+                    TextField(
+                        value = newCourse,
+                        onValueChange = { newCourse = it },
+                        label = { Text("Course Code") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    TextField(
+                        value = newDescription,
+                        onValueChange = { newDescription = it },
+                        label = { Text("Description") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        when (currAlert){
+                            "addBoard" -> {
+                                boardModel.add(Board(boardModel.newBoardId(), newCourse, newDescription))
+                                individualBoardModel.addBlankBoard(boardModel.newBoardId())
+                            }
+                        }
+                        boardList = boardModel.boardList.toList()
+                        currAlert = ""
+                        newCourse = ""
+                        newDescription = ""
+                    }
+                ) {
+                    Text("Add")
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = {
+                        currAlert = ""
+                        newCourse = ""
+                        newDescription = ""
+                    }
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
 }
