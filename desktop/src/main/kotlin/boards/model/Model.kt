@@ -28,7 +28,7 @@ class Model : IPublisher(){
 
     fun newBoardId(): Int{
         // The board ID for a new board to be added
-        return boardList.size + 1
+        return boardList.size
     }
 
     fun save() {

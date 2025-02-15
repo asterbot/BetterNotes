@@ -84,10 +84,12 @@ class Model() : IPublisher() {
 
     fun addBlankBoard(boardId: Int) {
         noteDict[boardId] = mutableListOf()
+        notifySubscribers()
     }
 
     fun removeBoard(boardId: Int) {
         noteDict.remove(boardId)
+        notifySubscribers()
     }
 
 }

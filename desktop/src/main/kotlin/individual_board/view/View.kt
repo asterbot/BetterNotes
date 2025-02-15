@@ -51,6 +51,7 @@ data class IndividualBoardScreen(
 @Composable
 fun NoteRowView(
     note: Note,
+    board: Board
 ) {
     val navigator = LocalNavigator.currentOrThrow
     Button (
@@ -61,7 +62,7 @@ fun NoteRowView(
         onClick = {
             println("DEBUG: Clicked ${note.title}")
             // Implement navigator soon
-            navigator.push(ArticleScreen())
+            navigator.push(ArticleScreen(board))
         }
     ) {
         Column {
@@ -129,10 +130,10 @@ fun IndividualBoardView(
                                     deleteMode = false
                                 }
                         ) {
-                            NoteRowView(note)
+                            NoteRowView(note, board)
                         }
                     } else {
-                        NoteRowView(note)
+                        NoteRowView(note, board)
                     }
                 }
             }
