@@ -57,6 +57,7 @@ import org.intellij.markdown.MarkdownTokenTypes
 import org.intellij.markdown.ast.ASTNode
 import org.intellij.markdown.flavours.commonmark.CommonMarkFlavourDescriptor
 import org.intellij.markdown.parser.MarkdownParser
+import org.jetbrains.skia.CubicResampler
 
 data class ArticleScreen(var board: Board): Screen{
     @Composable
@@ -66,8 +67,8 @@ data class ArticleScreen(var board: Board): Screen{
 }
 
 @Composable
-fun DrawingCanvas() {
-    val paths = remember { mutableStateListOf<Path>() }
+fun DrawingCanvas(paths: MutableList<Path>) {
+    // val paths = remember { mutableStateListOf<Path>() }
     var currentPath by remember { mutableStateOf(Path()) }
     var isDrawing by remember { mutableStateOf(false) }
 
@@ -126,32 +127,83 @@ fun MarkdownButton(
     ) { Text("Toggle Markdown") }
 }
 
+//@Composable
+//fun EditableTextBox(
+//    isTextOn: Boolean,
+//    onTextChange: (String) -> Unit,
+//) {
+//    var text by remember { mutableStateOf("") } // Holds user input
+//    val focusRequester = remember { FocusRequester() } // Controls focus
+//
+//    // Use Modifier to handle enabling/disabling interaction
+//    Column(
+//        modifier = Modifier
+//            .padding(16.dp)
+//            .clickable { focusRequester.requestFocus() }
+////            .then(
+////                if (isTextOn) Modifier.clickable { focusRequester.requestFocus() }
+////                else Modifier // If not enabled, prevent interaction
+////            )
+//    ) {
+//        BasicTextField(
+//            value = text,
+//            onValueChange = {
+//                if (isTextOn) text = it // this is necessary for some reason? or else focusRequester won't work :o
+//                onTextChange(text) // Updates state
+//            },
+//            // enabled = isTextOn, // Disables the field when isTextOn is false
+//            modifier = Modifier
+//                .fillMaxWidth()
+//        )
+//    }
+//}
+
 @Composable
 fun EditableTextBox(
-    isTextOn: Boolean,
     onTextChange: (String) -> Unit,
 ) {
     var text by remember { mutableStateOf("") } // Holds user input
     val focusRequester = remember { FocusRequester() } // Controls focus
+    var keyPressed by remember { mutableStateOf<Key?>(null) }
 
-    // Use Modifier to handle enabling/disabling interaction
+
+    // Effect to continuously add characters when a key is held down
+//    LaunchedEffect(keyPressed) {
+//        keyPressed?.let { key ->
+//            while (keyPressed == key) {
+//                // text += key.toString()[5] // Append the pressed key (you can customize this)
+//                delay(100L) // Adjust delay for input repeat speed
+//            }
+//        }
+//    }
+
     Column(
         modifier = Modifier
             .padding(16.dp)
-            .then(
-                if (isTextOn) Modifier.clickable { focusRequester.requestFocus() }
-                else Modifier // If not enabled, prevent interaction
-            )
+            .clickable { focusRequester.requestFocus() } // Ensure click brings focus (highlights when hovering)
     ) {
         BasicTextField(
             value = text,
             onValueChange = {
                 text = it
-                onTextChange(text) // Updates state
-            },
-            enabled = isTextOn, // Disables the field when isTextOn is false
+                onTextChange(text) }, // Updates state
             modifier = Modifier
                 .fillMaxWidth()
+                // .focusRequester(focusRequester) // Attach focus requester
+                // .focusable(true) // Allow focus
+                .onKeyEvent { event -> // Handle key events
+                    when {
+                        event.type == KeyDown -> {
+                            keyPressed = event.key // Start tracking key hold
+                            true
+                        }
+                        event.type == KeyUp -> {
+                            keyPressed = null // Stop key repeat
+                            true
+                        }
+                        else -> false
+                    }
+                }
         )
     }
 }
@@ -222,6 +274,8 @@ fun Article(board: Board){
     var markdownRendered by remember { mutableStateOf(false) }
     var navigator = LocalNavigator.currentOrThrow
     var text by remember { mutableStateOf("") }
+    var collectionOfPaths = remember { mutableStateListOf<Path>() }
+
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -258,14 +312,16 @@ fun Article(board: Board){
         Box(
             modifier = Modifier.fillMaxSize()
         ) {
-            // Show drawing canvas if it's open
-            if (isDrawingCanvasOpen) {
-                DrawingCanvas()
-            }
-
-            EditableTextBox(onTextChange = {text = it}, isTextOn = isTextOn)
+            EditableTextBox(onTextChange = {text = it}) //isTextOn = isTextOn
             if (markdownRendered) {
                 MarkdownRenderer(text)
+            }
+
+            // Show drawing canvas if it's open
+            // the order of these two if stmts matter, decides which box is on top
+            // now this is drawing on top, not drawing underneath
+            if (isDrawingCanvasOpen) {
+                DrawingCanvas(collectionOfPaths)
             }
         }
 
