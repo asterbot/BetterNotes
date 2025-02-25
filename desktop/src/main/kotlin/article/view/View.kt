@@ -66,24 +66,6 @@ data class ArticleScreen(var board: Board): Screen{
 }
 
 @Composable
-fun CanvasButton(
-    onToggleCanvas: () -> Unit,
-    isCanvasOpen: Boolean,
-    // isEraserOn: Boolean
-) {
-    Button(
-        modifier = Modifier.padding(15.dp),
-        colors = ButtonDefaults.buttonColors(Color(0xff74C365)),
-        onClick = {
-            println("Toggling canvas")
-            onToggleCanvas()
-        }
-    ) {
-        Text(if (isCanvasOpen) "Close Canvas" else "New Canvas", textAlign = TextAlign.Center)
-    }
-}
-
-@Composable
 fun DrawingCanvas() {
     val paths = remember { mutableStateListOf<Path>() }
     var currentPath by remember { mutableStateOf(Path()) }
@@ -146,53 +128,34 @@ fun MarkdownButton(
 
 @Composable
 fun EditableTextBox(
+    isTextOn: Boolean,
     onTextChange: (String) -> Unit,
 ) {
     var text by remember { mutableStateOf("") } // Holds user input
     val focusRequester = remember { FocusRequester() } // Controls focus
-    var keyPressed by remember { mutableStateOf<Key?>(null) }
 
-
-    // Effect to continuously add characters when a key is held down
-//    LaunchedEffect(keyPressed) {
-//        keyPressed?.let { key ->
-//            while (keyPressed == key) {
-//                // text += key.toString()[5] // Append the pressed key (you can customize this)
-//                delay(100L) // Adjust delay for input repeat speed
-//            }
-//        }
-//    }
-
+    // Use Modifier to handle enabling/disabling interaction
     Column(
         modifier = Modifier
             .padding(16.dp)
-            .clickable { focusRequester.requestFocus() } // Ensure click brings focus (highlights when hovering)
+            .then(
+                if (isTextOn) Modifier.clickable { focusRequester.requestFocus() }
+                else Modifier // If not enabled, prevent interaction
+            )
     ) {
         BasicTextField(
             value = text,
             onValueChange = {
                 text = it
-                onTextChange(text) }, // Updates state
+                onTextChange(text) // Updates state
+            },
+            enabled = isTextOn, // Disables the field when isTextOn is false
             modifier = Modifier
                 .fillMaxWidth()
-                // .focusRequester(focusRequester) // Attach focus requester
-                // .focusable(true) // Allow focus
-                .onKeyEvent { event -> // Handle key events
-                    when {
-                        event.type == KeyDown -> {
-                            keyPressed = event.key // Start tracking key hold
-                            true
-                        }
-                        event.type == KeyUp -> {
-                            keyPressed = null // Stop key repeat
-                            true
-                        }
-                        else -> false
-                    }
-                }
         )
     }
 }
+
 
 @Composable
 fun MarkdownRenderer(rawText: String) {
@@ -252,11 +215,10 @@ fun extractText(node: ASTNode, rawText: String): String {
 }
 
 
-
-
 @Composable
 fun Article(board: Board){
     var isDrawingCanvasOpen by remember { mutableStateOf(false) }
+    var isTextOn by remember { mutableStateOf(true) }
     var markdownRendered by remember { mutableStateOf(false) }
     var navigator = LocalNavigator.currentOrThrow
     var text by remember { mutableStateOf("") }
@@ -269,10 +231,17 @@ fun Article(board: Board){
             //modifier = Modifier.fillMaxSize(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            CanvasButton(
-                onToggleCanvas = { isDrawingCanvasOpen = !isDrawingCanvasOpen },
-                isCanvasOpen = isDrawingCanvasOpen
-            )
+            Button(
+                modifier = Modifier.padding(15.dp),
+                colors = ButtonDefaults.buttonColors(Color(0xff74C365)),
+                onClick = {
+                    println("Toggling canvas")
+                    isDrawingCanvasOpen = !isDrawingCanvasOpen  // Toggle state for drawing canvas
+                    isTextOn = !isTextOn  // Toggle state for text
+                }
+            ) {
+                Text(if (isDrawingCanvasOpen) "Type" else "Draw", textAlign = TextAlign.Center)
+            }
 
             Button(
                 onClick = {
@@ -294,7 +263,7 @@ fun Article(board: Board){
                 DrawingCanvas()
             }
 
-            EditableTextBox(onTextChange = {text = it})
+            EditableTextBox(onTextChange = {text = it}, isTextOn = isTextOn)
             if (markdownRendered) {
                 MarkdownRenderer(text)
             }
@@ -303,3 +272,32 @@ fun Article(board: Board){
 
     }
 }
+
+// attempt to enable continuous entries of same character by holding key down
+
+// var keyPressed by remember { mutableStateOf<Key?>(null) }
+// Effect to continuously add characters when a key is held down
+//    LaunchedEffect(keyPressed) {
+//        keyPressed?.let { key ->
+//            while (keyPressed == key) {
+//                // text += key.toString()[5] // Append the pressed key (you can customize this)
+//                delay(100L) // Adjust delay for input repeat speed
+//            }
+//        }
+//    }
+
+// .focusRequester(focusRequester) // Attach focus requester
+// .focusable(true) // Allow focus
+//                .onKeyEvent { event -> // Handle key events
+//                    when {
+//                        event.type == KeyDown -> {
+//                            keyPressed = event.key // Start tracking key hold
+//                            true
+//                        }
+//                        event.type == KeyUp -> {
+//                            keyPressed = null // Stop key repeat
+//                            true
+//                        }
+//                        else -> false
+//                    }
+//                }
