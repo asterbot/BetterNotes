@@ -91,7 +91,7 @@ fun DrawingCanvas() {
 
     Box(
         modifier = Modifier.fillMaxSize()
-            .background(Color.White)
+            .background(Color.Transparent)
             .pointerInput(Unit) {
                 detectDragGestures(
                     onDragStart = { offset ->
@@ -286,16 +286,18 @@ fun Article(board: Board){
                 onToggleRender = { markdownRendered = !markdownRendered },
             )
         }
+        Box(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            // Show drawing canvas if it's open
+            if (isDrawingCanvasOpen) {
+                DrawingCanvas()
+            }
 
-        // Show drawing canvas if it's open
-        if (isDrawingCanvasOpen) {
-            DrawingCanvas()
-        }
-
-
-        EditableTextBox(onTextChange = {text = it})
-        if (markdownRendered) {
-            MarkdownRenderer(text)
+            EditableTextBox(onTextChange = {text = it})
+            if (markdownRendered) {
+                MarkdownRenderer(text)
+            }
         }
 
 
