@@ -52,12 +52,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import boards.view.BoardsView
 import individual_board.view.IndividualBoardScreen
+import jdk.jfr.internal.management.ManagementSupport.removePath
 import org.intellij.markdown.MarkdownElementTypes
 import org.intellij.markdown.MarkdownTokenTypes
 import org.intellij.markdown.ast.ASTNode
 import org.intellij.markdown.flavours.commonmark.CommonMarkFlavourDescriptor
 import org.intellij.markdown.parser.MarkdownParser
 import org.jetbrains.skia.CubicResampler
+import androidx.compose.ui.geometry.Offset
 
 data class ArticleScreen(var board: Board): Screen{
     @Composable
@@ -66,52 +68,147 @@ data class ArticleScreen(var board: Board): Screen{
     }
 }
 
+//@Composable
+//fun DrawingCanvas(paths: MutableList<Path>, isEraserOn: Boolean) {
+//    var currentPath by remember { mutableStateOf(Path()) }
+//    var isDrawing by remember { mutableStateOf(false) }
+//
+//    Box(
+//        modifier = Modifier.fillMaxSize()
+//            .background(Color.Transparent)
+//            .pointerInput(Unit) {
+//                if (!isEraserOn) {
+//                    detectDragGestures(
+//                        onDragStart = { offset ->
+//                            isDrawing = true
+//                            currentPath = Path().apply { moveTo(offset.x, offset.y) }
+//                        },
+//                        onDrag = { change, _ ->
+//                            currentPath = Path().apply {
+//                                addPath(currentPath)
+//                                lineTo(change.position.x, change.position.y)
+//                            }
+//                        },
+//                        onDragEnd = {
+//                            isDrawing = false
+//                            paths.add(currentPath)
+//                            currentPath = Path()
+//                        }
+//                    )
+//                } else {
+//                    detectDragGestures(
+//                        onDragStart = { offset ->
+//                            currentPath = Path().apply { moveTo(offset.x, offset.y) }
+//                        },
+//                        onDrag = { change, _ ->
+//                            paths.remove(currentPath)
+//                        },
+//                        onDragEnd = {
+//                        }
+//                    )
+//                }
+//
+//            }
+//    ) {
+//        Canvas(modifier = Modifier.fillMaxSize()) {
+//            paths.forEach { path ->
+//                drawPath(
+//                    path = path,
+//                    color = Color.Black,
+//                    style = Stroke(width = 2f)
+//                )
+//            }
+//            if (isDrawing) {
+//                drawPath(
+//                    path = currentPath,
+//                    color = Color.Black,
+//                    style = Stroke(width = 2f)
+//                )
+//            }
+//        }
+//    }
+//}
+
 @Composable
-fun DrawingCanvas(paths: MutableList<Path>) {
-    // val paths = remember { mutableStateListOf<Path>() }
-    var currentPath by remember { mutableStateOf(Path()) }
+fun DrawingCanvas(
+    paths: MutableList<MutableList<Offset>>, // Store paths as lists of points
+    isEraserOn: Boolean
+) {
+    var currentPath by remember { mutableStateOf(mutableListOf<Offset>()) }
     var isDrawing by remember { mutableStateOf(false) }
+    val strokeWidth = if (isEraserOn) 30f else 5f // Eraser has a thicker stroke
 
     Box(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
             .background(Color.Transparent)
-            .pointerInput(Unit) {
+            .pointerInput(isEraserOn) {
                 detectDragGestures(
                     onDragStart = { offset ->
                         isDrawing = true
-                        currentPath = Path().apply { moveTo(offset.x, offset.y) }
+                        currentPath = mutableListOf(offset)
+
+                        if (isEraserOn) {
+                            paths.removeAll { path ->
+                                path.any { it.isNear(offset, strokeWidth) }
+                            }
+                        }
                     },
                     onDrag = { change, _ ->
-                        currentPath = Path().apply {
-                            addPath(currentPath)
-                            lineTo(change.position.x, change.position.y)
+                        if (isEraserOn) {
+                            paths.removeAll { path ->
+                                path.any { it.isNear(change.position, strokeWidth) }
+                            }
+                        } else {
+                            currentPath.add(change.position)
                         }
                     },
                     onDragEnd = {
                         isDrawing = false
-                        paths.add(currentPath)
-                        currentPath = Path()
+                        if (!isEraserOn && currentPath.isNotEmpty()) {
+                            paths.add(currentPath)
+                        }
+                        currentPath = mutableListOf()
                     }
                 )
             }
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             paths.forEach { path ->
-                drawPath(
-                    path = path,
-                    color = Color.Black,
-                    style = Stroke(width = 2f)
-                )
+                if (path.size > 1) {
+                    drawPath(
+                        path = Path().apply {
+                            path.forEachIndexed { index, point ->
+                                if (index == 0) moveTo(point.x, point.y)
+                                else lineTo(point.x, point.y)
+                            }
+                        },
+                        color = Color.Black,
+                        style = Stroke(width = 5f)
+                    )
+                }
             }
-            if (isDrawing) {
+            if (isDrawing && !isEraserOn && currentPath.size > 1) {
                 drawPath(
-                    path = currentPath,
+                    path = Path().apply {
+                        currentPath.forEachIndexed { index, point ->
+                            if (index == 0) moveTo(point.x, point.y)
+                            else lineTo(point.x, point.y)
+                        }
+                    },
                     color = Color.Black,
-                    style = Stroke(width = 2f)
+                    style = Stroke(width = 5f)
                 )
             }
         }
     }
+}
+
+/**
+ * Helper function to check if a point is near another point.
+ */
+fun Offset.isNear(other: Offset, threshold: Float): Boolean {
+    return (this - other).getDistance() <= threshold
 }
 
 @Composable
@@ -166,17 +263,6 @@ fun EditableTextBox(
     val focusRequester = remember { FocusRequester() } // Controls focus
     var keyPressed by remember { mutableStateOf<Key?>(null) }
 
-
-    // Effect to continuously add characters when a key is held down
-//    LaunchedEffect(keyPressed) {
-//        keyPressed?.let { key ->
-//            while (keyPressed == key) {
-//                // text += key.toString()[5] // Append the pressed key (you can customize this)
-//                delay(100L) // Adjust delay for input repeat speed
-//            }
-//        }
-//    }
-
     Column(
         modifier = Modifier
             .padding(16.dp)
@@ -189,8 +275,6 @@ fun EditableTextBox(
                 onTextChange(text) }, // Updates state
             modifier = Modifier
                 .fillMaxWidth()
-                // .focusRequester(focusRequester) // Attach focus requester
-                // .focusable(true) // Allow focus
                 .onKeyEvent { event -> // Handle key events
                     when {
                         event.type == KeyDown -> {
@@ -266,7 +350,6 @@ fun extractText(node: ASTNode, rawText: String): String {
     return rawText.substring(node.startOffset, node.endOffset)
 }
 
-
 @Composable
 fun Article(board: Board){
     var isDrawingCanvasOpen by remember { mutableStateOf(false) }
@@ -274,7 +357,8 @@ fun Article(board: Board){
     var markdownRendered by remember { mutableStateOf(false) }
     var navigator = LocalNavigator.currentOrThrow
     var text by remember { mutableStateOf("") }
-    var collectionOfPaths = remember { mutableStateListOf<Path>() }
+    var collectionOfPaths by remember { mutableStateOf(mutableListOf<MutableList<Offset>>()) }
+    var isEraserOpen by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -296,6 +380,16 @@ fun Article(board: Board){
             ) {
                 Text(if (isDrawingCanvasOpen) "Type" else "Draw", textAlign = TextAlign.Center)
             }
+            if (isDrawingCanvasOpen) {
+                Button(modifier = Modifier.padding(15.dp),
+                    colors = ButtonDefaults.buttonColors(Color(0xff74C365)),
+                    onClick = {
+                        println("Toggling eraser")
+                        isEraserOpen = !isEraserOpen
+                    }) {
+                    Text(if (isEraserOpen) "Pen" else "Eraser", textAlign = TextAlign.Center)
+                }
+            }
 
             Button(
                 onClick = {
@@ -312,6 +406,31 @@ fun Article(board: Board){
         Box(
             modifier = Modifier.fillMaxSize()
         ) {
+//            Canvas(modifier = Modifier.fillMaxSize()) {
+//                collectionOfPaths.forEach { path ->
+//                    drawPath(
+//                        path = path,
+//                        color = Color.Black,
+//                        style = Stroke(width = 2f)
+//                    )
+//                }
+//            }
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                collectionOfPaths.forEach { path ->
+                    if (path.size > 1) {
+                        drawPath(
+                            path = Path().apply {
+                                path.forEachIndexed { index, point ->
+                                    if (index == 0) moveTo(point.x, point.y)
+                                    else lineTo(point.x, point.y)
+                                }
+                            },
+                            color = Color.Black,
+                            style = Stroke(width = 5f)
+                        )
+                    }
+                }
+            }
             EditableTextBox(onTextChange = {text = it}) //isTextOn = isTextOn
             if (markdownRendered) {
                 MarkdownRenderer(text)
@@ -321,39 +440,10 @@ fun Article(board: Board){
             // the order of these two if stmts matter, decides which box is on top
             // now this is drawing on top, not drawing underneath
             if (isDrawingCanvasOpen) {
-                DrawingCanvas(collectionOfPaths)
+                DrawingCanvas(collectionOfPaths, isEraserOpen)
             }
         }
 
 
     }
 }
-
-// attempt to enable continuous entries of same character by holding key down
-
-// var keyPressed by remember { mutableStateOf<Key?>(null) }
-// Effect to continuously add characters when a key is held down
-//    LaunchedEffect(keyPressed) {
-//        keyPressed?.let { key ->
-//            while (keyPressed == key) {
-//                // text += key.toString()[5] // Append the pressed key (you can customize this)
-//                delay(100L) // Adjust delay for input repeat speed
-//            }
-//        }
-//    }
-
-// .focusRequester(focusRequester) // Attach focus requester
-// .focusable(true) // Allow focus
-//                .onKeyEvent { event -> // Handle key events
-//                    when {
-//                        event.type == KeyDown -> {
-//                            keyPressed = event.key // Start tracking key hold
-//                            true
-//                        }
-//                        event.type == KeyUp -> {
-//                            keyPressed = null // Stop key repeat
-//                            true
-//                        }
-//                        else -> false
-//                    }
-//                }
