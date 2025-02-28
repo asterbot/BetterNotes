@@ -50,6 +50,7 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import article.entities.MarkdownHandler
 import boards.view.BoardsView
 import individual_board.view.IndividualBoardScreen
 import org.intellij.markdown.MarkdownElementTypes
@@ -153,7 +154,7 @@ fun EditableTextBox(
     var keyPressed by remember { mutableStateOf<Key?>(null) }
 
 
-    // Effect to continuously add characters when a key is held down
+//     Effect to continuously add characters when a key is held down
 //    LaunchedEffect(keyPressed) {
 //        keyPressed?.let { key ->
 //            while (keyPressed == key) {
@@ -195,71 +196,13 @@ fun EditableTextBox(
 }
 
 @Composable
-fun MarkdownRenderer(rawText: String) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        // first, parse the raw text into an Abstract Syntax Tree (AST)
-        val flavour = CommonMarkFlavourDescriptor()
-        val parsedTree = MarkdownParser(flavour).buildMarkdownTreeFromString(rawText)
-
-        parsedTree.children.forEach{node ->
-            println("-----------------------------")
-            printASTNode(node, rawText)
-            renderMarkdownNode(node, rawText)
-        }
-    }
-}
-
-fun printASTNode(node: ASTNode, rawText: String) {
-    print(node.type.toString() + " (text: [" + extractText(node, rawText) + "])\n")
-
-    node.children.forEach {
-        printASTNode(it, rawText)
-    }
-}
-
-@Composable
-fun renderMarkdownNode(node: ASTNode, rawText: String) {
-    val headerTypes = arrayOf(MarkdownElementTypes.ATX_1, MarkdownElementTypes.ATX_2, MarkdownElementTypes.ATX_3)
-    var t = extractText(node, rawText)
-    when (node.type) {
-        in headerTypes -> {
-            t = t.trimStart('#', ' ')
-            val fontSize = when (node.type) {
-                MarkdownElementTypes.ATX_1 -> 30.sp
-                MarkdownElementTypes.ATX_2 -> 24.sp
-                MarkdownElementTypes.ATX_3 -> 18.sp
-                else -> 0.sp // should never reach here
-            }
-            Text(
-                text = t,
-                fontSize = fontSize,
-                fontWeight = FontWeight.Bold
-            )
-        }
-        MarkdownTokenTypes.EOL -> {}
-        else -> Text(
-            text = extractText(node, rawText)
-        )
-    }
-}
-
-fun extractText(node: ASTNode, rawText: String): String {
-    return rawText.substring(node.startOffset, node.endOffset)
-}
-
-
-
-
-@Composable
 fun Article(board: Board){
     var isDrawingCanvasOpen by remember { mutableStateOf(false) }
     var markdownRendered by remember { mutableStateOf(false) }
-    var navigator = LocalNavigator.currentOrThrow
+    val navigator = LocalNavigator.currentOrThrow
     var text by remember { mutableStateOf("") }
+    val markdownHandler = MarkdownHandler(text)
+
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -293,9 +236,9 @@ fun Article(board: Board){
         }
 
 
-        EditableTextBox(onTextChange = {text = it})
+        EditableTextBox(onTextChange = {text = it })
         if (markdownRendered) {
-            MarkdownRenderer(text)
+            markdownHandler.renderMarkdown()
         }
 
 
