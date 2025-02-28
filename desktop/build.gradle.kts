@@ -26,6 +26,13 @@ dependencies {
     implementation("cafe.adriel.voyager:voyager-navigator:$voyagerVersion")
 
     implementation("org.jetbrains:markdown-jvm:0.7.3")
+
+    // Kotlin coroutine dependency
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
+    // MongoDB Kotlin driver dependency
+    implementation("org.mongodb:mongodb-driver-kotlin-coroutine:4.10.1")
+
+
 }
 
 compose.desktop {
