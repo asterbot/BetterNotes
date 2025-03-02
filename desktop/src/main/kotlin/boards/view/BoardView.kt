@@ -71,23 +71,30 @@ fun BoardButton(
 
 @Composable
 fun BoardsView() {
-    var boardList by remember { mutableStateOf(boardViewModel.boardList.toList()) }
+    // NOTE: you technically can directly access boardViewModel because it's global right now
+    // however, i'm not sure if that'll still be the case after database integration
+    var boardViewModel by remember { mutableStateOf(boardViewModel) }
 
     val openAddDialog = remember {mutableStateOf(false) }
     val boardToEdit = remember { mutableStateOf<Board?> (null) }
     val boardToDelete = remember { mutableStateOf<Board?>(null) }
 
+    fun addBoard(name: String, desc: String) {
+        boardModel.add(Board(boardModel.newBoardId(), name, desc))
+        individualBoardModel.addBlankBoard(boardModel.newBoardId())
+//        boardList = boardViewModel.boardList.toList()
+    }
+
     fun deleteBoard(board: Board) {
         boardModel.del(board)
         individualBoardModel.removeBoard(board.id)
-        boardList = boardViewModel.boardList.toList()
+//        boardList = boardViewModel.boardList.toList()
     }
 
     fun editBoard(board: Board, name: String, desc: String) {
         boardModel.update(board, name, desc)
-        boardList = boardViewModel.boardList.toList()
+//        boardList = boardViewModel.boardList.toList()
     }
-
 
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -108,7 +115,7 @@ fun BoardsView() {
                 columns = GridCells.Fixed(3),
                 state = state
             ) {
-                for (board in boardList) {
+                for (board in boardViewModel.boardList) {
                     item {
                         BoardButton(
                             board = board,
@@ -142,9 +149,7 @@ fun BoardsView() {
                     openAddDialog.value = false
                 },
                 onConfirmation = { boardName, boardDesc ->
-                    boardModel.add(Board(boardModel.newBoardId(), boardName, boardDesc))
-                    individualBoardModel.addBlankBoard(boardModel.newBoardId())
-                    boardList = boardViewModel.boardList.toList()
+                    addBoard(boardName, boardDesc)
                     openAddDialog.value = false
                 }
             )

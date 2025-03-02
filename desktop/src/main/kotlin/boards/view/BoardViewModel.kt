@@ -12,6 +12,7 @@ class BoardViewModel(private val model: BoardModel): ISubscriber {
 
     init{
         model.subscribe(this)
+        update()
     }
 
     override fun update(){

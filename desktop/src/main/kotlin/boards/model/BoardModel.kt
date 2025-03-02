@@ -34,8 +34,4 @@ class BoardModel : IPublisher(){
         return boardList.size
     }
 
-    fun save() {
-        // Save to file
-    }
-
 }
