@@ -1,10 +1,8 @@
 package boards.model;
-import boards.entities.Board;
-import boards.entities.addBoard;
-import boards.entities.removeBoard;
+import boards.entities.*
 import shared.IPublisher
 
-class Model : IPublisher(){
+class BoardModel : IPublisher(){
     var boardList = mutableListOf<Board>();
 
     // Convention: id's start from 1
@@ -23,6 +21,11 @@ class Model : IPublisher(){
 
     fun del(board: Board) {
         boardList.removeBoard(board);
+        notifySubscribers();
+    }
+
+    fun update(board: Board, name: String, desc: String) {
+        boardList.updateBoard(board, name, desc);
         notifySubscribers();
     }
 

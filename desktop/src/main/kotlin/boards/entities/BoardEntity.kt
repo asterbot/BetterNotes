@@ -21,6 +21,13 @@ fun MutableList<Board>.removeBoard(element: Board): Boolean {
     return true
 }
 
+fun MutableList<Board>.updateBoard(element: Board, name: String, desc: String): Boolean {
+    val index = this.indexOf(element)
+    if (index == -1) return false
+    this[index] = element.copy(name = name, desc = desc)
+    return true
+}
+
 private fun MutableList<Board>.reindex() {
     var count = 1
     for (board in this) {

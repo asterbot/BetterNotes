@@ -1,10 +1,10 @@
-package globals
+package shared
 
 
 import individual_board.view.ViewModel as IndividualBoardViewModel
-import boards.view.ViewModel as BoardViewModel
+import boards.view.BoardViewModel
 import individual_board.model.Model as IndividualBoardModel
-import boards.model.Model as BoardModel
+import boards.model.BoardModel
 
 val boardModel = BoardModel()
 val boardViewModel = BoardViewModel(boardModel)

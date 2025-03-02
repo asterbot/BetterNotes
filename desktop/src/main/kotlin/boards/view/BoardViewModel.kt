@@ -3,11 +3,11 @@ import androidx.compose.runtime.mutableStateListOf
 
 
 import shared.ISubscriber
-import boards.model.Model;
+import boards.model.BoardModel;
 import boards.entities.Board
 
 
-class ViewModel(private val model: Model): ISubscriber {
+class BoardViewModel(private val model: BoardModel): ISubscriber {
     val boardList = mutableStateListOf<Board>()
 
     init{
@@ -15,10 +15,10 @@ class ViewModel(private val model: Model): ISubscriber {
     }
 
     override fun update(){
+        println("DEBUG: ViewModel update")
         boardList.clear()
         for (board in model.boardList){
             boardList.add(board)
         }
     }
-
 }
