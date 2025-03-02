@@ -46,12 +46,12 @@ fun ActionMenu(
         ) {
             DropdownMenuItem(
                 text = { Text("Edit") },
-                onClick = { onEdit() },
+                onClick = { onEdit(); expanded = false },
                 leadingIcon = { Icon(Icons.Default.Edit, contentDescription = "Edit") }
             )
             DropdownMenuItem(
                 text = { Text("Delete") },
-                onClick = { onDelete() },
+                onClick = { onDelete(); expanded = false },
                 leadingIcon = { Icon(Icons.Default.Delete, contentDescription = "Delete") }
             )
         }

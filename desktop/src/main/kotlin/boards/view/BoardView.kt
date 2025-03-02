@@ -36,7 +36,9 @@ fun BoardButton(
     onDelete: (Board) -> Unit,
     onEdit: (Board) -> Unit,
     ) {
+
     val navigator = LocalNavigator.currentOrThrow
+
     Box (
         modifier = Modifier.padding(15.dp),
     ) {
@@ -73,6 +75,7 @@ fun BoardsView() {
 
     val openAddDialog = remember {mutableStateOf(false) }
     val boardToEdit = remember { mutableStateOf<Board?> (null) }
+    val boardToDelete = remember { mutableStateOf<Board?>(null) }
 
     fun deleteBoard(board: Board) {
         boardModel.del(board)
@@ -109,7 +112,7 @@ fun BoardsView() {
                     item {
                         BoardButton(
                             board = board,
-                            onDelete = { deleteBoard(board) },
+                            onDelete = { boardToDelete.value = board },
                             onEdit = { boardToEdit.value = board }
                         )
                     }
@@ -160,7 +163,18 @@ fun BoardsView() {
                 boardName = boardToEdit.value?.name ?: "",
                 boardDesc = boardToEdit.value?.desc ?: ""
             )
+        }
 
+        boardToDelete.value != null -> {
+            ConfirmationDialog(
+                onDismissRequest = { boardToDelete.value = null }, // Cancel deletion
+                onConfirmation = {
+                    deleteBoard(boardToDelete.value!!)
+                    boardToDelete.value = null
+                },
+                dialogTitle = "Delete ${boardToDelete.value?.name}",
+                dialogText = "Are you sure you want to delete '${boardToDelete.value?.name}'? This action cannot be undone."
+            )
         }
     }
 }
