@@ -1,22 +1,11 @@
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.Window
 
-// Boards page imports
-import boards.view.BoardViewScreen
-
+// Navigator imports
 import cafe.adriel.voyager.navigator.Navigator
 
-
-//import individual_board.view.ViewModel as IndividualBoardViewModel
-//import boards.view.ViewModel as BoardViewModel
-//import individual_board.model.Model as IndividualBoardModel
-//import boards.model.Model as BoardModel
-//
-//val boardModel = BoardModel()
-//val boardViewModel = BoardViewModel(boardModel)
-//
-//val individualBoardModel = IndividualBoardModel()
-//val individualBoardViewModel = IndividualBoardViewModel(individualBoardModel)
+// Boards page imports
+import boards.view.BoardViewScreen
 
 fun main() {
     application {
