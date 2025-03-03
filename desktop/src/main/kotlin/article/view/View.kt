@@ -12,31 +12,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import boards.entities.Board
-import boards.view.BoardViewScreen
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import individual_board.entities.Note
-import individual_board.entities.Section
-import individual_board.entities.Article
-import individual_board.entities.MarkdownBlock
-import individual_board.entities.CodeBlock
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.Button
-import androidx.compose.material.Text
-import individual_board.entities.ContentBlock
-import globals.boardViewModel
-import globals.boardModel
-import globals.individualBoardModel
-import globals.individualBoardViewModel
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Path
@@ -48,16 +32,8 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
 import article.entities.MarkdownHandler
-import boards.view.BoardsView
 import individual_board.view.IndividualBoardScreen
-import org.intellij.markdown.MarkdownElementTypes
-import org.intellij.markdown.MarkdownTokenTypes
-import org.intellij.markdown.ast.ASTNode
-import org.intellij.markdown.flavours.commonmark.CommonMarkFlavourDescriptor
-import org.intellij.markdown.parser.MarkdownParser
 
 data class ArticleScreen(var board: Board): Screen{
     @Composable

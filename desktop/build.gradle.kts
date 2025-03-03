@@ -26,7 +26,10 @@ dependencies {
     implementation("cafe.adriel.voyager:voyager-navigator:$voyagerVersion")
 
     implementation("org.jetbrains:markdown-jvm:0.7.3")
+    implementation(compose.material3)
 }
+
+
 
 compose.desktop {
     application {
