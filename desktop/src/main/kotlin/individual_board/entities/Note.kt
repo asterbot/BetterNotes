@@ -1,5 +1,7 @@
 package individual_board.entities
 
+import java.util.*
+
 /* Notes */
 
 open class Note(
@@ -49,6 +51,20 @@ class Article(
 
 sealed class ContentBlock {
     abstract val type: String
+    var id: UUID = UUID.randomUUID()
+    abstract fun copyBlock(): ContentBlock
+}
+
+data class TextBlock (
+    // Boilerplate
+    val text: String
+) : ContentBlock() {
+    override val type = "text"
+    override fun copyBlock(): ContentBlock {
+        return TextBlock(text).apply {
+            this.id = UUID.randomUUID()  // Assign new ID
+        }
+    }
 }
 
 data class MarkdownBlock (
@@ -56,6 +72,11 @@ data class MarkdownBlock (
     val text: String
 ) : ContentBlock() {
     override val type = "markdown"
+    override fun copyBlock(): ContentBlock {
+        return MarkdownBlock(text).apply {
+            this.id = UUID.randomUUID()  // Assign new ID
+        }
+    }
 }
 
 data class CodeBlock (
@@ -64,6 +85,11 @@ data class CodeBlock (
     val language: String? = null
 ) : ContentBlock() {
     override val type = "code"
+    override fun copyBlock(): ContentBlock {
+        return CodeBlock(code, language).apply {
+            this.id = UUID.randomUUID()  // Assign new ID
+        }
+    }
 }
 
 fun MutableList<ContentBlock>.addContentBlock(element: ContentBlock): Boolean {
