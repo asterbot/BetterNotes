@@ -28,7 +28,11 @@ dependencies {
     implementation("org.jetbrains:markdown-jvm:0.7.3")
     implementation(compose.material3)
 
-    testImplementation("org.jetbrains.kotlin:kotlin-test")
+    testImplementation(kotlin("test"))
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
 
 

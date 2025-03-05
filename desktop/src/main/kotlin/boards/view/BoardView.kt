@@ -82,18 +82,15 @@ fun BoardsView() {
     fun addBoard(name: String, desc: String) {
         boardModel.add(Board(boardModel.newBoardId(), name, desc))
         individualBoardModel.addBlankBoard(boardModel.newBoardId())
-//        boardList = boardViewModel.boardList.toList()
     }
 
     fun deleteBoard(board: Board) {
         boardModel.del(board)
         individualBoardModel.removeBoard(board.id)
-//        boardList = boardViewModel.boardList.toList()
     }
 
     fun editBoard(board: Board, name: String, desc: String) {
         boardModel.update(board, name, desc)
-//        boardList = boardViewModel.boardList.toList()
     }
 
     Column(
