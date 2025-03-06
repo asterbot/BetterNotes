@@ -49,6 +49,10 @@ fun Article(board: Board, article: Article) {
     var selectedBlock by remember { mutableStateOf<Int?>(null) }
     var debugState by remember { mutableStateOf(false) }
 
+    fun selectAtIndex(index: Int) {
+        selectedBlock = index
+    }
+
     val menuButtonFuncs: Map<String, (Int) -> Unit> = mapOf(
         "Duplicate Block" to { index ->
             articleModel.duplicateBlock(index)
@@ -123,6 +127,7 @@ fun Article(board: Board, article: Article) {
                         selectedBlock = if (selectedBlock == index) null else index
                         println("DEBUG: Selecting block at index $index")
                     },
+                    selectAtIndex = ::selectAtIndex,
                     debugState = debugState
                 )
             }
@@ -140,6 +145,7 @@ fun BlockFrame(
     menuButtonFuncs: Map<String, (Int) -> Unit>,
     isSelected: Boolean,
     onBlockClick: () -> Unit,
+    selectAtIndex: (Int) -> Unit,
     debugState: Boolean
 ) {
     var block by remember { mutableStateOf(articleViewModel.contentBlocksList[blockIndex]) }
@@ -167,7 +173,7 @@ fun BlockFrame(
             ) {
 
                 if (isSelected) {
-                    AddBlockFrameButton(blockIndex, "UP")
+                    AddBlockFrameButton(blockIndex, "UP", selectAtIndex)
                 }
 
                 // TODO: replace this with generalizable code for all ContentBlocks
@@ -179,7 +185,7 @@ fun BlockFrame(
                 )
 
                 if (isSelected) {
-                    AddBlockFrameButton(blockIndex, "DOWN")
+                    AddBlockFrameButton(blockIndex, "DOWN", selectAtIndex)
                 }
 
             }
@@ -208,6 +214,7 @@ fun EditableTextBox(
                 onTextChange(it)
             },
             modifier = Modifier
+                .background(Colors.white)
                 .fillMaxWidth()
                 .focusRequester(focusRequester) // Attach focus requester to manage focus
                 .onKeyEvent { true } // prevents weird visual glitch from happening
@@ -250,7 +257,7 @@ fun BlockFrameMenu(index: Int, buttonFuncs: Map<String, (Int) -> Unit>) {
 
 
 @Composable
-fun AddBlockFrameButton(index: Int, direction: String) {
+fun AddBlockFrameButton(index: Int, direction: String, selectAtIndex: (Int) -> Unit) {
     // these buttons add a new (empty) ContentBlock above/below (depends on direction) the currently selected block
     // by default, insertBlock() creates a new Text block (assume that people use this the most)
     var showBlockTypes by remember { mutableStateOf(false) }
@@ -265,11 +272,11 @@ fun AddBlockFrameButton(index: Int, direction: String) {
         contentPadding = PaddingValues(10.dp),
     ) { Text(text = "+", fontSize = 20.sp) }
 
-    if (showBlockTypes) { InsertBlockTypesMenu(index, direction) }
+    if (showBlockTypes) { InsertBlockTypesMenu(index, direction, selectAtIndex) }
 }
 
 @Composable
-fun InsertBlockTypesMenu(index: Int, direction: String) {
+fun InsertBlockTypesMenu(index: Int, direction: String, selectAtIndex: (Int) -> Unit) {
     val atAddIndex = when (direction) {
         "UP" -> index
         else -> index + 1 // the "DOWN" case
@@ -284,6 +291,7 @@ fun InsertBlockTypesMenu(index: Int, direction: String) {
             Button(
                 onClick = {
                     articleModel.addBlock(atAddIndex, type)
+                    selectAtIndex(atAddIndex)
                 }
             ) {
                 Text(type.name)
