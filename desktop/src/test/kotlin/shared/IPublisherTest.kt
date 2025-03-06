@@ -1,4 +1,3 @@
-import boards.model.BoardModel
 import shared.IPublisher
 import shared.ISubscriber
 import kotlin.test.*
@@ -7,6 +6,7 @@ import kotlin.test.*
 class IPublisherTest() {
     lateinit var publisher: IPublisher
     lateinit var subscriber: MockSubscriber
+    lateinit var subscriber2: MockSubscriber
 
     class MockIPublisher : IPublisher() {
     }
@@ -21,13 +21,23 @@ class IPublisherTest() {
     fun setup() {
         publisher = MockIPublisher()
         subscriber = MockSubscriber()
+        subscriber2 = MockSubscriber()
     }
 
     @Test
     fun addSubscriber() {
         val oldCount = publisher.subscribers.size
         publisher.subscribe(subscriber)
-        assertEquals(oldCount + 1, publisher.subscribers.size)
+        assertEquals(oldCount + 2, publisher.subscribers.size)
+    }
+
+    @Test
+    fun notifySubscribers() {
+        publisher.subscribe(subscriber)
+        publisher.subscribe(subscriber2)
+        publisher.notifySubscribers()
+        assertTrue(subscriber.updated)
+        assertTrue(subscriber2.updated)
     }
 
     @Test
@@ -38,11 +48,12 @@ class IPublisherTest() {
         assertEquals(oldCount - 1, publisher.subscribers.size)
     }
 
-    @Test
-    fun notifySubscribers() {
-        publisher.subscribe(subscriber)
-        publisher.notifySubscribers()
-        assertTrue(subscriber.updated)
+    @AfterTest
+    fun teardown() {
+        publisher.subscribers.clear()
     }
+
+
+
 
 }
