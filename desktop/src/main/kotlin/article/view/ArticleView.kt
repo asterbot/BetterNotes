@@ -61,22 +61,23 @@ fun Article(board: Board, article: Article) {
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         Text( // title
-            text = "Notes for ${board.name}",
+            text = "Board ${board.name}",
             fontSize = 30.sp,
             fontWeight = FontWeight.Bold
         )
         Text( // article name
-            text = article.title,
+            text = "Article ${article.title}",
             fontSize = 20.sp
         )
 
+        // row containing any useful functionality (as buttons)
         Row( // TODO: buttons for main navigation (e.g. back to course, other articles, ...)
             horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) { // row containing any useful functionality (as buttons)
-            // insert block at beginning
+        ) {
+            // insert TextBlock at beginning
             Button(
                 onClick = { articleModel.addBlock(0, BlockType.PLAINTEXT) },
-            ) { Text(text="Insert Block") }
+            ) { Text(text="Insert TextBlock") }
             Button(
                 onClick = {navigator.push(IndividualBoardScreen(board))}
             ) { Text("Back to current course") }
@@ -84,7 +85,7 @@ fun Article(board: Board, article: Article) {
                 onClick = {
                     println("DEBUG (THE BLOCKS):")
                     println("FROM MODEL: ${articleModel.contentBlocks}")
-                    println("FOM VIEWMODEL: ${articleViewModel.contentBlocksList}")
+                    println("FROM VIEWMODEL: ${articleViewModel.contentBlocksList}")
                     debugState = !debugState
                 }
             ) { Text(text="DEBUG") }
@@ -130,7 +131,7 @@ fun BlockFrame(
     debugState: Boolean
 ) {
     var block by remember { mutableStateOf(articleViewModel.contentBlocksList[blockIndex]) }
-
+    // TODO: abstract this for it to work generally for all ContentBlocks
     var text by remember { mutableStateOf((block as? TextBlock)?.text ?: "") }
 
     Box(
@@ -157,7 +158,7 @@ fun BlockFrame(
                     AddBlockFrameButton(blockIndex, "UP")
                 }
 
-                // TODO: replace this with the actual content blocks
+                // TODO: replace this with generalizable code for all ContentBlocks
                 EditableTextBox(
                     startText = text,
                     onTextChange = {
@@ -299,7 +300,6 @@ fun InsertBlockTypesMenu(index: Int, direction: String) {
 //}
 //
 //
-//
 //@Composable
 //fun DrawingCanvas() {
 //    val paths = remember { mutableStateListOf<Path>() }
@@ -348,6 +348,7 @@ fun InsertBlockTypesMenu(index: Int, direction: String) {
 //    }
 //}
 //
+//
 //@Composable
 //fun MarkdownButton(
 //    onToggleRender: () -> Unit,
@@ -360,10 +361,6 @@ fun InsertBlockTypesMenu(index: Int, direction: String) {
 //        }
 //    ) { Text("Toggle Markdown") }
 //}
-//
-//
-//
-//
 //
 //
 //@Composable
@@ -511,6 +508,7 @@ fun InsertBlockTypesMenu(index: Int, direction: String) {
 //    }
 //}
 //
+//
 //@Composable
 //fun BlockFrameMenu(index: Int, buttonFuncs: Map<String, (Int) -> Unit>) {
 //    // BlockFrameMenu consists of the buttons that do actions for all blocks (i.e. all types of ContentBlocks)
@@ -633,6 +631,7 @@ fun InsertBlockTypesMenu(index: Int, direction: String) {
 //    }
 //}
 //
+//
 //@Composable
 //fun AddBlockFrameButton(index: Int, direction: String, insertBlock: (Int, ContentBlock) -> Unit) {
 //    // these buttons add a new (empty) ContentBlock above/below (depends on direction) the currently selected block
@@ -677,6 +676,7 @@ fun InsertBlockTypesMenu(index: Int, direction: String) {
 //        }
 //    }
 //}
+//
 //
 ////@Composable
 ////fun Article(board: Board){

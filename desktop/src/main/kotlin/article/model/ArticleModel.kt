@@ -23,13 +23,13 @@ class ArticleModel() : IPublisher() {
 
     fun addBlock(index: Int, type: BlockType) {
         println("DEBUG: inserting empty block at index $index (attempt)")
-        // if no blocks or index is a valid value, insert as normal
-        if (contentBlocks.size == 0 || index in 0..(contentBlocks.size - 1)) {
+        // index is a valid value, insert as normal
+        if (index in 0..(contentBlocks.size - 1)) {
             contentBlocks.add(index, type.createDefaultBlock())
             println("DEBUG: inserted block at index $index")
             notifySubscribers()
         }
-        // special case where we insert downwards (index out of range of existing block array, so append instead
+        // special case where we insert downwards (index out of range of existing block array, so append instead)
         else if (index == contentBlocks.size) {
             contentBlocks.add(type.createDefaultBlock())
             println("DEBUG: inserted block at index $index")
