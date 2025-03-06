@@ -16,10 +16,18 @@ class Article(
 
 // Content Blocks
 
-enum class BlockType(val defaultBlock: ContentBlock) {
-    PLAINTEXT (TextBlock("")),
-    MARKDOWN (MarkdownBlock("")),
-    CODE (CodeBlock(""))
+enum class BlockType(
+    val createDefaultBlock: () -> ContentBlock
+    ) {
+    PLAINTEXT(
+        { TextBlock() }
+    ),
+    MARKDOWN(
+        { MarkdownBlock() }
+    ),
+    CODE(
+        { CodeBlock() }
+    )
 }
 
 sealed class ContentBlock {
@@ -30,7 +38,7 @@ sealed class ContentBlock {
 
 data class TextBlock (
     // Boilerplate
-    var text: String
+    var text: String = ""
 ) : ContentBlock() {
     override val type = BlockType.PLAINTEXT
     override fun copyBlock(): ContentBlock {
@@ -42,7 +50,7 @@ data class TextBlock (
 
 data class MarkdownBlock (
     // Boilerplate
-    val text: String
+    val text: String = ""
 ) : ContentBlock() {
     override val type = BlockType.MARKDOWN
     override fun copyBlock(): ContentBlock {
@@ -54,7 +62,7 @@ data class MarkdownBlock (
 
 data class CodeBlock (
     // Boilerplate
-    val code: String,
+    val code: String = "",
     val language: String? = null
 ) : ContentBlock() {
     override val type = BlockType.CODE
