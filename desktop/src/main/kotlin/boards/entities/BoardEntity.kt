@@ -6,7 +6,6 @@ data class Board(
     var id: Int = 0,
     var name: String,
     var desc: String,
-    var canDelete: Boolean = false,
 )
 
 fun MutableList<Board>.addBoard(element: Board): Boolean {
