@@ -1,17 +1,15 @@
 package individual_board.model
-import boards.entities.Board
 import individual_board.entities.Note
 import individual_board.entities.addNote
 import individual_board.entities.removeNote
 import individual_board.entities.Section
-import individual_board.entities.Article
-import individual_board.entities.ContentBlock
-import individual_board.entities.MarkdownBlock
+import article.entities.*
 import shared.IPublisher
 
 
-class Model() : IPublisher() {
+class IndvBoardModel() : IPublisher() {
     // maps board ID to list of notes
+
     var noteDict = mutableMapOf<Int, MutableList<Note>>(
         1 to mutableListOf(
             Section(
