@@ -17,7 +17,7 @@ import boards.view.BoardViewScreen
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import individual_board.entities.Article
+import article.entities.*
 import individual_board.entities.Note
 import individual_board.entities.Section
 import shared.individualBoardModel
@@ -47,7 +47,7 @@ fun NoteRowView(
             println("DEBUG: Clicked ${note.title}")
             // Implement navigator soon
             if (note is Article) {
-                navigator.push(ArticleScreen(board))
+                navigator.push(ArticleScreen(board, note))
             }
         }
     ) {
