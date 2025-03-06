@@ -1,4 +1,5 @@
 package article.view
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -13,26 +14,24 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import article.entities.Article
+import article.entities.BlockType
+import article.entities.ContentBlock
+import article.entities.TextBlock
 import boards.entities.Board
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import article.entities.*
 import individual_board.view.IndividualBoardScreen
 import shared.Colors
 import shared.articleModel
 import shared.articleViewModel
 
-//
-//
+
 data class ArticleScreen(
     val board: Board,
     val article: Article
@@ -40,6 +39,166 @@ data class ArticleScreen(
     @Composable
     override fun Content() {
         Article(board, article)
+    }
+}
+
+@Composable
+fun Article(board: Board, article: Article) {
+    var articleViewModel by remember { mutableStateOf(articleViewModel) }
+    val navigator = LocalNavigator.currentOrThrow
+    var selectedBlock by remember { mutableStateOf<Int?>(null) }
+    var debugState by remember { mutableStateOf(false) }
+
+    val menuButtonFuncs: Map<String, (Int) -> Unit> = mapOf(
+        "Duplicate Block" to articleModel::duplicateBlock,
+        "Move Block Up" to articleModel::moveBlockUp,
+        "Move Block Down" to articleModel::moveBlockDown,
+        "Delete Block" to articleModel::deleteBlock
+    )
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Text( // title
+            text = "Notes for ${board.name}",
+            fontSize = 30.sp,
+            fontWeight = FontWeight.Bold
+        )
+        Text( // article name
+            text = article.title,
+            fontSize = 20.sp
+        )
+
+        Row( // TODO: buttons for main navigation (e.g. back to course, other articles, ...)
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) { // row containing any useful functionality (as buttons)
+            // insert block at beginning
+            Button(
+                onClick = { articleModel.addBlock(0, BlockType.PLAINTEXT) },
+            ) { Text(text="Insert Block") }
+            Button(
+                onClick = {navigator.push(IndividualBoardScreen(board))}
+            ) { Text("Back to current course") }
+            Button(
+                onClick = {
+                    println("DEBUG (THE BLOCKS):")
+                    println("FROM MODEL: ${articleModel.contentBlocks}")
+                    println("FOM VIEWMODEL: ${articleViewModel.contentBlocksList}")
+                    debugState = !debugState
+                }
+            ) { Text(text="DEBUG") }
+        }
+
+        LazyColumn( // lazy column stores all blocks
+            modifier = Modifier.fillMaxSize().padding(25.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(20.dp)
+        ) {
+
+            itemsIndexed(
+                articleViewModel.contentBlocksList, // itemsIndexed iterates over this collection
+                key = { index: Int, block: ContentBlock -> block.id } // Jetpack Compose uses keys to track recompositions
+            ) { index: Int, block: ContentBlock -> {} // honestly I'm not sure what this does, but it's needed
+
+                BlockFrame(
+                    blockIndex = index,
+                    menuButtonFuncs = menuButtonFuncs,
+                    isSelected = (selectedBlock == index),
+                    onBlockClick = {
+                        // if currently selected, deselect (else, select as normal)
+                        selectedBlock = if (selectedBlock == index) null else index
+                        println("DEBUG: Selecting block at index $index")
+                    },
+                    debugState = debugState
+                )
+            }
+        }
+        // if no blocks, set select index to null
+        if (articleViewModel.contentBlocksList.size == 0) {
+            selectedBlock = null
+        }
+    }
+}
+
+@Composable
+fun BlockFrame(
+    blockIndex: Int,
+    menuButtonFuncs: Map<String, (Int) -> Unit>,
+    isSelected: Boolean,
+    onBlockClick: () -> Unit,
+    debugState: Boolean
+) {
+    var block by remember { mutableStateOf(articleViewModel.contentBlocksList[blockIndex]) }
+
+    var text by remember { mutableStateOf((block as? TextBlock)?.text ?: "") }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .clickable { onBlockClick() }
+    ) {
+        Box(
+            modifier = Modifier
+                .background(Colors.lightTeal)
+                .padding(horizontal = 15.dp, vertical = 10.dp)
+        ) {
+            if (isSelected) {
+                BlockFrameMenu(blockIndex, menuButtonFuncs)
+            }
+
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(5.dp)
+            ) {
+
+                if (isSelected) {
+                    AddBlockFrameButton(blockIndex, "UP")
+                }
+
+                // TODO: replace this with the actual content blocks
+                EditableTextBox(
+                    startText = text,
+                    onTextChange = {
+                        articleModel.saveBlock(blockIndex, it)
+                    }
+                )
+
+                if (isSelected) {
+                    AddBlockFrameButton(blockIndex, "DOWN")
+                }
+
+            }
+        }
+    }
+}
+
+@Composable
+fun EditableTextBox(
+    startText: String = "",
+    onTextChange: (String) -> Unit,
+) {
+    var textFieldValue by remember { mutableStateOf<String>(startText) }
+    val focusRequester = remember { FocusRequester() } // Controls focus
+
+
+    Column(
+        modifier = Modifier
+            .padding(16.dp)
+            .clickable { focusRequester.requestFocus() } // Ensure click brings focus
+    ) {
+        BasicTextField(
+            value = textFieldValue,
+            onValueChange = {
+                textFieldValue = it
+                onTextChange(it)
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .focusRequester(focusRequester) // Attach focus requester to manage focus
+                .onKeyEvent { true } // prevents weird visual glitch from happening
+        )
     }
 }
 
@@ -75,186 +234,10 @@ fun BlockFrameMenu(index: Int, buttonFuncs: Map<String, (Int) -> Unit>) {
     }
 }
 
-@Composable
-fun BlockFrame(blockIndex: Int,
-               menuButtonFuncs: Map<String, (Int) -> Unit>,
-               isSelected: Boolean,
-               onBlockClick: () -> Unit,
-               debugState: Boolean
-               )
-{
-    var block by remember { mutableStateOf(articleModel.contentBlocks[blockIndex]) }
 
-    fun insertBlock() {
-        when (type) {
-            BlockType.PLAINTEXT -> ::articleModel.addTextBlock
-            BlockType.MARKDOWN -> println("not implemented")
-            BlockType.CODE -> println("not implemented")
-        }
-    }
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .clickable {
-                onBlockClick()
-            }
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 15.dp, vertical = 10.dp)
-        ) {
-            if (isSelected) {
-                BlockFrameMenu(blockIndex, menuButtonFuncs)
-            }
-
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(5.dp)
-            ) {
-                if (isSelected) {
-                    AddBlockFrameButton(
-                        blockIndex, "UP",
-                        insertBlock = ::insertBlock
-                    )
-                }
-
-                when (block) {
-                    is TextBlock -> {
-                        if (isSelected) {
-                            var text by remember { mutableStateOf((block as TextBlock).text) }
-
-                            BasicTextField(
-                                value = text,
-                                onValueChange = { text = it
-                                    articleModel.saveTextBlock(
-                                        blockIndex,
-                                        text
-                                    )
-                                }
-                            )
-
-                        } else {
-                            Text((block as TextBlock).text)
-                        }
-                    }
-
-                    else -> {
-                        Text("Not implemented")
-                    }
-                }
-
-                if (isSelected) {
-                    AddBlockFrameButton(blockIndex, "DOWN", insertBlock = ::insertBlock)
-                }
-
-            }
-        }
-    }
-}
 
 @Composable
-fun Article(board: Board, article: Article) {
-    var articleViewModel by remember { mutableStateOf(articleViewModel) }
-    val navigator = LocalNavigator.currentOrThrow
-    var selectedBlock by remember { mutableStateOf<Int?>(null) }
-
-    var debugState by remember { mutableStateOf(false) }
-
-    // functions for the various buttons that appear for the block
-    // these functionalities are available for all types of content blocks
-    fun insertDefaultBlock(index: Int) {
-        println("DEBUG: inserting empty block at index $index (attempt)")
-        articleModel.addTextBlock()
-        println("DEBUG: inserted block at index $index")
-    }
-
-    fun duplicateBlock(index: Int) {
-        println("DEBUG: duplicating block at index $index (attempt)")
-        articleModel.duplicateBlock(index)
-        println("DEBUG: duplicated block at index $index")
-    }
-    fun moveBlockUp(index: Int) {
-        println("DEBUG: moving up block at index ${index} (attempt)")
-        articleModel.moveBlockUp(index)
-        println("DEBUG: swapped blocks with indices ${index} and ${index-1}")
-    }
-    fun moveBlockDown(index: Int) {
-        println("DEBUG: moving down block at index ${index} (attempt)")
-        articleModel.moveBlockDown(index)
-        println("DEBUG: swapped blocks with indices ${index} and ${index+1}")
-    }
-    fun deleteBlock(index: Int) {
-        println("DEBUG: deleting block at index ${index} (attempt)")
-        articleModel.deleteBlock(index)
-        println("DEBUG: deleted block at index ${index}")
-    }
-    val menuButtonFuncs: Map<String, (Int) -> Unit> = mapOf(
-        "Duplicate Block" to ::duplicateBlock,
-        "Move Block Up" to ::moveBlockUp,
-        "Move Block Down" to ::moveBlockDown,
-        "Delete Block" to ::deleteBlock
-    )
-
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        Text( // title
-            text = "Notes for ${board.name}",
-            fontSize = 30.sp,
-            fontWeight = FontWeight.Bold
-        )
-        Text( // article name
-            text = article.title,
-            fontSize = 20.sp
-        )
-
-        Row( // TODO: buttons for main navigation (e.g. back to course, other articles, ...)
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) { // row containing any useful functionality (as buttons)
-            // insert block at beginning
-            Button(
-                onClick = {insertDefaultBlock(0) },
-            ) { Text(text="Insert Block") }
-            Button(
-                onClick = {navigator.push(IndividualBoardScreen(board))}
-            ) { Text("Back to current course") }
-            Button(
-                onClick = {
-                    println("DEBUG: ${articleViewModel.contentBlocksList}")
-                    debugState = !debugState
-                }
-            ) {Text(text="DEBUG")}
-        }
-
-        LazyColumn( // lazy column stores all blocks
-            modifier = Modifier.fillMaxSize().padding(25.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(20.dp)
-        ) {
-            for ((index, contentBlock) in articleViewModel.contentBlocksList.withIndex()) {
-                item {
-                    BlockFrame(
-                        blockIndex = index,
-                        menuButtonFuncs = menuButtonFuncs,
-                        isSelected = (selectedBlock == index),
-                        onBlockClick = {
-                            selectedBlock = if (selectedBlock == index) null else index
-                            println("DEBUG: Selecting block at index $index") },
-                        debugState = debugState
-                    )
-
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun AddBlockFrameButton(index: Int, direction: String, insertBlock: (Int, BlockType) -> Unit) {
+fun AddBlockFrameButton(index: Int, direction: String) {
     // these buttons add a new (empty) ContentBlock above/below (depends on direction) the currently selected block
     // by default, insertBlock() creates a new Text block (assume that people use this the most)
     var showBlockTypes by remember { mutableStateOf(false) }
@@ -269,19 +252,17 @@ fun AddBlockFrameButton(index: Int, direction: String, insertBlock: (Int, BlockT
         contentPadding = PaddingValues(10.dp),
     ) { Text(text = "+", fontSize = 20.sp) }
 
-    if (showBlockTypes) { InsertBlockTypesMenu(index, direction, insertBlock) }
+    if (showBlockTypes) { InsertBlockTypesMenu(index, direction) }
 }
 
 @Composable
-fun InsertBlockTypesMenu(index: Int, direction: String, insertBlock: (Int, BlockType) -> Unit) {
+fun InsertBlockTypesMenu(index: Int, direction: String) {
     val atAddIndex = when (direction) {
         "UP" -> index
         else -> index + 1 // the "DOWN" case
     }
 
     println("DEBUG: CLICKED for index $index, direction $direction")
-    // insertBlock(atAddIndex)
-
 
     Row(
         horizontalArrangement = Arrangement.spacedBy(5.dp),
@@ -289,14 +270,13 @@ fun InsertBlockTypesMenu(index: Int, direction: String, insertBlock: (Int, Block
         for (type in BlockType.entries) {
             Button(
                 onClick = {
-                    insertBlock(atAddIndex, type)
+                    articleModel.addBlock(atAddIndex, type)
                 }
             ) {
                 Text(type.name)
             }
         }
     }
-
 }
 
 //
@@ -383,36 +363,6 @@ fun InsertBlockTypesMenu(index: Int, direction: String, insertBlock: (Int, Block
 //
 //
 //
-//@Composable
-//fun EditableTextBox(
-//    startText: String = "",
-//    onTextChange: (String) -> Unit,
-//) {
-//    var textFieldValue by remember { mutableStateOf<String>(startText) }
-//    val focusRequester = remember { FocusRequester() } // Controls focus
-//
-//    // Request focus on first composition
-//    LaunchedEffect(Unit) {
-//        focusRequester.requestFocus()
-//    }
-//
-//    Column(
-//        modifier = Modifier
-//            .padding(16.dp)
-//            .clickable { focusRequester.requestFocus() } // Ensure click brings focus
-//    ) {
-//        BasicTextField(
-//            value = textFieldValue,
-//            onValueChange = {
-//                textFieldValue = it
-//                onTextChange(it)
-//            },
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .focusRequester(focusRequester) // Attach focus requester to manage focus
-//        )
-//    }
-//}
 //
 //
 //
@@ -648,6 +598,38 @@ fun InsertBlockTypesMenu(index: Int, direction: String, insertBlock: (Int, Block
 //
 //            }
 //        }
+//    }
+//}
+//
+//
+//@Composable
+//fun EditableTextBox(
+//    startText: String = "",
+//    onTextChange: (String) -> Unit,
+//) {
+//    var textFieldValue by remember { mutableStateOf<String>(startText) }
+//    val focusRequester = remember { FocusRequester() } // Controls focus
+//
+//    // Request focus on first composition
+//    LaunchedEffect(Unit) {
+//        focusRequester.requestFocus()
+//    }
+//
+//    Column(
+//        modifier = Modifier
+//            .padding(16.dp)
+//            .clickable { focusRequester.requestFocus() } // Ensure click brings focus
+//    ) {
+//        BasicTextField(
+//            value = textFieldValue,
+//            onValueChange = {
+//                textFieldValue = it
+//                onTextChange(it)
+//            },
+//            modifier = Modifier
+//                .fillMaxWidth()
+//                .focusRequester(focusRequester) // Attach focus requester to manage focus
+//        )
 //    }
 //}
 //
