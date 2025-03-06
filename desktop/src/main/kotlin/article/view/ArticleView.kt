@@ -50,10 +50,22 @@ fun Article(board: Board, article: Article) {
     var debugState by remember { mutableStateOf(false) }
 
     val menuButtonFuncs: Map<String, (Int) -> Unit> = mapOf(
-        "Duplicate Block" to articleModel::duplicateBlock,
-        "Move Block Up" to articleModel::moveBlockUp,
-        "Move Block Down" to articleModel::moveBlockDown,
-        "Delete Block" to articleModel::deleteBlock
+        "Duplicate Block" to { index ->
+            articleModel.duplicateBlock(index)
+            selectedBlock = index + 1
+        },
+        "Move Block Up" to { index ->
+            articleModel.moveBlockUp(index)
+            selectedBlock = index - 1
+        },
+        "Move Block Down" to { index ->
+            articleModel.moveBlockDown(index)
+            selectedBlock = index + 1
+        },
+        "Delete Block" to { index ->
+            articleModel.deleteBlock(index)
+            selectedBlock = null
+        }
     )
 
     Column(
