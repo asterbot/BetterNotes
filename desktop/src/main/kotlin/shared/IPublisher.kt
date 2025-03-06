@@ -1,7 +1,7 @@
 package shared
 
 abstract class IPublisher {
-    private val subscribers = mutableListOf<ISubscriber>()
+    val subscribers = mutableListOf<ISubscriber>()
     fun notifySubscribers() {
         subscribers.forEach() {
             it.update()
