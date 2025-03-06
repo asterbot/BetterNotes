@@ -11,8 +11,6 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.Text
-import androidx.compose.material.TextField
-import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -21,16 +19,8 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyEventType.Companion.KeyDown
-import androidx.compose.ui.input.key.KeyEventType.Companion.KeyUp
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onKeyEvent
-import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -38,6 +28,7 @@ import boards.entities.Board
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import individual_board.entities.BlockType
 import individual_board.entities.ContentBlock
 import individual_board.entities.TextBlock
 import individual_board.view.IndividualBoardScreen
@@ -132,23 +123,19 @@ fun MarkdownButton(
     ) { Text("Toggle Markdown") }
 }
 
+
+
 @Composable
 fun EditableTextBox(
     startText: String = "",
     onTextChange: (String) -> Unit,
 ) {
-    var textFieldValue by remember { mutableStateOf(TextFieldValue(startText)) } // Holds user input and cursor position
+    var textFieldValue by remember { mutableStateOf<String>(startText) }
     val focusRequester = remember { FocusRequester() } // Controls focus
-    var keyPressed by remember { mutableStateOf<Key?>(null) } // Tracks key presses
 
     // Request focus on first composition
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
-    }
-
-    // Ensures that when the user types, the cursor is always at the end of the text
-    LaunchedEffect(textFieldValue.text) {
-        textFieldValue = textFieldValue.copy(selection = TextRange(textFieldValue.text.length))
     }
 
     Column(
@@ -158,93 +145,34 @@ fun EditableTextBox(
     ) {
         BasicTextField(
             value = textFieldValue,
-            onValueChange = { newTextFieldValue ->
-                textFieldValue = newTextFieldValue
-                onTextChange(newTextFieldValue.text) // Update state in parent composable
+            onValueChange = {
+                textFieldValue = it
+                onTextChange(it)
             },
             modifier = Modifier
                 .fillMaxWidth()
                 .focusRequester(focusRequester) // Attach focus requester to manage focus
-                .onKeyEvent { event -> // Handle key events
-                    when {
-                        event.type == KeyDown -> {
-                            keyPressed = event.key // Start tracking key hold
-                            true
-                        }
-                        event.type == KeyUp -> {
-                            keyPressed = null // Stop key repeat
-                            true
-                        }
-                        else -> false
-                    }
-                }
         )
     }
 }
-
-
-
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun BlockTypeSelector() {
-    val blockTypes = listOf("None", "Plaintext")
-    var expanded by remember { mutableStateOf(false) }
-    var selectedBlockType by remember { mutableStateOf(blockTypes[0]) }
-
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { expanded = it }
-    ) {
-        TextField(
-            value = selectedBlockType,
-            onValueChange = {},
-            readOnly = true, // Prevents manual text input
-            label = { Text(text="Select a Block Type", fontSize=10.sp) },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            modifier = Modifier
-                .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled=true)
-                .fillMaxWidth(0.4f)
-                .height(52.dp)
-                .padding(horizontal=50.dp)
-        )
-
-        ExposedDropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false }
-        ) {
-            blockTypes.forEach { blockType ->
-                DropdownMenuItem(
-                    text = { Text(text=blockType, fontSize=14.sp) },
-                    onClick = {
-                        selectedBlockType = blockType
-                        expanded = false // Close menu after selection
-                    }
-                )
-            }
-        }
-    }
-}
-
 
 
 
 @Composable
 fun Article(board: Board) {
     // the content that is assigned to an ArticleScreen (essentially the page view)
-    var blocks by remember { mutableStateOf<List<ContentBlock>>(emptyList())}
+    var blocks by remember { mutableStateOf<List<ContentBlock>>(listOf(TextBlock(text="SOME DEFAULT VALUE")))}
     val navigator = LocalNavigator.currentOrThrow
     var selectedBlock by remember { mutableStateOf<Int?>(null) }
+    var debugState by remember { mutableStateOf(false) }
 
     // functions for the various buttons that appear for the block
     // these functionalities are available for all types of content blocks
-    fun insertBlock(index: Int) {
+    fun insertBlock(index: Int, defaultBlock: ContentBlock) {
         println("DEBUG: inserting empty block at index $index (attempt)")
         val updatedBlocks = blocks.toMutableList()
-        println("INDEX FROM FUNCTION: $index")
         if (index in 0..(updatedBlocks.size)) {
-            println("INDEX: $index")
-            updatedBlocks.add(index, TextBlock(""))
+            updatedBlocks.add(index, defaultBlock)
             println("DEBUG: inserted block at index $index")
         }
         blocks = updatedBlocks
@@ -285,6 +213,7 @@ fun Article(board: Board) {
         val updatedBlocks = blocks.toMutableList()
         if (index in 0..<(updatedBlocks.size)) {
             updatedBlocks.removeAt(index)
+            selectedBlock = null
             println("DEBUG: deleted block at index ${index}")
         }
         blocks = updatedBlocks
@@ -310,20 +239,21 @@ fun Article(board: Board) {
             fontSize = 20.sp
         )
 
-        BlockTypeSelector()
-
         Row( // TODO: buttons for main navigation (e.g. back to course, other articles, ...)
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) { // row containing any useful functionality (as buttons)
             // insert block at beginning
             Button(
-                onClick = {insertBlock(0)}
+                onClick = {insertBlock(0, TextBlock("")) },
             ) { Text(text="Insert Block") }
             Button(
                 onClick = {navigator.push(IndividualBoardScreen(board))}
             ) { Text("Back to current course") }
             Button(
-                onClick = { println("DEBUG: $blocks") }
+                onClick = {
+                    println("DEBUG: $blocks")
+                    debugState = !debugState
+                }
             ) {Text(text="DEBUG")}
         }
 
@@ -344,7 +274,7 @@ fun Article(board: Board) {
 
                 BlockFrame(
                     index, block, content,
-                    insertBlock = { insertIndex -> insertBlock(insertIndex) },
+                    insertBlock = { insertIndex, defaultBlock -> insertBlock(insertIndex, defaultBlock) },
                     menuButtonFuncs = menuButtonFuncs,
                     isSelected = (selectedBlock == index),
                     onBlockClick = {
@@ -353,13 +283,16 @@ fun Article(board: Board) {
                         println("DEBUG: Selecting block at index $index")
                     },
                     updateBlockText = { blockIndex, newText ->
+                        println("INDEX: $blockIndex")
+                        println("THE NEW TEXT: $newText")
                         val blocksCopy = blocks.toMutableList()
                         val b = blocksCopy[blockIndex]
                         if (b is TextBlock) {
                             blocksCopy[blockIndex] = b.copy(text = newText)
                         }
                         blocks = blocksCopy
-                    }
+                    },
+                    debugState = debugState
                 )
             }
         }
@@ -401,11 +334,13 @@ fun BlockFrameMenu(index: Int, buttonFuncs: Map<String, (Int) -> Unit>) {
 
 @Composable
 fun BlockFrame(blockIndex: Int, block: ContentBlock, content: String,
-               insertBlock: (Int) -> Unit,
+               insertBlock: (Int, ContentBlock) -> Unit,
                menuButtonFuncs: Map<String, (Int) -> Unit>,
                isSelected: Boolean,
                onBlockClick: () -> Unit,
-               updateBlockText: (Int, String) -> Unit) {
+               updateBlockText: (Int, String) -> Unit,
+               debugState: Boolean)
+{
     // creates a template for ContentBlocks to go into
     var text by remember { mutableStateOf(content) }
 
@@ -437,21 +372,13 @@ fun BlockFrame(blockIndex: Int, block: ContentBlock, content: String,
                     AddBlockFrameButton(blockIndex, "UP", insertBlock = insertBlock)
                 }
 
-//                // TODO: replace this with the actual content blocks
-//                Box(
-//                    modifier = Modifier
-//                        .fillMaxWidth()
-//                        .background(Colors.medTeal)
-//                        .padding(horizontal = 50.dp)
-//                        .defaultMinSize(minHeight = 50.dp)
-//                )
-
-                EditableTextBox (
+                // TODO: replace this with the actual content blocks
+                EditableTextBox(
                     startText = content,
                     onTextChange = {
-                        text = it
                         updateBlockText(blockIndex, text)
-                })
+                    }
+                )
 
                 if (isSelected) {
                     AddBlockFrameButton(blockIndex, "DOWN", insertBlock = insertBlock)
@@ -463,28 +390,50 @@ fun BlockFrame(blockIndex: Int, block: ContentBlock, content: String,
 }
 
 @Composable
-fun AddBlockFrameButton(index: Int, direction: String, insertBlock: (Int) -> Unit) {
+fun AddBlockFrameButton(index: Int, direction: String, insertBlock: (Int, ContentBlock) -> Unit) {
     // these buttons add a new (empty) ContentBlock above/below (depends on direction) the currently selected block
     // by default, insertBlock() creates a new Text block (assume that people use this the most)
+    var showBlockTypes by remember { mutableStateOf(false) }
+
     Button(
-        onClick = {
-            val atAddIndex = when (direction) {
-                "UP" -> index
-                else -> index + 1 // the "DOWN" case
-            }
-            println("DEBUG: CLICKED for index ${index}, direction ${direction}")
-            println("INDEX FROM BUTTON: $atAddIndex")
-            insertBlock(atAddIndex)
-        },
+        onClick = { showBlockTypes = !showBlockTypes },
         colors = ButtonDefaults.buttonColors(
             backgroundColor = Colors.medTeal,
-            contentColor = Colors.white),
+            contentColor = Colors.white
+        ),
         shape = CircleShape,
         contentPadding = PaddingValues(10.dp),
     ) { Text(text = "+", fontSize = 20.sp) }
+
+    if (showBlockTypes) { InsertBlockTypesMenu(index, direction, insertBlock) }
 }
 
-//
+@Composable
+fun InsertBlockTypesMenu(index: Int, direction: String, insertBlock: (Int, ContentBlock) -> Unit) {
+    val atAddIndex = when (direction) {
+        "UP" -> index
+        else -> index + 1 // the "DOWN" case
+    }
+
+    println("DEBUG: CLICKED for index $index, direction $direction")
+    // insertBlock(atAddIndex)
+
+
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
+    ) {
+        for (type in BlockType.entries) {
+            Button(
+                onClick = {
+                    insertBlock(atAddIndex, type.defaultBlock.copyBlock())
+                }
+            ) {
+                Text(type.name)
+            }
+        }
+    }
+}
+
 //@Composable
 //fun Article(board: Board){
 //    var isDrawingCanvasOpen by remember { mutableStateOf(false) }
