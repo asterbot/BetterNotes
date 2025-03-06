@@ -49,8 +49,14 @@ class Article(
 
 // Content Blocks
 
+enum class BlockType(val defaultBlock: ContentBlock) {
+    PLAINTEXT (TextBlock("")),
+    MARKDOWN (MarkdownBlock("")),
+    CODE (CodeBlock(""))
+}
+
 sealed class ContentBlock {
-    abstract val type: String
+    abstract val type: BlockType
     var id: UUID = UUID.randomUUID()
     abstract fun copyBlock(): ContentBlock
 }
@@ -59,7 +65,7 @@ data class TextBlock (
     // Boilerplate
     val text: String
 ) : ContentBlock() {
-    override val type = "text"
+    override val type = BlockType.PLAINTEXT
     override fun copyBlock(): ContentBlock {
         return TextBlock(text).apply {
             this.id = UUID.randomUUID()  // Assign new ID
@@ -71,7 +77,7 @@ data class MarkdownBlock (
     // Boilerplate
     val text: String
 ) : ContentBlock() {
-    override val type = "markdown"
+    override val type = BlockType.MARKDOWN
     override fun copyBlock(): ContentBlock {
         return MarkdownBlock(text).apply {
             this.id = UUID.randomUUID()  // Assign new ID
@@ -84,7 +90,7 @@ data class CodeBlock (
     val code: String,
     val language: String? = null
 ) : ContentBlock() {
-    override val type = "code"
+    override val type = BlockType.CODE
     override fun copyBlock(): ContentBlock {
         return CodeBlock(code, language).apply {
             this.id = UUID.randomUUID()  // Assign new ID
