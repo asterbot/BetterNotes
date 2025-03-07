@@ -1,17 +1,15 @@
 package individual_board.model
-import boards.entities.Board
 import individual_board.entities.Note
 import individual_board.entities.addNote
 import individual_board.entities.removeNote
 import individual_board.entities.Section
-import individual_board.entities.Article
-import individual_board.entities.ContentBlock
-import individual_board.entities.MarkdownBlock
+import article.entities.*
 import shared.IPublisher
 
 
-class Model() : IPublisher() {
+class IndvBoardModel() : IPublisher() {
     // maps board ID to list of notes
+
     var noteDict = mutableMapOf<Int, MutableList<Note>>(
         1 to mutableListOf(
             Section(
@@ -76,6 +74,29 @@ class Model() : IPublisher() {
         noteDict[boardId]?.addNote(article)
         notifySubscribers()
     }
+
+    fun updateSection(section: Section, boardId: Int, title: String, desc: String) {
+        noteDict[boardId]?.let { notes ->
+            val index = notes.indexOfFirst { it is Section && it.id == section.id }
+            if (index != -1) {
+                val updatedSection = (notes[index] as Section).copy(title = title, desc = desc)
+                notes[index] = updatedSection
+                notifySubscribers()
+            }
+        }
+    }
+
+    fun updateArticle(article: Article, boardId: Int, title: String, desc: String) {
+        noteDict[boardId]?.let { notes ->
+            val index = notes.indexOfFirst { it is Article && it.id == article.id }
+            if (index != -1) {
+                val updatedArticle = (notes[index] as Article).copy(title = title, desc = desc)
+                notes[index] = updatedArticle
+                notifySubscribers()
+            }
+        }
+    }
+
 
     fun del(note: Note, boardId: Int) {
         noteDict[boardId]?.removeNote(note)
