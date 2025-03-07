@@ -4,15 +4,6 @@ import shared.IPublisher
 
 // NOTE: should pass in board probably
 class ArticleModel() : IPublisher() {
-    // NOTE: change to be empty when first init
-//    var contentBlocks = mutableListOf<ContentBlock>(
-//        TextBlock(
-//            text = "Default text 1 :D"
-//        ),
-//        TextBlock(
-//            text = "Default text 2 :P"
-//        )
-//    )
     var contentBlocks = mutableListOf<ContentBlock>()
 
     init {
