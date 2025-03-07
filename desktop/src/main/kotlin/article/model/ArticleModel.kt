@@ -1,6 +1,8 @@
 package article.model
+import androidx.compose.ui.graphics.Path
 import article.entities.*
 import shared.IPublisher
+import java.awt.Canvas
 
 // NOTE: should pass in board probably
 class ArticleModel() : IPublisher() {
@@ -68,7 +70,7 @@ class ArticleModel() : IPublisher() {
     }
 
     // TODO: later (expand to other ContentBlock types)
-    fun saveBlock(index: Int, stringContent: String) {
+    fun saveBlock(index: Int, stringContent: String = "", pathsContent: MutableList<Path> = mutableListOf()) {
         if (index in 0..(contentBlocks.size - 1)) {
             if (contentBlocks[index] is TextBlock) {
                 (contentBlocks[index] as TextBlock).text = stringContent
@@ -76,6 +78,9 @@ class ArticleModel() : IPublisher() {
                 (contentBlocks[index] as MarkdownBlock).text = stringContent
             } else if (contentBlocks[index] is CodeBlock) {
                 (contentBlocks[index] as CodeBlock).code = stringContent
+            } else if (contentBlocks[index] is CanvasBlock) {
+                (contentBlocks[index] as CanvasBlock).paths = pathsContent
+                // var paths: MutableList<Path> = mutableListOf<Path>()
             }
 
             notifySubscribers()

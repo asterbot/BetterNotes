@@ -1,6 +1,9 @@
 package article.view
+
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,12 +18,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import article.entities.*
@@ -110,7 +118,21 @@ fun Article(board: Board, article: Article) {
                     onClick = {
                         println("DEBUG (THE BLOCKS):")
                         println("FROM MODEL: ${articleModel.contentBlocks}")
+                        for (contentBlock in articleModel.contentBlocks) {
+                            if (contentBlock.type == BlockType.CANVAS) {
+                                println("\tCANVAS HAS ${(contentBlock as CanvasBlock).paths.size} PATHS")
+                            } else {
+                                println("\t$contentBlock")
+                            }
+                        }
                         println("FROM VIEWMODEL: ${articleViewModel.contentBlocksList}")
+                        for (contentBlock in articleViewModel.contentBlocksList) {
+                            if (contentBlock.type == BlockType.CANVAS) {
+                                println("\tCANVAS HAS ${(contentBlock as CanvasBlock).paths.size} PATHS")
+                            } else {
+                                println("\t$contentBlock")
+                            }
+                        }
                         debugState = !debugState
                     }
                 ) { Text(text = "DEBUG") }
@@ -207,6 +229,15 @@ fun BlockFrame(
                     markdownHandler.renderMarkdown()
                 }
 
+                if (block.type == BlockType.CANVAS) {
+                    EditableCanvas(
+                        block = block,
+                        100.dp,
+                        onCanvasUpdate = {
+                            articleModel.saveBlock(blockIndex, "", it)
+                        })
+                }
+
                 if (isSelected) {
                     AddBlockFrameButton(blockIndex, "DOWN", selectAtIndex)
                 }
@@ -215,6 +246,131 @@ fun BlockFrame(
         }
     }
 }
+
+@Composable
+fun EditableCanvas(
+    block: ContentBlock,
+    canvasHeight: Dp,
+    onCanvasUpdate: (MutableList<Path>) -> Unit
+) {
+    var startPaths: MutableList<Path> = when (block.type) {
+        BlockType.CANVAS -> { (block as CanvasBlock).paths }
+        else -> mutableListOf()
+    }
+
+    val paths = remember { mutableStateListOf<Path>().apply { addAll(startPaths) } }
+    var currentPath by remember { mutableStateOf(Path()) }
+    var isDrawing by remember { mutableStateOf(false) }
+    var isOutsideBox by remember { mutableStateOf(false) }
+    var isErasing by remember { mutableStateOf(false) } // Eraser mode toggle
+
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(canvasHeight)
+            .background(Color.White)
+            .pointerInput(Unit) {
+                detectDragGestures(
+                    onDragStart = { offset ->
+                        if (offset.x in 0f..size.width.toFloat() && offset.y in 0f..size.height.toFloat()) {
+                            isDrawing = true
+                            isOutsideBox = false
+
+                            if (isErasing) {
+                                // Erase paths near the cursor
+                                paths.removeAll { path -> isPointNearPath(offset, path) }
+                            } else {
+                                currentPath = Path().apply { moveTo(offset.x, offset.y) }
+                            }
+                        }
+                    },
+                    onDrag = { change, _ ->
+                        val boxWidth = size.width
+                        val boxHeight = size.height
+
+                        val isInside = change.position.x in 0f..boxWidth.toFloat() &&
+                                change.position.y in 0f..boxHeight.toFloat()
+
+                        if (isInside) {
+                            if (isErasing) {
+                                // Remove paths near the cursor position
+                                paths.removeAll { path -> isPointNearPath(change.position, path) }
+                            } else {
+                                if (isOutsideBox) {
+                                    currentPath = Path().apply { moveTo(change.position.x, change.position.y) }
+                                    isOutsideBox = false
+                                } else {
+                                    currentPath = Path().apply {
+                                        addPath(currentPath)
+                                        lineTo(change.position.x, change.position.y)
+                                    }
+                                }
+                            }
+                        } else {
+                            if (!isOutsideBox && !isErasing) {
+                                paths.add(currentPath)
+                                onCanvasUpdate(paths)
+                                currentPath = Path()
+                                isOutsideBox = true
+                            }
+                        }
+                    },
+                    onDragEnd = {
+                        if (!isOutsideBox && !isErasing) {
+                            paths.add(currentPath)
+                            onCanvasUpdate(paths)
+                        }
+                        isDrawing = false
+                        currentPath = Path()
+                    }
+                )
+            }
+
+    ) {
+        Button(
+            onClick = { isErasing = !isErasing },
+            colors = ButtonDefaults.buttonColors(
+                backgroundColor = Colors.medTeal,
+                contentColor = Colors.white
+            ),
+            shape = CircleShape,
+            contentPadding = PaddingValues(10.dp),
+        ) { Text(if (!isErasing) "Erase" else "Draw" ) }
+
+        // drawing the existing path
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            paths.forEach { path ->
+                drawPath(
+                    path = path,
+                    color = Color.Black,
+                    style = Stroke(width = 2f)
+                )
+            }
+
+            // drawing the dragging path
+            if (isDrawing && !isErasing) {
+                drawPath(
+                    path = currentPath,
+                    color = Color.Black,
+                    style = Stroke(width = 2f)
+                )
+            }
+        }
+
+    }
+}
+
+fun isPointNearPath(point: Offset, path: Path, threshold: Float = 20f): Boolean {
+    val pathBounds = path.getBounds()
+    return (point.x in (pathBounds.left - threshold)..(pathBounds.right + threshold) &&
+            point.y in (pathBounds.top - threshold)..(pathBounds.bottom + threshold))
+}
+
+
+//fun Path.getBounds(): Rect {
+//    return this.getBounds()
+//}
 
 @Composable
 fun EditableTextBox(
@@ -226,6 +382,7 @@ fun EditableTextBox(
         BlockType.PLAINTEXT -> (block as TextBlock).text
         BlockType.MARKDOWN -> (block as MarkdownBlock).text
         BlockType.CODE -> (block as CodeBlock).code
+        else -> ""
     }
 
     var textFieldValue by remember { mutableStateOf<String>(startText) }
