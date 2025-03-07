@@ -131,10 +131,13 @@ fun IndividualBoardView(
     }
 
     fun editSection(section: Section, title: String, desc: String) {
+        println("DEBUG: Edit section called")
         individualBoardModel.updateSection(section, board.id, title, desc)
+
     }
 
     fun editArticle(article: Article, title: String, desc: String) {
+        println("DEBUG: Edit article called")
         individualBoardModel.updateArticle(article, board.id, title, desc)
     }
 
@@ -230,6 +233,7 @@ fun IndividualBoardView(
             }
 
             noteToEdit.value != null -> {
+                println("DEBUG: THIS IS SECTION: ${noteToEdit.value is Section}")
                 EditNoteDialog(
                     type = if (noteToEdit.value is Section) "Section" else "Article",
                     noteTitle = noteToEdit.value?.title ?: "",

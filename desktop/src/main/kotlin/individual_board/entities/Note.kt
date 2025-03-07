@@ -4,7 +4,7 @@ import java.util.*
 
 /* Notes */
 
-open class Note(
+abstract class Note(
 
     var id: Int = 0,
     var title: String,
@@ -12,15 +12,7 @@ open class Note(
     var parentNotes: MutableList<Note>? = null,
     var relatedNotes: MutableList<Note>? = null
 ) {
-    fun copy(title: String, desc: String): Note {
-        return Note(
-            id = this.id,
-            title = title,
-            desc = desc,
-            parentNotes = this.parentNotes,
-            relatedNotes = this.relatedNotes
-        )
-    }
+    abstract fun copy(title: String, desc: String): Note
 }
 
 fun MutableList<Note>.addNote(element: Note): Boolean {
@@ -44,7 +36,17 @@ class Section(
     parentNotes: MutableList<Note>? = null,
     relatedNotes: MutableList<Note>? = null,
 //    childrenNotes: MutableList<Note>? = null // to be implemented (some circular dependency things)
-) : Note(id, title, desc, parentNotes, relatedNotes)
+) : Note(id, title, desc, parentNotes, relatedNotes) {
+    override fun copy(title: String, desc: String): Section {
+        return Section(
+            id = this.id,
+            title = title,
+            desc = desc,
+            parentNotes = this.parentNotes,
+            relatedNotes = this.relatedNotes
+        )
+    }
+}
 
 
 

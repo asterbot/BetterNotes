@@ -9,6 +9,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.Icon
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -212,7 +213,7 @@ fun EditBoardDialog(
     var isError by remember { mutableStateOf(false) }
 
     AlertDialog(
-        icon = { Icons.Default.Add },
+        icon = { Icons.Default.Edit },
         title = { Text(text = "Edit Board") },
         text = {
             Column(modifier = Modifier.padding(16.dp)) {
