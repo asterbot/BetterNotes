@@ -12,7 +12,18 @@ class Article(
     parentNotes: MutableList<Note>? = null,
     relatedNotes: MutableList<Note>? = null,
     var contentBlocks: MutableList<ContentBlock> = mutableListOf()
-) : Note(id, title, desc, parentNotes, relatedNotes)
+) : Note(id, title, desc, parentNotes, relatedNotes) {
+    override fun copy(title: String, desc: String): Article {
+        return Article(
+            id = this.id,
+            title = title,
+            desc = desc,
+            parentNotes = this.parentNotes,
+            relatedNotes = this.relatedNotes,
+            contentBlocks = this.contentBlocks.map { it.copyBlock() }.toMutableList()
+        )
+    }
+}
 
 // Content Blocks
 
