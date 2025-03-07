@@ -75,6 +75,29 @@ class IndvBoardModel() : IPublisher() {
         notifySubscribers()
     }
 
+    fun updateSection(section: Section, boardId: Int, title: String, desc: String) {
+        noteDict[boardId]?.let { notes ->
+            val index = notes.indexOfFirst { it is Section && it.id == section.id }
+            if (index != -1) {
+                val updatedSection = (notes[index] as Section).copy(title = title, desc = desc)
+                notes[index] = updatedSection
+                notifySubscribers()
+            }
+        }
+    }
+
+    fun updateArticle(article: Article, boardId: Int, title: String, desc: String) {
+        noteDict[boardId]?.let { notes ->
+            val index = notes.indexOfFirst { it is Article && it.id == article.id }
+            if (index != -1) {
+                val updatedArticle = (notes[index] as Article).copy(title = title, desc = desc)
+                notes[index] = updatedArticle
+                notifySubscribers()
+            }
+        }
+    }
+
+
     fun del(note: Note, boardId: Int) {
         noteDict[boardId]?.removeNote(note)
         notifySubscribers()
