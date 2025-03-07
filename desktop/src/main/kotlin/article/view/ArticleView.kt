@@ -37,6 +37,10 @@ import shared.Colors
 import shared.articleModel
 import shared.articleViewModel
 
+import androidx.compose.foundation.*
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.unit.Dp
+
 
 data class ArticleScreen(
     val board: Board,
@@ -194,7 +198,7 @@ fun BlockFrame(
                     listOf(
                         BlockType.PLAINTEXT,
                         BlockType.MARKDOWN,
-                        BlockType.CODE,
+                        BlockType.CODE
                     )) {
                     if (!(block.type == BlockType.MARKDOWN && !isSelected)) {
                         EditableTextBox(
@@ -211,6 +215,10 @@ fun BlockFrame(
                     markdownHandler.renderMarkdown()
                 }
 
+                if (block.type == BlockType.CANVAS) {
+                    EditableCanvas(100.dp)
+                }
+
                 if (isSelected) {
                     AddBlockFrameButton(blockIndex, "DOWN", selectAtIndex)
                 }
@@ -220,13 +228,13 @@ fun BlockFrame(
     }
 }
 @Composable
-fun EditableCanvas() {
+fun EditableCanvas(canvasHeight: Dp) {
     val paths = remember { mutableStateListOf<Path>() }
     var currentPath by remember { mutableStateOf(Path()) }
     var isDrawing by remember { mutableStateOf(false) } // Track if dragging is in progress
 
     Box(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxWidth().height(canvasHeight)
             .background(Color.White)
             .pointerInput(Unit) {
                 detectDragGestures(
