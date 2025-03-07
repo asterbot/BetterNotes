@@ -1,5 +1,7 @@
 package article.entities
 
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Path
 import individual_board.entities.Note
 import java.util.*
 
@@ -38,6 +40,9 @@ enum class BlockType(
     ),
     CODE(
         { CodeBlock() }
+    ),
+    CANVAS(
+        { CanvasBlock() }
     )
 }
 
@@ -81,6 +86,15 @@ data class CodeBlock (
         return CodeBlock(code, language).apply {
             this.id = UUID.randomUUID()  // Assign new ID
         }
+    }
+}
+
+data class CanvasBlock (
+    var paths: MutableList<Path> = mutableListOf<Path>(),
+) : ContentBlock() {
+    override val type = BlockType.CANVAS
+    override fun copyBlock(): ContentBlock {
+        return CanvasBlock(paths).apply { this.id = UUID.randomUUID() }
     }
 }
 
