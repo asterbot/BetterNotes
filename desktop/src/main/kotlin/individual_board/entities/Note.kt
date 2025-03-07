@@ -11,7 +11,17 @@ open class Note(
     var desc: String? = "",
     var parentNotes: MutableList<Note>? = null,
     var relatedNotes: MutableList<Note>? = null
-)
+) {
+    fun copy(title: String, desc: String): Note {
+        return Note(
+            id = this.id,
+            title = title,
+            desc = desc,
+            parentNotes = this.parentNotes,
+            relatedNotes = this.relatedNotes
+        )
+    }
+}
 
 fun MutableList<Note>.addNote(element: Note): Boolean {
     this.add(element)

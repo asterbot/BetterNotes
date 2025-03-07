@@ -57,3 +57,32 @@ fun ActionMenu(
         }
     }
 }
+
+@Composable
+fun AddNoteMenu(
+    onAddSection: () -> Unit,
+    onAddArticle: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var expanded by remember { mutableStateOf(false) }
+    Box(
+        modifier = modifier
+    ) {
+        IconButton(onClick = { expanded = !expanded }) {
+            Icon(Icons.Default.Add, contentDescription = "Add")
+        }
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            DropdownMenuItem(
+                text = { Text("Add Section") },
+                onClick = { onAddSection(); expanded = false },
+            )
+            DropdownMenuItem(
+                text = { Text("Add Article") },
+                onClick = { onAddArticle(); expanded = false },
+            )
+        }
+    }
+}
