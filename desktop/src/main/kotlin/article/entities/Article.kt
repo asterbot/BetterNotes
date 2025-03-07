@@ -91,12 +91,10 @@ data class CodeBlock (
 
 data class CanvasBlock (
     var paths: MutableList<Path> = mutableListOf<Path>(),
-    var isEraserOn: Boolean = false,
-
 ) : ContentBlock() {
     override val type = BlockType.CANVAS
     override fun copyBlock(): ContentBlock {
-        return CanvasBlock(paths, isEraserOn).apply { this.id = UUID.randomUUID() }
+        return CanvasBlock(paths).apply { this.id = UUID.randomUUID() }
     }
 }
 
