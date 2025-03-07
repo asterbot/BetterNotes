@@ -1,6 +1,7 @@
 package article.view
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,9 +16,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -190,7 +194,7 @@ fun BlockFrame(
                     listOf(
                         BlockType.PLAINTEXT,
                         BlockType.MARKDOWN,
-                        BlockType.CODE
+                        BlockType.CODE,
                     )) {
                     if (!(block.type == BlockType.MARKDOWN && !isSelected)) {
                         EditableTextBox(
@@ -215,6 +219,56 @@ fun BlockFrame(
         }
     }
 }
+@Composable
+fun EditableCanvas() {
+    val paths = remember { mutableStateListOf<Path>() }
+    var currentPath by remember { mutableStateOf(Path()) }
+    var isDrawing by remember { mutableStateOf(false) } // Track if dragging is in progress
+
+    Box(
+        modifier = Modifier.fillMaxSize()
+            .background(Color.White)
+            .pointerInput(Unit) {
+                detectDragGestures(
+                    onDragStart = { offset ->
+                        isDrawing = true // Start tracking the drawing
+                        currentPath = Path().apply { moveTo(offset.x, offset.y) }
+                    },
+                    onDrag = { change, _ ->
+                        currentPath = Path().apply {
+                            addPath(currentPath) // Keep the previous path data
+                            lineTo(change.position.x, change.position.y)
+                        }
+                    },
+                    onDragEnd = {
+                        isDrawing = false // Stop tracking
+                        paths.add(currentPath)
+                        currentPath = Path() // Reset for next drawing
+                    }
+                )
+            }
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            // Draw all completed paths
+            paths.forEach { path ->
+                drawPath(
+                    path = path,
+                    color = Color.Black,
+                    style = Stroke(width = 2f)
+                )
+            }
+            // Draw the path currently being drawn
+            if (isDrawing) {
+                drawPath(
+                    path = currentPath,
+                    color = Color.Black,
+                    style = Stroke(width = 2f)
+                )
+            }
+        }
+    }
+}
+
 
 @Composable
 fun EditableTextBox(
@@ -226,6 +280,7 @@ fun EditableTextBox(
         BlockType.PLAINTEXT -> (block as TextBlock).text
         BlockType.MARKDOWN -> (block as MarkdownBlock).text
         BlockType.CODE -> (block as CodeBlock).code
+        BlockType.CANVAS -> ""
     }
 
     var textFieldValue by remember { mutableStateOf<String>(startText) }
