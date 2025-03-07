@@ -7,7 +7,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.*
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.intellij.markdown.MarkdownElementTypes
@@ -25,7 +27,8 @@ class MarkdownHandler(private var rawString: String) {
 
 
     @Composable
-    fun renderMarkdown(){
+    fun renderMarkdown() {
+        println(rawString)
         // Renders markdown for ALL the nodes
         Column(
             modifier = Modifier
@@ -40,7 +43,6 @@ class MarkdownHandler(private var rawString: String) {
                 renderMarkdownNode(node)
             }
         }
-
     }
 
     @Composable

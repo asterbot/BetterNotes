@@ -1,15 +1,19 @@
 package individual_board.entities
 
+import java.util.*
+
 /* Notes */
 
-open class Note(
+abstract class Note(
 
     var id: Int = 0,
     var title: String,
     var desc: String? = "",
     var parentNotes: MutableList<Note>? = null,
     var relatedNotes: MutableList<Note>? = null
-)
+) {
+    abstract fun copy(title: String, desc: String): Note
+}
 
 fun MutableList<Note>.addNote(element: Note): Boolean {
     this.add(element)
@@ -32,49 +36,19 @@ class Section(
     parentNotes: MutableList<Note>? = null,
     relatedNotes: MutableList<Note>? = null,
 //    childrenNotes: MutableList<Note>? = null // to be implemented (some circular dependency things)
-) : Note(id, title, desc, parentNotes, relatedNotes)
-
-/* Articles */
-
-class Article(
-    id: Int = 0,
-    title: String,
-    desc: String,
-    parentNotes: MutableList<Note>? = null,
-    relatedNotes: MutableList<Note>? = null,
-    var contentBlocks: MutableList<ContentBlock> = mutableListOf()
-) : Note(id, title, desc, parentNotes, relatedNotes)
-
-// Content Blocks
-
-sealed class ContentBlock {
-    abstract val type: String
+) : Note(id, title, desc, parentNotes, relatedNotes) {
+    override fun copy(title: String, desc: String): Section {
+        return Section(
+            id = this.id,
+            title = title,
+            desc = desc,
+            parentNotes = this.parentNotes,
+            relatedNotes = this.relatedNotes
+        )
+    }
 }
 
-data class MarkdownBlock (
-    // Boilerplate
-    val text: String
-) : ContentBlock() {
-    override val type = "markdown"
-}
 
-data class CodeBlock (
-    // Boilerplate
-    val code: String,
-    val language: String? = null
-) : ContentBlock() {
-    override val type = "code"
-}
-
-fun MutableList<ContentBlock>.addContentBlock(element: ContentBlock): Boolean {
-    this.add(element)
-    return true
-}
-
-fun MutableList<ContentBlock>.removeContentBlock(element: ContentBlock): Boolean {
-    this.remove(element)
-    return true
-}
 
 private fun MutableList<Note>.reindex() {
     var count = 0

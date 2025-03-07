@@ -9,6 +9,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.Icon
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -127,6 +128,79 @@ fun AddBoardDialog(
 }
 
 @Composable
+fun AddNoteDialog(
+    type: String,
+    onDismissRequest: () -> Unit,
+    onConfirmation: (boardName: String, boardDesc: String) -> Unit
+) {
+    var noteTitle by remember { mutableStateOf(TextFieldValue("")) }
+    var noteDesc by remember { mutableStateOf(TextFieldValue("")) }
+
+    var isError by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        icon = { Icons.Default.Add },
+        title = { Text(text = "Add ${type}") },
+        text = {
+            Column(modifier = Modifier.padding(16.dp)) {
+                // Input field for title
+                TextField(
+                    value = noteTitle,
+                    onValueChange = { newText ->
+                        noteTitle = newText
+                        isError = newText.text.isBlank()
+                    },
+                    label = { androidx.compose.material.Text("Note Title") },
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = isError,
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                // Input field for description
+                TextField(
+                    value = noteDesc,
+                    onValueChange = { noteDesc = it },
+                    label = { androidx.compose.material.Text("Note Description") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        onDismissRequest = {
+            onDismissRequest()
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    if (noteTitle.text.isBlank()) {
+                        isError = true
+                    }
+                    else {
+                        onConfirmation(
+                            noteTitle.text,
+                            noteDesc.text
+                        )
+                        noteTitle = TextFieldValue("")
+                        noteDesc = TextFieldValue("")
+                    }
+                }
+            ) {
+                Text("Add")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = {
+                    onDismissRequest()
+                    noteTitle = TextFieldValue("")
+                    noteDesc = TextFieldValue("")
+                }
+            ) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+@Composable
 fun EditBoardDialog(
     onDismissRequest: () -> Unit,
     onConfirmation: (boardName: String, boardDesc: String) -> Unit,
@@ -139,7 +213,7 @@ fun EditBoardDialog(
     var isError by remember { mutableStateOf(false) }
 
     AlertDialog(
-        icon = { Icons.Default.Add },
+        icon = { Icons.Default.Edit },
         title = { Text(text = "Edit Board") },
         text = {
             Column(modifier = Modifier.padding(16.dp)) {
@@ -193,6 +267,82 @@ fun EditBoardDialog(
                     onDismissRequest()
                     newBoardName = TextFieldValue("")
                     newBoardDesc = TextFieldValue("")
+                }
+            ) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+@Composable
+fun EditNoteDialog(
+    type: String,
+    onDismissRequest: () -> Unit,
+    onConfirmation: (noteTitle: String, noteDesc: String) -> Unit,
+    noteTitle: String,
+    noteDesc: String
+) {
+    var newNoteTitle by remember { mutableStateOf(TextFieldValue(noteTitle)) }
+    var newNoteDesc by remember { mutableStateOf(TextFieldValue(noteDesc)) }
+
+    var isError by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        icon = { Icons.Default.Add },
+        title = { Text(text = "Edit ${type}") },
+        text = {
+            Column(modifier = Modifier.padding(16.dp)) {
+                // Input field for title
+                TextField(
+                    value = newNoteTitle,
+                    onValueChange = { newText ->
+                        newNoteTitle = newText
+                        isError = newText.text.isBlank()
+                    },
+                    label = { androidx.compose.material.Text("Note Title") },
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = isError,
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                // Input field for description
+                TextField(
+                    value = newNoteDesc,
+                    onValueChange = { newNoteDesc = it },
+                    label = { androidx.compose.material.Text("Note Description") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        onDismissRequest = {
+            onDismissRequest()
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    if (newNoteTitle.text.isBlank()) {
+                        isError = true
+                    }
+                    else {
+                        onConfirmation(
+                            newNoteTitle.text,
+                            newNoteDesc.text
+                        )
+                        newNoteTitle = TextFieldValue("")
+                        newNoteDesc = TextFieldValue("")
+                    }
+                }
+            ) {
+                Text("Save")
+            }
+
+        },
+        dismissButton = {
+            TextButton(
+                onClick = {
+                    onDismissRequest()
+                    newNoteTitle = TextFieldValue("")
+                    newNoteDesc = TextFieldValue("")
                 }
             ) {
                 Text("Cancel")
