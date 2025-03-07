@@ -50,7 +50,7 @@ data class TextBlock (
 
 data class MarkdownBlock (
     // Boilerplate
-    val text: String = ""
+    var text: String = ""
 ) : ContentBlock() {
     override val type = BlockType.MARKDOWN
     override fun copyBlock(): ContentBlock {
@@ -62,7 +62,7 @@ data class MarkdownBlock (
 
 data class CodeBlock (
     // Boilerplate
-    val code: String = "",
+    var code: String = "",
     val language: String? = null
 ) : ContentBlock() {
     override val type = BlockType.CODE
