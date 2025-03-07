@@ -1,7 +1,5 @@
 package article.model
-import article.entities.BlockType
-import article.entities.ContentBlock
-import article.entities.TextBlock
+import article.entities.*
 import shared.IPublisher
 
 // NOTE: should pass in board probably
@@ -78,13 +76,18 @@ class ArticleModel() : IPublisher() {
         }
     }
 
-    // TODO: later
-    fun saveBlock(index: Int, text: String) {
+    // TODO: later (expand to other ContentBlock types)
+    fun saveBlock(index: Int, stringContent: String) {
         if (index in 0..(contentBlocks.size - 1)) {
             if (contentBlocks[index] is TextBlock) {
-                (contentBlocks[index] as TextBlock).text = text
-                notifySubscribers()
+                (contentBlocks[index] as TextBlock).text = stringContent
+            } else if (contentBlocks[index] is MarkdownBlock) {
+                (contentBlocks[index] as MarkdownBlock).text = stringContent
+            } else if (contentBlocks[index] is CodeBlock) {
+                (contentBlocks[index] as CodeBlock).code = stringContent
             }
+
+            notifySubscribers()
         }
     }
 }

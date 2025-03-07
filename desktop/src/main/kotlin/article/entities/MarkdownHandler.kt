@@ -27,7 +27,8 @@ class MarkdownHandler(private var rawString: String) {
 
 
     @Composable
-    fun renderMarkdown(){
+    fun renderMarkdown() {
+        println(rawString)
         // Renders markdown for ALL the nodes
         Column(
             modifier = Modifier

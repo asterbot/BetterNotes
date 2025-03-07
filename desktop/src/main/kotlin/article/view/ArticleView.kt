@@ -1,6 +1,7 @@
 package article.view
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -18,10 +19,7 @@ import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import article.entities.Article
-import article.entities.BlockType
-import article.entities.ContentBlock
-import article.entities.TextBlock
+import article.entities.*
 import boards.entities.Board
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
@@ -71,70 +69,81 @@ fun Article(board: Board, article: Article) {
             selectedBlock = null
         }
     )
-
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .clickable(
+                // passing in empty MutableInteractionSource means no ripple effect (i.e. box not grayed out when hovered over)
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) { selectedBlock = null }
     ) {
-        Text( // title
-            text = "Board ${board.name}",
-            fontSize = 30.sp,
-            fontWeight = FontWeight.Bold
-        )
-        Text( // article name
-            text = "Article ${article.title}",
-            fontSize = 20.sp
-        )
-
-        // row containing any useful functionality (as buttons)
-        Row( // TODO: buttons for main navigation (e.g. back to course, other articles, ...)
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            // insert TextBlock at beginning
-            Button(
-                onClick = { articleModel.addBlock(0, BlockType.PLAINTEXT) },
-            ) { Text(text="Insert TextBlock") }
-            Button(
-                onClick = {navigator.push(IndividualBoardScreen(board))}
-            ) { Text("Back to current course") }
-            Button(
-                onClick = {
-                    println("DEBUG (THE BLOCKS):")
-                    println("FROM MODEL: ${articleModel.contentBlocks}")
-                    println("FROM VIEWMODEL: ${articleViewModel.contentBlocksList}")
-                    debugState = !debugState
-                }
-            ) { Text(text="DEBUG") }
-        }
-
-        LazyColumn( // lazy column stores all blocks
-            modifier = Modifier.fillMaxSize().padding(25.dp),
+        Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
+            Text( // title
+                text = "Board ${board.name}",
+                fontSize = 30.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Text( // article name
+                text = "Article ${article.title}",
+                fontSize = 20.sp
+            )
 
-            itemsIndexed(
-                articleViewModel.contentBlocksList, // itemsIndexed iterates over this collection
-                key = { index: Int, block: ContentBlock -> block.id } // Jetpack Compose uses keys to track recompositions
-            ) { index: Int, block: ContentBlock -> {} // honestly I'm not sure what this does, but it's needed
-
-                BlockFrame(
-                    blockIndex = index,
-                    menuButtonFuncs = menuButtonFuncs,
-                    isSelected = (selectedBlock == index),
-                    onBlockClick = {
-                        // if currently selected, deselect (else, select as normal)
-                        selectedBlock = if (selectedBlock == index) null else index
-                        println("DEBUG: Selecting block at index $index")
-                    },
-                    selectAtIndex = ::selectAtIndex,
-                    debugState = debugState
-                )
+            // row containing any useful functionality (as buttons)
+            Row(
+                // TODO: buttons for main navigation (e.g. back to course, other articles, ...)
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                // insert TextBlock at beginning
+                Button(
+                    onClick = { articleModel.addBlock(0, BlockType.PLAINTEXT) },
+                ) { Text(text = "Insert TextBlock") }
+                Button(
+                    onClick = { navigator.push(IndividualBoardScreen(board)) }
+                ) { Text("Back to current course") }
+                Button(
+                    onClick = {
+                        println("DEBUG (THE BLOCKS):")
+                        println("FROM MODEL: ${articleModel.contentBlocks}")
+                        println("FROM VIEWMODEL: ${articleViewModel.contentBlocksList}")
+                        debugState = !debugState
+                    }
+                ) { Text(text = "DEBUG") }
             }
-        }
-        // if no blocks, set select index to null
-        if (articleViewModel.contentBlocksList.size == 0) {
-            selectedBlock = null
+
+            LazyColumn( // lazy column stores all blocks
+                modifier = Modifier.fillMaxSize().padding(25.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(20.dp)
+            ) {
+
+                itemsIndexed(
+                    articleViewModel.contentBlocksList, // itemsIndexed iterates over this collection
+                    key = { index: Int, block: ContentBlock -> block.id } // Jetpack Compose uses keys to track recompositions
+                ) { index: Int, block: ContentBlock ->
+                    {} // honestly I'm not sure what this does, but it's needed
+
+                    BlockFrame(
+                        blockIndex = index,
+                        menuButtonFuncs = menuButtonFuncs,
+                        isSelected = (selectedBlock == index),
+                        onBlockClick = {
+                            // if currently selected, deselect (else, select as normal)
+                            selectedBlock = if (selectedBlock == index) null else index
+                            println("DEBUG: Selecting block at index $index")
+                        },
+                        selectAtIndex = ::selectAtIndex,
+                        debugState = debugState
+                    )
+                }
+            }
+            // if no blocks, set select index to null
+            if (articleViewModel.contentBlocksList.size == 0) {
+                selectedBlock = null
+            }
         }
     }
 }
@@ -149,8 +158,6 @@ fun BlockFrame(
     debugState: Boolean
 ) {
     var block by remember { mutableStateOf(articleViewModel.contentBlocksList[blockIndex]) }
-    // TODO: abstract this for it to work generally for all ContentBlocks
-    var text by remember { mutableStateOf((block as? TextBlock)?.text ?: "") }
 
     Box(
         modifier = Modifier
@@ -177,12 +184,30 @@ fun BlockFrame(
                 }
 
                 // TODO: replace this with generalizable code for all ContentBlocks
-                EditableTextBox(
-                    startText = text,
-                    onTextChange = {
-                        articleModel.saveBlock(blockIndex, it)
+                if (block.type in
+                    listOf(
+                        BlockType.PLAINTEXT,
+                        BlockType.MARKDOWN,
+                        BlockType.CODE
+                    )) {
+                    if (!(block.type == BlockType.MARKDOWN && !isSelected)) {
+                        EditableTextBox(
+                            startText = when (block.type) {
+                                BlockType.PLAINTEXT -> (block as TextBlock).text
+                                BlockType.MARKDOWN -> (block as MarkdownBlock).text
+                                BlockType.CODE -> (block as CodeBlock).code
+                            },
+                            onTextChange = {
+                                articleModel.saveBlock(blockIndex, it)
+                            }
+                        )
                     }
-                )
+                }
+
+                if (block.type == BlockType.MARKDOWN && !isSelected) {
+                    val markdownHandler = MarkdownHandler((block as MarkdownBlock).text)
+                    markdownHandler.renderMarkdown()
+                }
 
                 if (isSelected) {
                     AddBlockFrameButton(blockIndex, "DOWN", selectAtIndex)
