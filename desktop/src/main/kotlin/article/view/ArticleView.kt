@@ -15,7 +15,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -47,9 +51,7 @@ fun Article(board: Board, article: Article) {
     var selectedBlock by remember { mutableStateOf<Int?>(null) }
     var debugState by remember { mutableStateOf(false) }
 
-    fun selectAtIndex(index: Int) {
-        selectedBlock = index
-    }
+    fun selectAtIndex(index: Int) { selectedBlock = index } // used with inserting blocks
 
     val menuButtonFuncs: Map<String, (Int) -> Unit> = mapOf(
         "Duplicate Block" to { index ->
@@ -192,11 +194,7 @@ fun BlockFrame(
                     )) {
                     if (!(block.type == BlockType.MARKDOWN && !isSelected)) {
                         EditableTextBox(
-                            startText = when (block.type) {
-                                BlockType.PLAINTEXT -> (block as TextBlock).text
-                                BlockType.MARKDOWN -> (block as MarkdownBlock).text
-                                BlockType.CODE -> (block as CodeBlock).code
-                            },
+                            block = block,
                             onTextChange = {
                                 articleModel.saveBlock(blockIndex, it)
                             }
@@ -220,12 +218,27 @@ fun BlockFrame(
 
 @Composable
 fun EditableTextBox(
-    startText: String = "",
+    block: ContentBlock,
     onTextChange: (String) -> Unit,
 ) {
+
+    var startText: String = when (block.type) {
+        BlockType.PLAINTEXT -> (block as TextBlock).text
+        BlockType.MARKDOWN -> (block as MarkdownBlock).text
+        BlockType.CODE -> (block as CodeBlock).code
+    }
+
     var textFieldValue by remember { mutableStateOf<String>(startText) }
     val focusRequester = remember { FocusRequester() } // Controls focus
 
+    var textStyle = when (block.type) {
+        BlockType.CODE -> TextStyle(
+            fontFamily = FontFamily.Monospace,
+            fontWeight = FontWeight.W200,
+            color = Color.Green
+        )
+        else -> TextStyle.Default
+    }
 
     Column(
         modifier = Modifier
@@ -239,10 +252,12 @@ fun EditableTextBox(
                 onTextChange(it)
             },
             modifier = Modifier
-                .background(Colors.white)
+                .background(if (block.type == BlockType.CODE) Colors.black else Colors.white)
                 .fillMaxWidth()
                 .focusRequester(focusRequester) // Attach focus requester to manage focus
-                .onKeyEvent { true } // prevents weird visual glitch from happening
+                .onKeyEvent { true }, // prevents weird visual glitch from happening
+            textStyle = textStyle,
+            cursorBrush = SolidColor(if (block.type == BlockType.CODE) Color.White else Color.Black)
         )
     }
 }
