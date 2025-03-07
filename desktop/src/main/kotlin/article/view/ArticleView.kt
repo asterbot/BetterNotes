@@ -16,7 +16,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.SolidColor
@@ -38,6 +37,8 @@ import shared.articleModel
 import shared.articleViewModel
 
 import androidx.compose.foundation.*
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.Dp
 
@@ -118,7 +119,21 @@ fun Article(board: Board, article: Article) {
                     onClick = {
                         println("DEBUG (THE BLOCKS):")
                         println("FROM MODEL: ${articleModel.contentBlocks}")
+                        for (contentBlock in articleModel.contentBlocks) {
+                            if (contentBlock.type == BlockType.CANVAS) {
+                                println("\tCANVAS HAS ${(contentBlock as CanvasBlock).paths.size} PATHS")
+                            } else {
+                                println("\t$contentBlock")
+                            }
+                        }
                         println("FROM VIEWMODEL: ${articleViewModel.contentBlocksList}")
+                        for (contentBlock in articleViewModel.contentBlocksList) {
+                            if (contentBlock.type == BlockType.CANVAS) {
+                                println("\tCANVAS HAS ${(contentBlock as CanvasBlock).paths.size} PATHS")
+                            } else {
+                                println("\t$contentBlock")
+                            }
+                        }
                         debugState = !debugState
                     }
                 ) { Text(text = "DEBUG") }
@@ -216,7 +231,11 @@ fun BlockFrame(
                 }
 
                 if (block.type == BlockType.CANVAS) {
-                    EditableCanvas(100.dp)
+                    EditableCanvas(
+                        100.dp,
+                        onCanvasUpdate = {
+                            articleModel.saveBlock(blockIndex, "", it)
+                        })
                 }
 
                 if (isSelected) {
@@ -227,37 +246,93 @@ fun BlockFrame(
         }
     }
 }
+
 @Composable
-fun EditableCanvas(canvasHeight: Dp) {
+fun EditableCanvas(
+    canvasHeight: Dp,
+    onCanvasUpdate: (MutableList<Path>) -> Unit
+) {
     val paths = remember { mutableStateListOf<Path>() }
     var currentPath by remember { mutableStateOf(Path()) }
-    var isDrawing by remember { mutableStateOf(false) } // Track if dragging is in progress
+    var isDrawing by remember { mutableStateOf(false) }
+    var isOutsideBox by remember { mutableStateOf(false) }
+    var isErasing by remember { mutableStateOf(false) } // Eraser mode toggle
+
 
     Box(
-        modifier = Modifier.fillMaxWidth().height(canvasHeight)
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(canvasHeight)
             .background(Color.White)
             .pointerInput(Unit) {
                 detectDragGestures(
                     onDragStart = { offset ->
-                        isDrawing = true // Start tracking the drawing
-                        currentPath = Path().apply { moveTo(offset.x, offset.y) }
+                        if (offset.x in 0f..size.width.toFloat() && offset.y in 0f..size.height.toFloat()) {
+                            isDrawing = true
+                            isOutsideBox = false
+
+                            if (isErasing) {
+                                // Erase paths near the cursor
+                                paths.removeAll { path -> isPointNearPath(offset, path) }
+                            } else {
+                                currentPath = Path().apply { moveTo(offset.x, offset.y) }
+                            }
+                        }
                     },
                     onDrag = { change, _ ->
-                        currentPath = Path().apply {
-                            addPath(currentPath) // Keep the previous path data
-                            lineTo(change.position.x, change.position.y)
+                        val boxWidth = size.width
+                        val boxHeight = size.height
+
+                        val isInside = change.position.x in 0f..boxWidth.toFloat() &&
+                                change.position.y in 0f..boxHeight.toFloat()
+
+                        if (isInside) {
+                            if (isErasing) {
+                                // Remove paths near the cursor position
+                                paths.removeAll { path -> isPointNearPath(change.position, path) }
+                            } else {
+                                if (isOutsideBox) {
+                                    currentPath = Path().apply { moveTo(change.position.x, change.position.y) }
+                                    isOutsideBox = false
+                                } else {
+                                    currentPath = Path().apply {
+                                        addPath(currentPath)
+                                        lineTo(change.position.x, change.position.y)
+                                    }
+                                }
+                            }
+                        } else {
+                            if (!isOutsideBox && !isErasing) {
+                                paths.add(currentPath)
+                                currentPath = Path()
+                                isOutsideBox = true
+                            }
                         }
                     },
                     onDragEnd = {
-                        isDrawing = false // Stop tracking
-                        paths.add(currentPath)
-                        currentPath = Path() // Reset for next drawing
+                        if (!isOutsideBox && !isErasing) {
+                            paths.add(currentPath)
+                            onCanvasUpdate(paths)
+                        }
+                        isDrawing = false
+                        currentPath = Path()
                     }
                 )
             }
+
     ) {
+        Button(
+            onClick = { isErasing = !isErasing },
+            colors = ButtonDefaults.buttonColors(
+                backgroundColor = Colors.medTeal,
+                contentColor = Colors.white
+            ),
+            shape = CircleShape,
+            contentPadding = PaddingValues(10.dp),
+        ) { Text(if (!isErasing) "Erase" else "Draw" ) }
+
+        // drawing the existing path
         Canvas(modifier = Modifier.fillMaxSize()) {
-            // Draw all completed paths
             paths.forEach { path ->
                 drawPath(
                     path = path,
@@ -265,8 +340,9 @@ fun EditableCanvas(canvasHeight: Dp) {
                     style = Stroke(width = 2f)
                 )
             }
-            // Draw the path currently being drawn
-            if (isDrawing) {
+
+            // drawing the dragging path
+            if (isDrawing && !isErasing) {
                 drawPath(
                     path = currentPath,
                     color = Color.Black,
@@ -274,9 +350,20 @@ fun EditableCanvas(canvasHeight: Dp) {
                 )
             }
         }
+
     }
 }
 
+fun isPointNearPath(point: Offset, path: Path, threshold: Float = 20f): Boolean {
+    val pathBounds = path.getBounds()
+    return (point.x in (pathBounds.left - threshold)..(pathBounds.right + threshold) &&
+            point.y in (pathBounds.top - threshold)..(pathBounds.bottom + threshold))
+}
+
+
+//fun Path.getBounds(): Rect {
+//    return this.getBounds()
+//}
 
 @Composable
 fun EditableTextBox(
