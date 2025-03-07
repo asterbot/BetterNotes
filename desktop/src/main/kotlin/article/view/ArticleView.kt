@@ -1,4 +1,6 @@
 package article.view
+
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -16,14 +18,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import article.entities.*
@@ -35,12 +40,6 @@ import individual_board.view.IndividualBoardScreen
 import shared.Colors
 import shared.articleModel
 import shared.articleViewModel
-
-import androidx.compose.foundation.*
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.unit.Dp
 
 
 data class ArticleScreen(
@@ -232,6 +231,7 @@ fun BlockFrame(
 
                 if (block.type == BlockType.CANVAS) {
                     EditableCanvas(
+                        block = block,
                         100.dp,
                         onCanvasUpdate = {
                             articleModel.saveBlock(blockIndex, "", it)
@@ -249,10 +249,16 @@ fun BlockFrame(
 
 @Composable
 fun EditableCanvas(
+    block: ContentBlock,
     canvasHeight: Dp,
     onCanvasUpdate: (MutableList<Path>) -> Unit
 ) {
-    val paths = remember { mutableStateListOf<Path>() }
+    var startPaths: MutableList<Path> = when (block.type) {
+        BlockType.CANVAS -> { (block as CanvasBlock).paths }
+        else -> mutableListOf()
+    }
+
+    val paths = remember { mutableStateListOf<Path>().apply { addAll(startPaths) } }
     var currentPath by remember { mutableStateOf(Path()) }
     var isDrawing by remember { mutableStateOf(false) }
     var isOutsideBox by remember { mutableStateOf(false) }
@@ -304,6 +310,7 @@ fun EditableCanvas(
                         } else {
                             if (!isOutsideBox && !isErasing) {
                                 paths.add(currentPath)
+                                onCanvasUpdate(paths)
                                 currentPath = Path()
                                 isOutsideBox = true
                             }
@@ -375,7 +382,7 @@ fun EditableTextBox(
         BlockType.PLAINTEXT -> (block as TextBlock).text
         BlockType.MARKDOWN -> (block as MarkdownBlock).text
         BlockType.CODE -> (block as CodeBlock).code
-        BlockType.CANVAS -> ""
+        else -> ""
     }
 
     var textFieldValue by remember { mutableStateOf<String>(startText) }
