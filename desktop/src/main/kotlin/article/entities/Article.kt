@@ -3,29 +3,10 @@ package article.entities
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Path
 import individual_board.entities.Note
+import org.bson.types.ObjectId
 import java.util.*
 
 /* Articles */
-
-class Article(
-    id: Int = 0,
-    title: String,
-    desc: String,
-    parentNotes: MutableList<Note>? = null,
-    relatedNotes: MutableList<Note>? = null,
-    var contentBlocks: MutableList<ContentBlock> = mutableListOf()
-) : Note(id, title, desc, parentNotes, relatedNotes) {
-    override fun copy(title: String, desc: String): Article {
-        return Article(
-            id = this.id,
-            title = title,
-            desc = desc,
-            parentNotes = this.parentNotes,
-            relatedNotes = this.relatedNotes,
-            contentBlocks = this.contentBlocks.map { it.copyBlock() }.toMutableList()
-        )
-    }
-}
 
 // Content Blocks
 

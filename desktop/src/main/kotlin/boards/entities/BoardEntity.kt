@@ -1,22 +1,31 @@
 package boards.entities
 
+import individual_board.entities.Note
+import kotlinx.serialization.*
+import kotlinx.serialization.json.Json
+import org.bson.codecs.kotlinx.ObjectIdSerializer
+import org.bson.codecs.pojo.annotations.BsonProperty
+import org.bson.types.ObjectId
+
 // Entities holds the main data for the class and provides manipulator functions
 
-data class Board(
-    var id: Int = 0,
+@Serializable
+data class Board @OptIn(ExperimentalSerializationApi::class) constructor(
+    @SerialName("_id")
+    @Contextual var id: ObjectId,
     var name: String,
     var desc: String,
+    // For some reason we need to serialize each objectId independently when storing in lists?
+    @Contextual var notes: List<@Serializable(with = ObjectIdSerializer::class) ObjectId> = mutableListOf(),
 )
 
 fun MutableList<Board>.addBoard(element: Board): Boolean {
     this.add(element)
-    this.reindex()
     return true
 }
 
 fun MutableList<Board>.removeBoard(element: Board): Boolean {
     this.remove(element)
-    this.reindex()
     return true
 }
 
@@ -25,11 +34,4 @@ fun MutableList<Board>.updateBoard(element: Board, name: String, desc: String): 
     if (index == -1) return false
     this[index] = element.copy(name = name, desc = desc)
     return true
-}
-
-private fun MutableList<Board>.reindex() {
-    var count = 1
-    for (board in this) {
-        board.id = count++
-    }
 }
