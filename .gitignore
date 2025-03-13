@@ -45,5 +45,6 @@ bin/
 ### Mac OS ###
 .DS_Store
 
-## .env ##
+### Environment Variables ###
 desktop/.env
+.env

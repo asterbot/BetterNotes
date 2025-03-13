@@ -4,6 +4,7 @@ plugins {
     kotlin("jvm")
     id("org.jetbrains.compose")
     id("org.jetbrains.kotlin.plugin.compose")
+    kotlin("plugin.serialization") version "1.9.0"
 }
 
 group = "ca.uwaterloo"
@@ -28,6 +29,22 @@ dependencies {
     implementation("org.jetbrains:markdown-jvm:0.7.3")
     implementation(compose.material3)
 
+    // Kotlin coroutine dependency
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
+    // MongoDB Kotlin driver dependency
+    implementation("org.mongodb:mongodb-driver-kotlin-coroutine:4.11.1")
+
+    implementation("org.mongodb:bson-kotlinx:4.10.1")
+    // For logging from Mongo's side
+    implementation("org.slf4j:slf4j-simple:2.0.7")
+
+    // DotEnv file reader
+    implementation("io.github.cdimascio:dotenv-kotlin:6.5.1")
+
+    // JSON serialization library
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
+
+
     testImplementation(kotlin("test"))
 }
 
@@ -42,6 +59,7 @@ compose.desktop {
         mainClass = "MainKt"
 
         nativeDistributions {
+            includeAllModules = true
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "cs-346-project"
             packageVersion = "1.0.0"

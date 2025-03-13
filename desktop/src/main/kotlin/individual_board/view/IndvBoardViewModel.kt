@@ -4,9 +4,10 @@ import androidx.compose.runtime.mutableStateMapOf
 import shared.ISubscriber
 import individual_board.model.IndvBoardModel;
 import individual_board.entities.Note
+import org.bson.types.ObjectId
 
 
-class IndvBoardViewModel(private val model: IndvBoardModel, val boardId: Int): ISubscriber {
+class IndvBoardViewModel(private val model: IndvBoardModel, val boardId: ObjectId?): ISubscriber {
     val noteList = mutableStateListOf<Note>()
 
     init{
