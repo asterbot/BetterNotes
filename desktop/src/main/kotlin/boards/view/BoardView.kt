@@ -21,6 +21,7 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import individual_board.view.IndividualBoardScreen
+import org.bson.types.ObjectId
 import shared.*
 
 class BoardViewScreen: Screen{
@@ -80,13 +81,11 @@ fun BoardsView() {
     val boardToDelete = remember { mutableStateOf<Board?>(null) }
 
     fun addBoard(name: String, desc: String) {
-        boardModel.add(Board(boardModel.newBoardId(), name, desc))
-        individualBoardModel.addBlankBoard(boardModel.newBoardId())
+        boardModel.add(Board(ObjectId(), name, desc))
     }
 
     fun deleteBoard(board: Board) {
         boardModel.del(board)
-        individualBoardModel.removeBoard(board.id)
     }
 
     fun editBoard(board: Board, name: String, desc: String) {

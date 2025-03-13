@@ -36,24 +36,24 @@ import boards.entities.Board
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import individual_board.entities.Note
 import individual_board.view.IndividualBoardScreen
 import shared.Colors
 import shared.articleModel
 import shared.articleViewModel
 
-
 data class ArticleScreen(
     val board: Board,
-    val article: Article
+    val article: Note
 ): Screen{
     @Composable
     override fun Content() {
-        Article(board, article)
+        ArticleCompose(board, article)
     }
 }
 
 @Composable
-fun Article(board: Board, article: Article) {
+fun ArticleCompose(board: Board, article: Note) {
     var articleViewModel by remember { mutableStateOf(articleViewModel) }
     val navigator = LocalNavigator.currentOrThrow
     var selectedBlock by remember { mutableStateOf<Int?>(null) }

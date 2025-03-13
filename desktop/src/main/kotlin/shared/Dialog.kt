@@ -277,7 +277,7 @@ fun EditBoardDialog(
 
 @Composable
 fun EditNoteDialog(
-    type: String,
+    type: String?,
     onDismissRequest: () -> Unit,
     onConfirmation: (noteTitle: String, noteDesc: String) -> Unit,
     noteTitle: String,

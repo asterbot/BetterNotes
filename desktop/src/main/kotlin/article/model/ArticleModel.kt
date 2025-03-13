@@ -1,14 +1,23 @@
 package article.model
 import androidx.compose.ui.graphics.Path
 import article.entities.*
+import org.bson.types.ObjectId
+import shared.ConnectionManager
 import shared.IPublisher
+import shared.persistence.IPersistence
 import java.awt.Canvas
 
 // NOTE: should pass in board probably
-class ArticleModel() : IPublisher() {
+class ArticleModel(val persistence: IPersistence) : IPublisher() {
     var contentBlocks = mutableListOf<ContentBlock>()
+    // maps Article ID to list of content blocks
+    var contentBlockDict = mutableMapOf<ObjectId, MutableList<ContentBlock>>()
 
     init {
+        persistence.connect()
+        if (ConnectionManager.isConnected){
+            // TODO: Load data from DB
+        }
         println("DEBUG: initialized ArticleModel")
     }
 
