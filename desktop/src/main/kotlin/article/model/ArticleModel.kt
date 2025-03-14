@@ -6,6 +6,7 @@ import shared.ConnectionManager
 import shared.IPublisher
 import shared.persistence.IPersistence
 import java.awt.Canvas
+import javax.swing.text.StringContent
 
 // NOTE: should pass in board probably
 class ArticleModel(val persistence: IPersistence) : IPublisher() {
@@ -90,6 +91,8 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
             } else if (contentBlocks[index] is CanvasBlock) {
                 (contentBlocks[index] as CanvasBlock).paths = pathsContent
                 // var paths: MutableList<Path> = mutableListOf<Path>()
+            } else if (contentBlocks[index] is MathBlock) {
+                (contentBlocks[index] as MathBlock).text = stringContent
             }
 
             notifySubscribers()
