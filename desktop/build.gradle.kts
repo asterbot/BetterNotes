@@ -11,6 +11,7 @@ group = "ca.uwaterloo"
 version = "0.10"
 
 repositories {
+    maven("https://repo.kotlin.link")
     mavenCentral()
     maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
     google()
@@ -44,7 +45,15 @@ dependencies {
     // JSON serialization library
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
 
+    // KMath libraries
+    implementation("space.kscience:kmath-ast:0.4.2")
 
+    // Scilab
+    implementation("org.scilab.forge:jlatexmath:1.0.7")
+    implementation("org.jetbrains.compose.ui:ui-graphics-desktop:1.5.0")
+
+    implementation("org.scilab.forge:jlatexmath:1.0.7")
+    
     testImplementation(kotlin("test"))
 }
 

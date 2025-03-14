@@ -20,7 +20,6 @@ import cafe.adriel.voyager.navigator.CurrentScreen
 import boards.view.BoardViewScreen
 import shared.*
 
-// Shared data
 
 fun main() {
     application {

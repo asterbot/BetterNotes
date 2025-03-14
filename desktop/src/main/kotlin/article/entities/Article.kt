@@ -24,6 +24,9 @@ enum class BlockType(
     ),
     CANVAS(
         { CanvasBlock() }
+    ),
+    MATH(
+        { MathBlock() }
     )
 }
 
@@ -76,6 +79,17 @@ data class CanvasBlock (
     override val type = BlockType.CANVAS
     override fun copyBlock(): ContentBlock {
         return CanvasBlock(paths).apply { this.id = UUID.randomUUID() }
+    }
+}
+
+data class MathBlock(
+    var text: String = "",
+): ContentBlock() {
+    override val type = BlockType.MATH
+    override fun copyBlock(): ContentBlock {
+        return MathBlock(text).apply {
+            this.id = UUID.randomUUID()
+        }
     }
 }
 
