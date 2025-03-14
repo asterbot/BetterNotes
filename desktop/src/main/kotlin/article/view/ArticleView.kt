@@ -1,5 +1,6 @@
 package article.view
 
+import LatexRenderer
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -41,6 +42,9 @@ import individual_board.view.IndividualBoardScreen
 import shared.Colors
 import shared.articleModel
 import shared.articleViewModel
+import space.kscience.kmath.ast.*
+import space.kscience.kmath.ast.rendering.*
+import space.kscience.kmath.misc.*
 
 data class ArticleScreen(
     val board: Board,
@@ -212,9 +216,10 @@ fun BlockFrame(
                     listOf(
                         BlockType.PLAINTEXT,
                         BlockType.MARKDOWN,
-                        BlockType.CODE
+                        BlockType.CODE,
+                        BlockType.MATH
                     )) {
-                    if (!(block.type == BlockType.MARKDOWN && !isSelected)) {
+                    if (!((block.type == BlockType.MARKDOWN || block.type == BlockType.MATH) && !isSelected)) {
                         EditableTextBox(
                             block = block,
                             onTextChange = {
@@ -228,6 +233,23 @@ fun BlockFrame(
                     val markdownHandler = MarkdownHandler((block as MarkdownBlock).text)
                     markdownHandler.renderMarkdown()
                 }
+
+                if (block.type == BlockType.MATH && !isSelected) {
+                    // Render math here
+                    var latex = ""
+                    try{
+                        // Try to parse the "flaky" math
+                        val rawMath = ((block as MathBlock).text).parseMath()
+                        val syntax = FeaturedMathRendererWithPostProcess.Default.render(rawMath)
+                        latex = LatexSyntaxRenderer.renderWithStringBuilder(syntax)
+                    }
+                    catch(e: Exception){
+                        // Parsing error, render latex as is
+                        latex = (block as MathBlock).text
+                    }
+                    LatexRenderer(latex)
+                }
+
 
                 if (block.type == BlockType.CANVAS) {
                     EditableCanvas(
@@ -382,6 +404,7 @@ fun EditableTextBox(
         BlockType.PLAINTEXT -> (block as TextBlock).text
         BlockType.MARKDOWN -> (block as MarkdownBlock).text
         BlockType.CODE -> (block as CodeBlock).code
+        BlockType.MATH -> (block as MathBlock).text
         else -> ""
     }
 
