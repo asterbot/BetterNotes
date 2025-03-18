@@ -320,8 +320,12 @@ fun addMedia() {
         }
     }
 
-    Column {
-        Button(onClick = { launcher.launch() }) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+    ) {
+        Button(
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+            onClick = { launcher.launch() }) {
             Text("Pick a file")
         }
 
@@ -333,7 +337,8 @@ fun addMedia() {
                 val imageBitmap = org.jetbrains.skia.Image.makeFromEncoded(imageBytes).toComposeImageBitmap()
                 Image(
                     painter = BitmapPainter(image = imageBitmap),
-                    contentDescription = "everyone's favorite bird"
+                    contentDescription = "everyone's favorite bird",
+                    modifier = Modifier.fillMaxSize()
                 )
             } else {
                 Text(text = "File not found.")
