@@ -45,6 +45,8 @@ dependencies {
     // JSON serialization library
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
 
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.0")
+
     // KMath libraries
     implementation("space.kscience:kmath-ast:0.4.2")
 

@@ -37,14 +37,17 @@ import boards.entities.Board
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import com.mongodb.Block
 import individual_board.entities.Note
 import individual_board.view.IndividualBoardScreen
+import org.bson.types.Code
 import shared.Colors
 import shared.articleModel
 import shared.articleViewModel
-import space.kscience.kmath.ast.*
-import space.kscience.kmath.ast.rendering.*
-import space.kscience.kmath.misc.*
+import space.kscience.kmath.ast.parseMath
+import space.kscience.kmath.ast.rendering.FeaturedMathRendererWithPostProcess
+import space.kscience.kmath.ast.rendering.LatexSyntaxRenderer
+import space.kscience.kmath.ast.rendering.renderWithStringBuilder
 
 data class ArticleScreen(
     val board: Board,
@@ -58,8 +61,12 @@ data class ArticleScreen(
 
 @Composable
 fun ArticleCompose(board: Board, article: Note) {
-    var articleViewModel by remember { mutableStateOf(articleViewModel) }
     val navigator = LocalNavigator.currentOrThrow
+
+    articleViewModel = ArticleViewModel(articleModel, article.id)
+
+    var contentBlocksList by remember { mutableStateOf(articleViewModel) }
+
     var selectedBlock by remember { mutableStateOf<Int?>(null) }
     var debugState by remember { mutableStateOf(false) }
 
@@ -67,19 +74,20 @@ fun ArticleCompose(board: Board, article: Note) {
 
     val menuButtonFuncs: Map<String, (Int) -> Unit> = mapOf(
         "Duplicate Block" to { index ->
-            articleModel.duplicateBlock(index)
+            articleModel.duplicateBlock(index, article)
+            // articleModel.duplicateBlock(index, article)
             selectedBlock = index + 1
         },
         "Move Block Up" to { index ->
-            articleModel.moveBlockUp(index)
+            articleModel.moveBlockUp(index, article)
             selectedBlock = index - 1
         },
         "Move Block Down" to { index ->
-            articleModel.moveBlockDown(index)
+            articleModel.moveBlockDown(index, article)
             selectedBlock = index + 1
         },
         "Delete Block" to { index ->
-            articleModel.deleteBlock(index)
+            articleModel.deleteBlock(index, article)
             selectedBlock = null
         }
     )
@@ -113,7 +121,7 @@ fun ArticleCompose(board: Board, article: Note) {
             ) {
                 // insert TextBlock at beginning
                 Button(
-                    onClick = { articleModel.addBlock(0, BlockType.PLAINTEXT) },
+                    onClick = { articleModel.addBlock(0, BlockType.PLAINTEXT, article) },
                 ) { Text(text = "Insert TextBlock") }
                 Button(
                     onClick = { navigator.push(IndividualBoardScreen(board)) }
@@ -121,17 +129,19 @@ fun ArticleCompose(board: Board, article: Note) {
                 Button(
                     onClick = {
                         println("DEBUG (THE BLOCKS):")
-                        println("FROM MODEL: ${articleModel.contentBlocks}")
-                        for (contentBlock in articleModel.contentBlocks) {
-                            if (contentBlock.type == BlockType.CANVAS) {
-                                println("\tCANVAS HAS ${(contentBlock as CanvasBlock).paths.size} PATHS")
-                            } else {
-                                println("\t$contentBlock")
+                        println("FROM MODEL: ${articleModel.contentBlockDict}")
+                        articleModel.contentBlockDict[article.id]?.let {articleContentBlocks ->
+                            for (contentBlock in articleContentBlocks) {
+                                if (contentBlock.blockType == BlockType.CANVAS) {
+                                    println("\tCANVAS HAS ${(contentBlock as CanvasBlock).paths.size} PATHS")
+                                } else {
+                                    println("\t$contentBlock")
+                                }
                             }
                         }
-                        println("FROM VIEWMODEL: ${articleViewModel.contentBlocksList}")
-                        for (contentBlock in articleViewModel.contentBlocksList) {
-                            if (contentBlock.type == BlockType.CANVAS) {
+                        println("FROM VIEWMODEL: ${contentBlocksList.contentBlocksList}")
+                        for (contentBlock in contentBlocksList.contentBlocksList) {
+                            if (contentBlock.blockType == BlockType.CANVAS) {
                                 println("\tCANVAS HAS ${(contentBlock as CanvasBlock).paths.size} PATHS")
                             } else {
                                 println("\t$contentBlock")
@@ -149,12 +159,13 @@ fun ArticleCompose(board: Board, article: Note) {
             ) {
 
                 itemsIndexed(
-                    articleViewModel.contentBlocksList, // itemsIndexed iterates over this collection
+                    contentBlocksList.contentBlocksList, // itemsIndexed iterates over this collection
                     key = { index: Int, block: ContentBlock -> block.id } // Jetpack Compose uses keys to track recompositions
                 ) { index: Int, block: ContentBlock ->
                     {} // honestly I'm not sure what this does, but it's needed
 
                     BlockFrame(
+                        article = article,
                         blockIndex = index,
                         menuButtonFuncs = menuButtonFuncs,
                         isSelected = (selectedBlock == index),
@@ -169,7 +180,7 @@ fun ArticleCompose(board: Board, article: Note) {
                 }
             }
             // if no blocks, set select index to null
-            if (articleViewModel.contentBlocksList.size == 0) {
+            if (contentBlocksList.contentBlocksList.size == 0) {
                 selectedBlock = null
             }
         }
@@ -178,6 +189,7 @@ fun ArticleCompose(board: Board, article: Note) {
 
 @Composable
 fun BlockFrame(
+    article: Note,
     blockIndex: Int,
     menuButtonFuncs: Map<String, (Int) -> Unit>,
     isSelected: Boolean,
@@ -208,33 +220,40 @@ fun BlockFrame(
             ) {
 
                 if (isSelected) {
-                    AddBlockFrameButton(blockIndex, "UP", selectAtIndex)
+                    AddBlockFrameButton(article, blockIndex, "UP", selectAtIndex)
                 }
 
                 // TODO: replace this with generalizable code for all ContentBlocks
-                if (block.type in
+                if (block.blockType in
                     listOf(
                         BlockType.PLAINTEXT,
                         BlockType.MARKDOWN,
                         BlockType.CODE,
                         BlockType.MATH
                     )) {
-                    if (!((block.type == BlockType.MARKDOWN || block.type == BlockType.MATH) && !isSelected)) {
+                    if (!((block.blockType == BlockType.MARKDOWN || block.blockType == BlockType.MATH) && !isSelected)) {
                         EditableTextBox(
                             block = block,
                             onTextChange = {
-                                articleModel.saveBlock(blockIndex, it)
+                                if (block.blockType == BlockType.CODE){
+                                    articleModel.saveBlock(blockIndex, stringContent = it, article = article,
+                                        language = (block as CodeBlock).language)
+                                }
+                                else {
+                                    articleModel.saveBlock(blockIndex, stringContent = it, article = article)
+                                }
                             }
                         )
                     }
                 }
 
-                if (block.type == BlockType.MARKDOWN && !isSelected) {
+
+                if (block.blockType == BlockType.MARKDOWN && !isSelected) {
                     val markdownHandler = MarkdownHandler((block as MarkdownBlock).text)
                     markdownHandler.renderMarkdown()
                 }
 
-                if (block.type == BlockType.MATH && !isSelected) {
+                if (block.blockType == BlockType.MATH && !isSelected) {
                     // Render math here
                     var latex = ""
                     try{
@@ -251,17 +270,17 @@ fun BlockFrame(
                 }
 
 
-                if (block.type == BlockType.CANVAS) {
+                if (block.blockType == BlockType.CANVAS) {
                     EditableCanvas(
                         block = block,
                         100.dp,
                         onCanvasUpdate = {
-                            articleModel.saveBlock(blockIndex, "", it)
+                            articleModel.saveBlock(blockIndex, pathsContent=it, article=article)
                         })
                 }
 
                 if (isSelected) {
-                    AddBlockFrameButton(blockIndex, "DOWN", selectAtIndex)
+                    AddBlockFrameButton(article, blockIndex, "DOWN", selectAtIndex)
                 }
 
             }
@@ -275,7 +294,7 @@ fun EditableCanvas(
     canvasHeight: Dp,
     onCanvasUpdate: (MutableList<Path>) -> Unit
 ) {
-    var startPaths: MutableList<Path> = when (block.type) {
+    var startPaths: MutableList<Path> = when (block.blockType) {
         BlockType.CANVAS -> { (block as CanvasBlock).paths }
         else -> mutableListOf()
     }
@@ -400,10 +419,10 @@ fun EditableTextBox(
     onTextChange: (String) -> Unit,
 ) {
 
-    var startText: String = when (block.type) {
+    var startText: String = when (block.blockType) {
         BlockType.PLAINTEXT -> (block as TextBlock).text
         BlockType.MARKDOWN -> (block as MarkdownBlock).text
-        BlockType.CODE -> (block as CodeBlock).code
+        BlockType.CODE -> (block as CodeBlock).text
         BlockType.MATH -> (block as MathBlock).text
         else -> ""
     }
@@ -411,7 +430,7 @@ fun EditableTextBox(
     var textFieldValue by remember { mutableStateOf<String>(startText) }
     val focusRequester = remember { FocusRequester() } // Controls focus
 
-    var textStyle = when (block.type) {
+    var textStyle = when (block.blockType) {
         BlockType.CODE -> TextStyle(
             fontFamily = FontFamily.Monospace,
             fontWeight = FontWeight.W200,
@@ -432,12 +451,12 @@ fun EditableTextBox(
                 onTextChange(it)
             },
             modifier = Modifier
-                .background(if (block.type == BlockType.CODE) Colors.black else Colors.white)
+                .background(if (block.blockType == BlockType.CODE) Colors.black else Colors.white)
                 .fillMaxWidth()
                 .focusRequester(focusRequester) // Attach focus requester to manage focus
                 .onKeyEvent { true }, // prevents weird visual glitch from happening
             textStyle = textStyle,
-            cursorBrush = SolidColor(if (block.type == BlockType.CODE) Color.White else Color.Black)
+            cursorBrush = SolidColor(if (block.blockType == BlockType.CODE) Color.White else Color.Black)
         )
     }
 }
@@ -477,7 +496,7 @@ fun BlockFrameMenu(index: Int, buttonFuncs: Map<String, (Int) -> Unit>) {
 
 
 @Composable
-fun AddBlockFrameButton(index: Int, direction: String, selectAtIndex: (Int) -> Unit) {
+fun AddBlockFrameButton(article: Note, index: Int, direction: String, selectAtIndex: (Int) -> Unit) {
     // these buttons add a new (empty) ContentBlock above/below (depends on direction) the currently selected block
     // by default, insertBlock() creates a new Text block (assume that people use this the most)
     var showBlockTypes by remember { mutableStateOf(false) }
@@ -492,11 +511,11 @@ fun AddBlockFrameButton(index: Int, direction: String, selectAtIndex: (Int) -> U
         contentPadding = PaddingValues(10.dp),
     ) { Text(text = "+", fontSize = 20.sp) }
 
-    if (showBlockTypes) { InsertBlockTypesMenu(index, direction, selectAtIndex) }
+    if (showBlockTypes) { InsertBlockTypesMenu(article, index, direction, selectAtIndex) }
 }
 
 @Composable
-fun InsertBlockTypesMenu(index: Int, direction: String, selectAtIndex: (Int) -> Unit) {
+fun InsertBlockTypesMenu(article: Note, index: Int, direction: String, selectAtIndex: (Int) -> Unit) {
     val atAddIndex = when (direction) {
         "UP" -> index
         else -> index + 1 // the "DOWN" case
@@ -510,7 +529,7 @@ fun InsertBlockTypesMenu(index: Int, direction: String, selectAtIndex: (Int) -> 
         for (type in BlockType.entries) {
             Button(
                 onClick = {
-                    articleModel.addBlock(atAddIndex, type)
+                    articleModel.addBlock(atAddIndex, type, article)
                     selectAtIndex(atAddIndex)
                 }
             ) {
