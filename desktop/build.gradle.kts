@@ -55,12 +55,18 @@ dependencies {
     implementation("org.jetbrains.compose.ui:ui-graphics-desktop:1.5.0")
 
     implementation("org.scilab.forge:jlatexmath:1.0.7")
+
+    // File Picker
+    implementation("io.github.vinceglb:filekit-core:0.10.0-beta01")
+    implementation("io.github.vinceglb:filekit-coil:0.10.0-beta01")
+    implementation("io.github.vinceglb:filekit-dialogs:0.10.0-beta01")
+    implementation("io.github.vinceglb:filekit-dialogs-compose:0.10.0-beta01")
+//    implementation("io.github.vinceglb:filekit-core:$version")
+//    implementation("io.github.vinceglb:filekit-dialogs:$version")
+//    implementation("io.github.vinceglb:filekit-dialogs-compose:$version")
+//    implementation("io.github.vinceglb:filekit-coil:$version")
     
     testImplementation(kotlin("test"))
-
-    implementation("io.github.vinceglb:filekit-compose:0.8.8")
-
-    implementation("com.darkrockstudios:mpfilepicker:3.1.0")
 }
 
 tasks.test {

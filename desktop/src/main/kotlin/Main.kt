@@ -20,8 +20,12 @@ import cafe.adriel.voyager.navigator.CurrentScreen
 import boards.view.BoardViewScreen
 import shared.*
 
+// Filekit (delete "core" from import and don't use $verison in dependency)
+import io.github.vinceglb.filekit.FileKit
 
 fun main() {
+    // Initialize FileKit
+    FileKit.init(appId = "cs-346-project")
     application {
         Window(onCloseRequest = ::exitApplication) {
             // Starting screen
