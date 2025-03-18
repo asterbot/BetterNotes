@@ -1,14 +1,12 @@
 package individual_board.model
+//import individual_board.entities.Section
 import boards.entities.Board
 import individual_board.entities.Note
-import individual_board.entities.addNote
 import individual_board.entities.removeNote
-//import individual_board.entities.Section
 import org.bson.types.ObjectId
-import article.entities.*
 import shared.ConnectionManager
 import shared.IPublisher
-import shared.boardModel
+import shared.articleModel
 import shared.persistence.IPersistence
 
 
@@ -39,6 +37,10 @@ class IndvBoardModel(val persistence: IPersistence) : IPublisher() {
     fun addNote(note: Note, board: Board) {
         noteDict[board.id]?.add(note)
         board.notes += note.id
+
+        if (note.type == "article") {
+            articleModel.contentBlockDict[note.id]= mutableListOf()
+        }
 
         if (ConnectionManager.isConnected){
             persistence.addNote(board,note)

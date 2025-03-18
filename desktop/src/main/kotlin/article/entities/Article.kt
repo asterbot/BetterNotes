@@ -1,10 +1,9 @@
 package article.entities
 
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Path
-import individual_board.entities.Note
+import kotlinx.serialization.*
+import org.bson.codecs.kotlinx.ObjectIdSerializer
 import org.bson.types.ObjectId
-import java.util.*
 
 /* Articles */
 
@@ -30,65 +29,79 @@ enum class BlockType(
     )
 }
 
+@Serializable
 sealed class ContentBlock {
-    abstract val type: BlockType
-    var id: UUID = UUID.randomUUID()
+    abstract val blockType: BlockType
+    @SerialName("_id")
+    @Contextual abstract var id: ObjectId
     abstract fun copyBlock(): ContentBlock
 }
 
-data class TextBlock (
-    // Boilerplate
+@Serializable
+data class TextBlock @OptIn(ExperimentalSerializationApi::class) constructor(
+    @SerialName("_id")
+    @Serializable(with = ObjectIdSerializer::class) override var id: ObjectId = ObjectId(),
     var text: String = ""
 ) : ContentBlock() {
-    override val type = BlockType.PLAINTEXT
+    override val blockType = BlockType.PLAINTEXT
     override fun copyBlock(): ContentBlock {
-        return TextBlock(text).apply {
-            this.id = UUID.randomUUID()  // Assign new ID
+        return TextBlock(text=text).apply {
+            this.id = ObjectId()  // Assign new ID
         }
     }
 }
 
+@Serializable
 data class MarkdownBlock (
-    // Boilerplate
+    @SerialName("_id")
+    @Contextual override var id: ObjectId = ObjectId(),
     var text: String = ""
 ) : ContentBlock() {
-    override val type = BlockType.MARKDOWN
+    override val blockType = BlockType.MARKDOWN
     override fun copyBlock(): ContentBlock {
-        return MarkdownBlock(text).apply {
-            this.id = UUID.randomUUID()  // Assign new ID
+        return MarkdownBlock(text=text).apply {
+            this.id = ObjectId()  // Assign new ID
         }
     }
 }
 
+@Serializable
 data class CodeBlock (
-    // Boilerplate
-    var code: String = "",
-    val language: String? = null
+    @SerialName("_id")
+    @Contextual override var id: ObjectId = ObjectId(),
+    var text: String = "",
+    val language: String = "kotlin",
 ) : ContentBlock() {
-    override val type = BlockType.CODE
+    override val blockType = BlockType.CODE
     override fun copyBlock(): ContentBlock {
-        return CodeBlock(code, language).apply {
-            this.id = UUID.randomUUID()  // Assign new ID
+        return CodeBlock(text=text, language=language).apply {
+            this.id = ObjectId()  // Assign new ID
         }
     }
 }
 
+@Serializable
 data class CanvasBlock (
+    @SerialName("_id")
+    @Contextual override var id: ObjectId = ObjectId(),
     var paths: MutableList<Path> = mutableListOf<Path>(),
 ) : ContentBlock() {
-    override val type = BlockType.CANVAS
+    override val blockType = BlockType.CANVAS
     override fun copyBlock(): ContentBlock {
-        return CanvasBlock(paths).apply { this.id = UUID.randomUUID() }
+        return CanvasBlock(paths=paths).apply { this.id = ObjectId() }
     }
 }
 
+@Serializable
 data class MathBlock(
+    @SerialName("_id")
+    @Contextual override var id: ObjectId = ObjectId(),
     var text: String = "",
 ): ContentBlock() {
-    override val type = BlockType.MATH
+    override val blockType = BlockType.MATH
     override fun copyBlock(): ContentBlock {
-        return MathBlock(text).apply {
-            this.id = UUID.randomUUID()
+        return MathBlock(text=text).apply {
+            this.id = ObjectId()
         }
     }
 }
