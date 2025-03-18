@@ -1,9 +1,11 @@
 package shared.persistence
 
+import androidx.compose.ui.graphics.Path
+import article.entities.*
 import boards.entities.Board
 import com.mongodb.MongoException
+import com.mongodb.client.model.DropCollectionOptions
 import com.mongodb.client.model.Filters
-import com.mongodb.client.model.Filters.eq
 import com.mongodb.client.model.Updates
 import com.mongodb.kotlin.client.coroutine.MongoClient
 import com.mongodb.kotlin.client.coroutine.MongoCollection
@@ -11,9 +13,10 @@ import com.mongodb.kotlin.client.coroutine.MongoDatabase
 import individual_board.entities.Note
 import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.forEach
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import org.bson.Document
 import org.bson.types.ObjectId
 import shared.ConnectionManager
 
@@ -34,6 +37,12 @@ class DBStorage() :IPersistence {
     private lateinit var boardsCollection: MongoCollection<Board>
     private lateinit var notesCollection: MongoCollection<Note>
 
+    // We need both collections since reading to polymorphic types requires de-serializing
+    //   however adding can be done as is done for the other types
+    private lateinit var contentBlocksDocumentCollection: MongoCollection<Document>
+    private lateinit var contentBlockCollection: MongoCollection<ContentBlock>
+
+
     override fun connect(): Boolean {
         try {
             mongoClient = MongoClient.create(uri)
@@ -41,6 +50,8 @@ class DBStorage() :IPersistence {
 
             boardsCollection = database.getCollection<Board>("boards")
             notesCollection = database.getCollection<Note>("notes")
+            contentBlocksDocumentCollection = database.getCollection<Document>("contentblocks")
+            contentBlockCollection = database.getCollection<ContentBlock>("contentblocks")
 
             ConnectionManager.updateConnection(true)
 
@@ -52,6 +63,8 @@ class DBStorage() :IPersistence {
 
             boardsCollection = database.getCollection("dummy-boards")
             notesCollection = database.getCollection("dummy-notes")
+            contentBlocksDocumentCollection = database.getCollection("dummy-contentblocks")
+            contentBlockCollection = database.getCollection<ContentBlock>("dummy-contentblocks")
 
             return false
         }
@@ -65,7 +78,6 @@ class DBStorage() :IPersistence {
         runBlocking {
             boardsCollection.find().collect {
                 boards.add(it)
-                println(it)
             }
         }
 
@@ -110,7 +122,7 @@ class DBStorage() :IPersistence {
         runBlocking {
             boardsCollection.find().collect { board ->
                 val notesInBoard = board.notes
-                println("All notes: $notesInBoard")
+                println("DBSTORAGE DEBUG: All notes: $notesInBoard")
                 val noteList = mutableListOf<Note>()
                 notesInBoard.forEach { noteId ->
                     notesCollection.find(Filters.eq(noteId)).firstOrNull()?.let { note ->
@@ -121,7 +133,7 @@ class DBStorage() :IPersistence {
             }
         }
 
-        println("toRet: $toRet")
+        println("DBSTORAGE DEBUG: toRet: $toRet")
         return toRet
     }
 
@@ -140,6 +152,15 @@ class DBStorage() :IPersistence {
 
     override fun deleteNote(noteId: ObjectId, boardId: ObjectId) {
         runBlocking {
+            // delete any content blocks from note if it is an article
+            notesCollection.find(Filters.eq(noteId)).firstOrNull()?.let { noteDocument ->
+                if (noteDocument.type == "article") {
+                    noteDocument.contentBlocks.forEach {
+                        deleteContentBlock(noteDocument, it)
+                    }
+                }
+            }
+
             notesCollection.deleteOne(Filters.eq(noteId))
 
             // Remove the note's ObjectId from the board's notes array
@@ -161,5 +182,156 @@ class DBStorage() :IPersistence {
             )
         }
     }
+
+    override fun readContentBlocks(): MutableMap<ObjectId, MutableList<ContentBlock>> {
+        val toRet: MutableMap<ObjectId, MutableList<ContentBlock>> = mutableMapOf()
+        runBlocking {
+            notesCollection.find().collect { note ->
+                // NOTE: i think it's ok to not check if the note is an article or not
+                // just let the code go through each note regardless
+                val blocksInArticle = note.contentBlocks
+                println("DBSTORAGE DEBUG: All Content Blocks: $blocksInArticle")
+                val contentBlockList: MutableList<ContentBlock> = mutableListOf()
+                blocksInArticle.forEach { blockId ->
+                    // convert each contentBlock of an article to the correct data subclass
+                    contentBlocksDocumentCollection.find(Filters.eq(blockId)).firstOrNull()?.let { block ->
+                        val typeStr = block.getString("blockType")
+                        println("DBSTORAGE DEBUG: Content Block Type: $typeStr")
+                        val blockCasted = when (typeStr) {
+                            "PLAINTEXT" -> TextBlock(
+                                id = block.getObjectId("_id"),
+                                text = block.getString("text"),
+                            )
+                            "MARKDOWN" -> MarkdownBlock(
+                                id = block.getObjectId("_id"),
+                                text = block.getString("text"),
+                            )
+                            "CODE" -> CodeBlock(
+                                id = block.getObjectId("_id"),
+                                text = block.getString("text"),
+                                language = block.getString("language"),
+                            )
+                            "CANVAS" -> CanvasBlock(
+                                id = block.getObjectId("_id"),
+                                // TODO: paths = block.getList("paths"),
+                            )
+                            "MATH" -> MathBlock(
+                                id = block.getObjectId("_id"),
+                                text = block.getString("text"),
+                            )
+                            else -> TextBlock(
+                                id = ObjectId(),
+                                text = "BAD!!!!!! THIS SHOULD NOT HAPPEN!!!!!!!",
+                            )
+                        }
+                        contentBlockList.add(blockCasted)
+                    }
+
+
+                }
+                toRet[note.id] = contentBlockList
+            }
+        }
+
+        println("DBSTORAGE DEBUG: [ARTICLEID, CONTENTBLOCKS] MAP: $toRet")
+        return toRet
+    }
+
+
+    override fun insertContentBlock(article: Note, contentBlock: ContentBlock, index: Int) {
+        runBlocking {
+            contentBlockCollection.insertOne(contentBlock)
+
+            // get existing list of contentBlock ids in the note
+            notesCollection.find(Filters.eq(article.id)).firstOrNull()?.let {articleDocument ->
+                var blockIds = articleDocument.contentBlocks.toMutableList()
+                // update the block with new id
+                blockIds.add(index, contentBlock.id)
+                // then, add back to the document (i.e. update)
+                notesCollection.updateOne(
+                    Filters.eq(article.id),
+                    Updates.set("contentBlocks", blockIds)
+                )
+            }
+
+        }
+    }
+
+
+    override fun addContentBlock(article: Note, contentBlock: ContentBlock) {
+        runBlocking {
+            // add contentBlock to collection
+            contentBlockCollection.insertOne(contentBlock)
+
+            // add contentBlock to end of article's list as well
+            notesCollection.updateOne(
+                Filters.eq(article.id),
+                Updates.addToSet("contentBlocks", contentBlock.id)
+            )
+        }
+    }
+
+
+
+    override fun duplicateContentBlock(article: Note, contentBlock: ContentBlock, index: Int) {
+        runBlocking {
+            // add contentBlock to collection
+            contentBlockCollection.insertOne(contentBlock)
+
+            notesCollection.find(Filters.eq(article.id)).firstOrNull()?.let {articleDocument ->
+                var blockIds = articleDocument.contentBlocks.toMutableList()
+                // update the block with new id
+                blockIds.add(index, contentBlock.id)
+                // then, add back to the document (i.e. update)
+                notesCollection.updateOne(
+                    Filters.eq(article.id),
+                    Updates.set("contentBlocks", blockIds)
+                )
+            }
+        }
+    }
+
+    override fun swapContentBlocks(article: Note, index1: Int, index2: Int) {
+        runBlocking {
+            notesCollection.find(Filters.eq(article.id)).firstOrNull()?.let {articleDocument ->
+                var blockIds = articleDocument.contentBlocks.toMutableList()
+                // swap indices of content blocks in article field
+                val temp: ObjectId = blockIds[index1]
+                blockIds[index1] = blockIds[index2]
+                blockIds[index2] = temp
+                // then, add back to the document (i.e. update)
+                notesCollection.updateOne(
+                    Filters.eq(article.id),
+                    Updates.set("contentBlocks", blockIds)
+                )
+            }
+        }
+    }
+
+    override fun deleteContentBlock(article: Note, contentBlockId: ObjectId) {
+        runBlocking {
+            // delete content block from content block collection
+            contentBlocksDocumentCollection.deleteOne(Filters.eq(contentBlockId))
+            // also update the content block id array for the article
+            notesCollection.updateOne(
+                Filters.eq(article.id),
+                Updates.pull("contentBlocks", contentBlockId)
+            )
+        }
+    }
+
+    override fun updateContentBlock(block: ContentBlock, text: String, pathsContent: MutableList<Path>, language: String) {
+        runBlocking {
+            contentBlocksDocumentCollection.updateOne(
+                Filters.eq(block.id),
+                Updates.combine(
+                    Updates.set("text", text),
+                    Updates.set("language", language)
+//                    Updates.set("paths", pathsContent),
+                )
+            )
+        }
+    }
+
 
 }

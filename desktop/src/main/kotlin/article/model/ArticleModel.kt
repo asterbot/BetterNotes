@@ -1,101 +1,159 @@
 package article.model
 import androidx.compose.ui.graphics.Path
 import article.entities.*
+import individual_board.entities.Note
 import org.bson.types.ObjectId
 import shared.ConnectionManager
 import shared.IPublisher
 import shared.persistence.IPersistence
-import java.awt.Canvas
-import javax.swing.text.StringContent
 
-// NOTE: should pass in board probably
+// TODO: NOTE: should pass in board probably
 class ArticleModel(val persistence: IPersistence) : IPublisher() {
-    var contentBlocks = mutableListOf<ContentBlock>()
-    // maps Article ID to list of content blocks
+    // maps Article ID to list of content blocks in the Article
     var contentBlockDict = mutableMapOf<ObjectId, MutableList<ContentBlock>>()
 
     init {
         persistence.connect()
         if (ConnectionManager.isConnected){
-            // TODO: Load data from DB
+            contentBlockDict = persistence.readContentBlocks()
+            notifySubscribers()
         }
         println("DEBUG: initialized ArticleModel")
     }
 
-    fun addBlock(index: Int, type: BlockType) {
+    fun initialize() {
+        // Called when there is a reconnection
+        if (ConnectionManager.isConnected) {
+            contentBlockDict = persistence.readContentBlocks()
+            notifySubscribers()
+        }
+    }
+
+
+    fun addBlock(index: Int, type: BlockType, article: Note) {
         println("DEBUG: inserting empty block at index $index (attempt)")
-        // index is a valid value, insert as normal
-        if (index in 0..(contentBlocks.size - 1)) {
-            contentBlocks.add(index, type.createDefaultBlock())
-            println("DEBUG: inserted block at index $index")
-            notifySubscribers()
-        }
-        // special case where we insert downwards (index out of range of existing block array, so append instead)
-        else if (index == contentBlocks.size) {
-            contentBlocks.add(type.createDefaultBlock())
-            println("DEBUG: inserted block at index $index")
-            notifySubscribers()
+
+        contentBlockDict[article.id]?.let { contentBlocks ->
+            val blockToAdd = type.createDefaultBlock()
+            // index is a valid value, insert as normal
+            if (index in 0..(contentBlocks.size - 1)) {
+                contentBlocks.add(index, blockToAdd)
+                println("DEBUG: inserted block at index $index into model")
+
+                if (ConnectionManager.isConnected) {
+                    persistence.insertContentBlock(article, blockToAdd, index)
+                }
+
+                notifySubscribers()
+            }
+            // special case where we insert downwards (index out of range of existing block array, so append instead)
+            else if (index == contentBlocks.size) {
+                contentBlocks.add(blockToAdd)
+                println("DEBUG: inserted block at index $index (from the end) into model")
+
+                if (ConnectionManager.isConnected) {
+                    persistence.addContentBlock(article, blockToAdd)
+                }
+
+                notifySubscribers()
+            }
         }
     }
 
-    fun duplicateBlock(index: Int) {
+    fun duplicateBlock(index: Int, article: Note) {
         println("DEBUG: duplicating block at index $index (attempt)")
-        if (index in 0..(contentBlocks.size - 1)) {
-            val dupBlock: ContentBlock = contentBlocks[index].copyBlock()
-            contentBlocks.add(index + 1, dupBlock)
-            println("DEBUG: duplicated block at index $index")
-            notifySubscribers()
+        contentBlockDict[article.id]?.let { contentBlocks ->
+            if (index in 0..(contentBlocks.size - 1)) {
+                val dupBlock: ContentBlock = contentBlocks[index].copyBlock()
+                contentBlocks.add(index + 1, dupBlock)
+                println("DEBUG: duplicated block at index $index into model")
+
+                if (ConnectionManager.isConnected) {
+                    persistence.duplicateContentBlock(article, dupBlock, index+1)
+                }
+
+                notifySubscribers()
+            }
         }
     }
 
-    fun moveBlockUp(index: Int) {
+    fun moveBlockUp(index: Int, article: Note) {
         println("DEBUG: moving up block at index $index (attempt)")
-        if (index in 1..(contentBlocks.size - 1)) {
-            val temp = contentBlocks[index]
-            contentBlocks[index] = contentBlocks[index - 1]
-            contentBlocks[index - 1] = temp
-            println("DEBUG: swapped blocks with indices $index and ${index-1}")
-            notifySubscribers()
+        contentBlockDict[article.id]?.let { contentBlocks ->
+            if (index in 1..(contentBlocks.size - 1)) {
+                val temp = contentBlocks[index]
+                contentBlocks[index] = contentBlocks[index - 1]
+                contentBlocks[index - 1] = temp
+                println("DEBUG: swapped blocks with indices $index and ${index - 1} in model")
+
+                if (ConnectionManager.isConnected) {
+                    persistence.swapContentBlocks(article, index, index-1)
+                }
+
+                notifySubscribers()
+            }
         }
     }
 
-    fun moveBlockDown(index: Int) {
+    fun moveBlockDown(index: Int, article: Note) {
         println("DEBUG: moving down block at index $index (attempt)")
-        if (index in 0..(contentBlocks.size - 2)) {
-            val temp = contentBlocks[index]
-            contentBlocks[index] = contentBlocks[index + 1]
-            contentBlocks[index + 1] = temp
-            println("DEBUG: swapped blocks with indices $index and ${index+1}")
-            notifySubscribers()
+        contentBlockDict[article.id]?.let { contentBlocks ->
+            if (index in 0..(contentBlocks.size - 2)) {
+                val temp = contentBlocks[index]
+                contentBlocks[index] = contentBlocks[index + 1]
+                contentBlocks[index + 1] = temp
+                println("DEBUG: swapped blocks with indices $index and ${index + 1} in model")
+
+                if (ConnectionManager.isConnected) {
+                    persistence.swapContentBlocks(article, index, index+1)
+                }
+
+                notifySubscribers()
+            }
         }
     }
 
-    fun deleteBlock(index: Int) {
+    fun deleteBlock(index: Int, article: Note) {
         println("DEBUG: deleting block at index $index (attempt)")
-        if (index in 0..(contentBlocks.size - 1)) {
-            contentBlocks.removeAt(index)
-            println("DEBUG: deleted block at index $index")
-            notifySubscribers()
+        contentBlockDict[article.id]?.let { contentBlocks ->
+            if (index in 0..(contentBlocks.size - 1)) {
+                val toRemove: ContentBlock = contentBlocks[index]
+                contentBlocks.removeAt(index)
+                println("DEBUG: deleted block at index $index in model")
+
+                if (ConnectionManager.isConnected) {
+                    persistence.deleteContentBlock(article, toRemove.id)
+                }
+
+                notifySubscribers()
+            }
         }
     }
 
     // TODO: later (expand to other ContentBlock types)
-    fun saveBlock(index: Int, stringContent: String = "", pathsContent: MutableList<Path> = mutableListOf()) {
-        if (index in 0..(contentBlocks.size - 1)) {
-            if (contentBlocks[index] is TextBlock) {
-                (contentBlocks[index] as TextBlock).text = stringContent
-            } else if (contentBlocks[index] is MarkdownBlock) {
-                (contentBlocks[index] as MarkdownBlock).text = stringContent
-            } else if (contentBlocks[index] is CodeBlock) {
-                (contentBlocks[index] as CodeBlock).code = stringContent
-            } else if (contentBlocks[index] is CanvasBlock) {
-                (contentBlocks[index] as CanvasBlock).paths = pathsContent
-                // var paths: MutableList<Path> = mutableListOf<Path>()
-            } else if (contentBlocks[index] is MathBlock) {
-                (contentBlocks[index] as MathBlock).text = stringContent
-            }
+    fun saveBlock(index: Int, stringContent: String = "", pathsContent: MutableList<Path> = mutableListOf(),
+                  language: String = "kotlin", article: Note) {
+        contentBlockDict[article.id]?.let { contentBlocks ->
+            if (index in 0..(contentBlocks.size - 1)) {
+                var block = contentBlocks[index]
+                if (block is TextBlock) {
+                    (block as TextBlock).text = stringContent
+                } else if (block is MarkdownBlock) {
+                    (block as MarkdownBlock).text = stringContent
+                } else if (block is CodeBlock) {
+                    (block as CodeBlock).text = stringContent
+                } else if (block is CanvasBlock) {
+                    (block as CanvasBlock).paths = pathsContent
+                } else if (block is MathBlock) {
+                    (block as MathBlock).text = stringContent
+                }
+                // TODO: might need to fix for canvas? idk if it can handle it yet
+                if (ConnectionManager.isConnected) {
+                    persistence.updateContentBlock(block, stringContent, pathsContent, language)
+                }
 
-            notifySubscribers()
+                notifySubscribers()
+            }
         }
     }
 }
