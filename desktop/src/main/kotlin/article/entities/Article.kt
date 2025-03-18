@@ -26,6 +26,9 @@ enum class BlockType(
     ),
     MATH(
         { MathBlock() }
+    ),
+    MEDIA(
+        { MediaBlock() }
     )
 }
 
@@ -101,6 +104,19 @@ data class MathBlock(
     override val blockType = BlockType.MATH
     override fun copyBlock(): ContentBlock {
         return MathBlock(text=text).apply {
+            this.id = ObjectId()
+        }
+    }
+}
+
+data class MediaBlock(
+    @SerialName("_id")
+    @Contextual override var id: ObjectId = ObjectId(),
+    var bList: MutableList<Byte> = mutableListOf()
+): ContentBlock() {
+    override val blockType = BlockType.MEDIA
+    override fun copyBlock(): ContentBlock {
+        return MediaBlock(bList=bList).apply {
             this.id = ObjectId()
         }
     }
