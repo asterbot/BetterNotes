@@ -48,6 +48,9 @@ import space.kscience.kmath.ast.parseMath
 import space.kscience.kmath.ast.rendering.FeaturedMathRendererWithPostProcess
 import space.kscience.kmath.ast.rendering.LatexSyntaxRenderer
 import space.kscience.kmath.ast.rendering.renderWithStringBuilder
+import com.darkrockstudios.mpfilepicker.FilePicker
+import com.darkrockstudios.mpfilepicker.MultipleFilePicker
+import com.darkrockstudios.mpfilepicker.DirectoryPicker
 
 data class ArticleScreen(
     val board: Board,
@@ -286,6 +289,27 @@ fun BlockFrame(
             }
         }
     }
+}
+
+@Composable
+fun addMedia() {
+    var showFilePicker by remember { mutableStateOf(false) }
+
+    val fileType = listOf("jpg", "png")
+    FilePicker(show = showFilePicker, fileExtensions = fileType) { platformFile ->
+        showFilePicker = false
+        // do something with the file
+    }
+    // FileKit Compose
+    val launcher = rememberFilePickerLauncher(
+        type = PickerType.ImageAndVideo,
+        mode = PickerMode.Multiple(),
+        title = "Pick a media",
+        initialDirectory = "/custom/initial/path"
+    ) { files ->
+        // Handle the picked files
+    }
+    launcher.launch()
 }
 
 @Composable

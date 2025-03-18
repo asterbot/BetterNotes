@@ -57,6 +57,10 @@ dependencies {
     implementation("org.scilab.forge:jlatexmath:1.0.7")
     
     testImplementation(kotlin("test"))
+
+    implementation("io.github.vinceglb:filekit-compose:0.8.8")
+
+    implementation("com.darkrockstudios:mpfilepicker:3.1.0")
 }
 
 tasks.test {
@@ -74,7 +78,10 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "cs-346-project"
             packageVersion = "1.0.0"
+            // If using JVM target and Linux distribution
+            linux {
+                modules("jdk.security.auth")
+            }
         }
     }
 }
-
