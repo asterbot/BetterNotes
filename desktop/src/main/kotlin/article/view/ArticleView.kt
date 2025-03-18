@@ -4,6 +4,7 @@ import LatexRenderer
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.content.MediaType.Companion.Image
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -20,9 +21,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.pointer.pointerInput
@@ -32,6 +30,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Window
+import androidx.compose.ui.window.application
 import article.entities.*
 import boards.entities.Board
 import cafe.adriel.voyager.core.screen.Screen
@@ -40,6 +40,8 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import com.mongodb.Block
 import individual_board.entities.Note
 import individual_board.view.IndividualBoardScreen
+import io.github.vinceglb.filekit.FileKit
+import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import org.bson.types.Code
 import shared.Colors
 import shared.articleModel
@@ -48,7 +50,14 @@ import space.kscience.kmath.ast.parseMath
 import space.kscience.kmath.ast.rendering.FeaturedMathRendererWithPostProcess
 import space.kscience.kmath.ast.rendering.LatexSyntaxRenderer
 import space.kscience.kmath.ast.rendering.renderWithStringBuilder
-
+import androidx.compose.ui.res.painterResource
+import androidx.compose.foundation.Image
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.painter.BitmapPainter
+import io.github.vinceglb.filekit.absolutePath
+import io.github.vinceglb.filekit.path
+import java.io.File
 
 data class ArticleScreen(
     val board: Board,
@@ -289,18 +298,48 @@ fun BlockFrame(
     }
 }
 
+
+//debug: if you click button quickly it allows multiple file pickers to open
+fun main() {
+    application {
+        Window(onCloseRequest = ::exitApplication) {
+            addMedia()
+        }
+    }
+}
 @Composable
 fun addMedia() {
-    // FileKit Compose
-    val launcher = rememberFilePickerLauncher(
-        type = PickerType.ImageAndVideo,
-        mode = PickerMode.Multiple(),
-        title = "Pick a media",
-        initialDirectory = "/custom/initial/path"
-    ) { files ->
-        // Handle the picked files
+    var filePath by remember { mutableStateOf<String?>(null) }
+
+    val launcher = rememberFilePickerLauncher { file ->
+        if (file != null) {
+            filePath = file.absolutePath()
+            println(filePath)
+        } else {
+            println("No file selected")
+        }
     }
-    launcher.launch()
+
+    Column {
+        Button(onClick = { launcher.launch() }) {
+            Text("Pick a file")
+        }
+
+        filePath?.let { path ->
+            val file = File(path)
+            if (file.exists()) {
+                // Read file bytes and create an ImageBitmap.
+                val imageBytes = file.readBytes()
+                val imageBitmap = org.jetbrains.skia.Image.makeFromEncoded(imageBytes).toComposeImageBitmap()
+                Image(
+                    painter = BitmapPainter(image = imageBitmap),
+                    contentDescription = "everyone's favorite bird"
+                )
+            } else {
+                Text(text = "File not found.")
+            }
+        }
+    }
 }
 
 @Composable
