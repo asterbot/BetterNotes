@@ -6,12 +6,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import article.model.ArticleModel
 import article.view.ArticleViewModel
-import boards.entities.Board
-import individual_board.view.IndvBoardViewModel as IndividualBoardViewModel
-import boards.view.BoardViewModel
-import individual_board.model.IndvBoardModel as IndividualBoardModel
 import boards.model.BoardModel
+import boards.view.BoardViewModel
 import shared.persistence.DBStorage
+import individual_board.model.IndvBoardModel as IndividualBoardModel
+import individual_board.view.IndvBoardViewModel as IndividualBoardViewModel
 
 val dbStorage: DBStorage = DBStorage()
 
@@ -22,7 +21,7 @@ val individualBoardModel = IndividualBoardModel(dbStorage)
 lateinit var individualBoardViewModel: IndividualBoardViewModel
 
 val articleModel = ArticleModel(dbStorage)
-val articleViewModel = ArticleViewModel(articleModel)
+lateinit var articleViewModel: ArticleViewModel
 
 object ConnectionManager{
     // Maintains whether there is a DB connection or not
