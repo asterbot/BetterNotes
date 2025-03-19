@@ -46,6 +46,7 @@ fun BoardButton(
         Button(
             onClick = {
                 println("DEBUG: Clicked ${board.name}")
+                boardModel.updateAccessed(board)
                 navigator.push(IndividualBoardScreen(board))
             },
             modifier = Modifier.fillMaxSize(),
