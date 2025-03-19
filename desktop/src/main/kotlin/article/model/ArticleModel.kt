@@ -6,6 +6,7 @@ import org.bson.types.ObjectId
 import shared.ConnectionManager
 import shared.IPublisher
 import shared.persistence.IPersistence
+import javax.sql.rowset.RowSetMetaDataImpl
 
 // TODO: NOTE: should pass in board probably
 class ArticleModel(val persistence: IPersistence) : IPublisher() {
@@ -131,7 +132,7 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
     }
 
     // TODO: later (expand to other ContentBlock types)
-    fun saveBlock(index: Int, stringContent: String = "", pathsContent: MutableList<Path> = mutableListOf(),
+    fun saveBlock(index: Int, stringContent: String = "", pathsContent: MutableList<Path> = mutableListOf(), bListContent: MutableList<Byte> = mutableListOf(),
                   language: String = "kotlin", article: Note) {
         contentBlockDict[article.id]?.let { contentBlocks ->
             if (index in 0..(contentBlocks.size - 1)) {
@@ -146,6 +147,8 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
                     (block as CanvasBlock).paths = pathsContent
                 } else if (block is MathBlock) {
                     (block as MathBlock).text = stringContent
+                } else if (block is MediaBlock) {
+                    (block as MediaBlock).bList = bListContent
                 }
                 // TODO: might need to fix for canvas? idk if it can handle it yet
                 if (ConnectionManager.isConnected) {

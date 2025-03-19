@@ -289,6 +289,10 @@ fun BlockFrame(
                         })
                 }
 
+                if (block.blockType == BlockType.MEDIA) {
+                    addMedia(isSelected)
+                }
+
                 if (isSelected) {
                     AddBlockFrameButton(article, blockIndex, "DOWN", selectAtIndex)
                 }
@@ -308,7 +312,7 @@ fun main() {
     }
 }
 @Composable
-fun addMedia() {
+fun addMedia(isSelected: Boolean = true) {
     var filePath by remember { mutableStateOf<String?>(null) }
 
     val launcher = rememberFilePickerLauncher { file ->
@@ -323,12 +327,13 @@ fun addMedia() {
     Column(
         modifier = Modifier.fillMaxSize(),
     ) {
-        Button(
-            modifier = Modifier.align(Alignment.CenterHorizontally),
-            onClick = { launcher.launch() }) {
-            Text("Pick a file")
+        if (isSelected && filePath == null) {
+            Button(
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+                onClick = { launcher.launch() }) {
+                Text("Pick a file")
+            }
         }
-
         filePath?.let { path ->
             val file = File(path)
             if (file.exists()) {
