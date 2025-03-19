@@ -78,6 +78,7 @@ fun NoteButton(
             onClick = {
                 println("DEBUG: Clicked ${note.title}")
                 if (note.type=="article") {
+                    individualBoardModel.updateNoteAccessed(note, board)
                     navigator.push(ArticleScreen(board, note))
                 }
             },
