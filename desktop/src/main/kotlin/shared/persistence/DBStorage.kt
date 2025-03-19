@@ -12,13 +12,17 @@ import com.mongodb.kotlin.client.coroutine.MongoCollection
 import com.mongodb.kotlin.client.coroutine.MongoDatabase
 import individual_board.entities.Note
 import io.github.cdimascio.dotenv.dotenv
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.bson.Document
 import org.bson.types.ObjectId
 import shared.ConnectionManager
+import java.time.Instant
 
 class DBStorage() :IPersistence {
     // Call connect() before using DB
@@ -109,8 +113,19 @@ class DBStorage() :IPersistence {
                 Updates.combine(
                     Updates.set("name", name),
                     Updates.set("desc", desc),
-                    Updates.set("notes", notes)
+                    Updates.set("notes", notes),
+                    Updates.set("datetimeUpdated", Instant.now().toString())
                 )
+            )
+        }
+    }
+
+    // This is specifically for updating the datetimeAccessed field
+    override fun updateBoardAccessed(boardId: ObjectId,) {
+        runBlocking {
+            boardsCollection.updateOne(
+                Filters.eq(boardId),
+                Updates.set("datetimeAccessed", Instant.now().toString())
             )
         }
     }
@@ -144,9 +159,12 @@ class DBStorage() :IPersistence {
             // Add note to board as well
             boardsCollection.updateOne(
                 Filters.eq(board.id),
-                Updates.addToSet("notes", note.id)
+                Updates.combine(
+                    Updates.addToSet("notes", note.id),
+                    Updates.set("datetimeUpdated", Instant.now().toString()),
+                    Updates.set("datetimeAccessed", Instant.now().toString())
+                )
             )
-
         }
     }
 
@@ -156,7 +174,7 @@ class DBStorage() :IPersistence {
             notesCollection.find(Filters.eq(noteId)).firstOrNull()?.let { noteDocument ->
                 if (noteDocument.type == "article") {
                     noteDocument.contentBlocks.forEach {
-                        deleteContentBlock(noteDocument, it)
+                        deleteContentBlock(noteDocument, it, boardId)
                     }
                 }
             }
@@ -166,7 +184,11 @@ class DBStorage() :IPersistence {
             // Remove the note's ObjectId from the board's notes array
             boardsCollection.updateOne(
                 Filters.eq(boardId),
-                Updates.pull("notes", noteId)
+                Updates.combine(
+                    Updates.pull("notes", noteId),
+                    Updates.set("datetimeUpdated", Instant.now().toString()),
+                    Updates.set("datetimeAccessed", Instant.now().toString())
+                )
             )
         }
     }
@@ -177,8 +199,37 @@ class DBStorage() :IPersistence {
                 Filters.eq(noteId),
                 Updates.combine(
                     Updates.set("title", title),
-                    Updates.set("desc", desc)
+                    Updates.set("desc", desc),
+                    Updates.set("datetimeUpdated", Instant.now().toString()),
+                    Updates.set("datetimeAccessed", Instant.now().toString())
+                )
+            )
+
+            boardsCollection.find(Filters.eq("notes", noteId)).firstOrNull()?.let { board ->
+                boardsCollection.updateOne(
+                    Filters.eq(board.id),
+                    Updates.combine(
+                        Updates.set("datetimeUpdated", Instant.now().toString()),
+                        Updates.set("datetimeAccessed", Instant.now().toString())
                     )
+                )
+            }
+        }
+    }
+
+    override fun updateNoteAccessed(noteId: ObjectId, boardId: ObjectId) {
+        runBlocking {
+            notesCollection.updateOne(
+                Filters.eq(noteId),
+                Updates.set("datetimeAccessed", Instant.now().toString())
+            )
+
+            boardsCollection.updateOne(
+                Filters.eq(boardId),
+                Updates.combine(
+                    Updates.set("datetimeUpdated", Instant.now().toString()),
+                    Updates.set("datetimeAccessed", Instant.now().toString())
+                )
             )
         }
     }
@@ -238,7 +289,7 @@ class DBStorage() :IPersistence {
     }
 
 
-    override fun insertContentBlock(article: Note, contentBlock: ContentBlock, index: Int) {
+    override fun insertContentBlock(article: Note, contentBlock: ContentBlock, index: Int, boardId: ObjectId) {
         runBlocking {
             contentBlockCollection.insertOne(contentBlock)
 
@@ -250,15 +301,27 @@ class DBStorage() :IPersistence {
                 // then, add back to the document (i.e. update)
                 notesCollection.updateOne(
                     Filters.eq(article.id),
-                    Updates.set("contentBlocks", blockIds)
+                    Updates.combine(
+                        Updates.set("contentBlocks", blockIds),
+                        Updates.set("datetimeUpdated", Instant.now().toString()),
+                        Updates.set("datetimeAccessed", Instant.now().toString())
+                    )
                 )
             }
+
+            boardsCollection.updateOne(
+                Filters.eq(boardId),
+                Updates.combine(
+                    Updates.set("datetimeUpdated", Instant.now().toString()),
+                    Updates.set("datetimeAccessed", Instant.now().toString())
+                )
+            )
 
         }
     }
 
 
-    override fun addContentBlock(article: Note, contentBlock: ContentBlock) {
+    override fun addContentBlock(article: Note, contentBlock: ContentBlock, boardId: ObjectId) {
         runBlocking {
             // add contentBlock to collection
             contentBlockCollection.insertOne(contentBlock)
@@ -266,14 +329,26 @@ class DBStorage() :IPersistence {
             // add contentBlock to end of article's list as well
             notesCollection.updateOne(
                 Filters.eq(article.id),
-                Updates.addToSet("contentBlocks", contentBlock.id)
+                Updates.combine(
+                    Updates.addToSet("contentBlocks", contentBlock.id),
+                    Updates.set("datetimeUpdated", Instant.now().toString()),
+                    Updates.set("datetimeAccessed", Instant.now().toString())
+                )
+            )
+
+            boardsCollection.updateOne(
+                Filters.eq(boardId),
+                Updates.combine(
+                    Updates.set("datetimeUpdated", Instant.now().toString()),
+                    Updates.set("datetimeAccessed", Instant.now().toString())
+                )
             )
         }
     }
 
 
 
-    override fun duplicateContentBlock(article: Note, contentBlock: ContentBlock, index: Int) {
+    override fun duplicateContentBlock(article: Note, contentBlock: ContentBlock, index: Int, boardId: ObjectId) {
         runBlocking {
             // add contentBlock to collection
             contentBlockCollection.insertOne(contentBlock)
@@ -285,13 +360,26 @@ class DBStorage() :IPersistence {
                 // then, add back to the document (i.e. update)
                 notesCollection.updateOne(
                     Filters.eq(article.id),
-                    Updates.set("contentBlocks", blockIds)
+                    Updates.combine(
+                        Updates.addToSet("contentBlocks", contentBlock.id),
+                        Updates.set("datetimeUpdated", Instant.now().toString()),
+                        Updates.set("datetimeAccessed", Instant.now().toString())
+                    )
                 )
             }
+
+            boardsCollection.updateOne(
+                Filters.eq(boardId),
+                Updates.combine(
+                    Updates.set("datetimeUpdated", Instant.now().toString()),
+                    Updates.set("datetimeAccessed", Instant.now().toString())
+                )
+            )
+
         }
     }
 
-    override fun swapContentBlocks(article: Note, index1: Int, index2: Int) {
+    override fun swapContentBlocks(article: Note, index1: Int, index2: Int, boardId: ObjectId) {
         runBlocking {
             notesCollection.find(Filters.eq(article.id)).firstOrNull()?.let {articleDocument ->
                 var blockIds = articleDocument.contentBlocks.toMutableList()
@@ -302,36 +390,86 @@ class DBStorage() :IPersistence {
                 // then, add back to the document (i.e. update)
                 notesCollection.updateOne(
                     Filters.eq(article.id),
-                    Updates.set("contentBlocks", blockIds)
+                    Updates.combine(
+                        Updates.set("contentBlocks", blockIds),
+                        Updates.set("datetimeUpdated", Instant.now().toString()),
+                        Updates.set("datetimeAccessed", Instant.now().toString())
+                    )
                 )
             }
+
+            boardsCollection.updateOne(
+                Filters.eq(boardId),
+                Updates.combine(
+                    Updates.set("datetimeUpdated", Instant.now().toString()),
+                    Updates.set("datetimeAccessed", Instant.now().toString())
+                )
+            )
         }
     }
 
-    override fun deleteContentBlock(article: Note, contentBlockId: ObjectId) {
+    override fun deleteContentBlock(article: Note, contentBlockId: ObjectId, boardId: ObjectId) {
         runBlocking {
             // delete content block from content block collection
             contentBlocksDocumentCollection.deleteOne(Filters.eq(contentBlockId))
             // also update the content block id array for the article
             notesCollection.updateOne(
                 Filters.eq(article.id),
-                Updates.pull("contentBlocks", contentBlockId)
-            )
-        }
-    }
-
-    override fun updateContentBlock(block: ContentBlock, text: String, pathsContent: MutableList<Path>, language: String) {
-        runBlocking {
-            contentBlocksDocumentCollection.updateOne(
-                Filters.eq(block.id),
                 Updates.combine(
-                    Updates.set("text", text),
-                    Updates.set("language", language)
-//                    Updates.set("paths", pathsContent),
+                    Updates.pull("contentBlocks", contentBlockId),
+                    Updates.set("datetimeUpdated", Instant.now().toString()),
+                    Updates.set("datetimeAccessed", Instant.now().toString())
+                )
+            )
+
+            boardsCollection.updateOne(
+                Filters.eq(boardId),
+                Updates.combine(
+                    Updates.set("datetimeUpdated", Instant.now().toString()),
+                    Updates.set("datetimeAccessed", Instant.now().toString())
                 )
             )
         }
     }
 
+    override fun updateContentBlock (
+        block: ContentBlock,
+        text: String,
+        pathsContent: MutableList< Path>,
+        language: String,
+        article: Note,
+        boardId: ObjectId
+    ) {
+        val now = Instant.now().toString()
+        runBlocking {
 
+            // Update the content block in the content block collection
+            contentBlocksDocumentCollection.updateOne(
+                Filters.eq(block.id),
+                Updates.combine(
+                    Updates.set("text", text),
+                    Updates.set("language", language),
+                    // Updates.set("paths", pathsContent) // Uncomment if needed
+                )
+            )
+
+            // Update the note's datetime fields
+            notesCollection.updateOne(
+                Filters.eq(article.id),
+                Updates.combine(
+                    Updates.set("datetimeUpdated", now),
+                    Updates.set("datetimeAccessed", now)
+                )
+            )
+
+            // Update the board's datetime fields
+            boardsCollection.updateOne(
+                Filters.eq(boardId),
+                Updates.combine(
+                    Updates.set("datetimeUpdated", now),
+                    Updates.set("datetimeAccessed", now)
+                )
+            )
+        }
+    }
 }
