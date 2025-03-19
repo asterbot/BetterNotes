@@ -4,6 +4,7 @@ import shared.ConnectionManager
 import shared.IPublisher
 import shared.individualBoardModel
 import shared.persistence.IPersistence
+import java.time.Instant
 
 class BoardModel(val persistence: IPersistence) : IPublisher(){
     var boardList = mutableListOf<Board>();
@@ -62,5 +63,10 @@ class BoardModel(val persistence: IPersistence) : IPublisher(){
         notifySubscribers();
     }
 
-
+    fun updateAccessed(board: Board) {
+        board.datetimeAccessed = Instant.now().toString()
+        if (ConnectionManager.isConnected) {
+            persistence.updateBoardAccessed(board.id)
+        }
+    }
 }

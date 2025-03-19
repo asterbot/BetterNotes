@@ -8,6 +8,7 @@ import shared.ConnectionManager
 import shared.IPublisher
 import shared.articleModel
 import shared.persistence.IPersistence
+import java.time.Instant
 
 
 class IndvBoardModel(val persistence: IPersistence) : IPublisher() {
@@ -63,6 +64,13 @@ class IndvBoardModel(val persistence: IPersistence) : IPublisher() {
         }
 
         notifySubscribers()
+    }
+
+    fun updateNoteAccessed(note: Note, board: Board) {
+        note.datetimeAccessed = Instant.now().toString()
+        if (ConnectionManager.isConnected) {
+            persistence.updateNoteAccessed(note.id, board.id)
+        }
     }
 
     fun del(note: Note, board: Board) {
