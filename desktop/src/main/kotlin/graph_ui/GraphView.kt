@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import individual_board.entities.Note
 import shared.Colors
 import shared.graphViewModel
 
@@ -37,7 +38,9 @@ internal fun Float.pxToDp(): Dp {
 }
 
 @Composable
-fun GraphView() {
+fun GraphView(
+    onClick: (Note) -> Unit
+) {
     var graph by remember { mutableStateOf(graphViewModel) }
 
     BoxWithConstraints(
@@ -97,7 +100,7 @@ fun GraphView() {
                 var buttonSize by remember { mutableStateOf(IntSize.Zero) }
                 Button(
                     onClick = {
-                        println("NODE POS $node.pos")
+                        onClick(node.note)
                     },
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(

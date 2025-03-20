@@ -246,7 +246,14 @@ fun IndividualBoardView(
             gesturesEnabled = false,
         ) {
 
-            GraphView()
+            GraphView(
+                onClick = { note ->
+                    if (note.type=="article") {
+                        individualBoardModel.updateNoteAccessed(note, board)
+                        navigator.push(ArticleScreen(board, note))
+                    }
+                }
+            )
             IconButton(
                 onClick = {
                     drawerScope.launch {
