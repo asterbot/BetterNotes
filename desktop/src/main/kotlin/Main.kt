@@ -58,7 +58,7 @@ fun AppScaffold() {
                     }
                 },
                 modifier = Modifier
-                    .align(Alignment.TopStart)
+                    .align(Alignment.TopEnd)
                     .padding(8.dp)
             )
 
