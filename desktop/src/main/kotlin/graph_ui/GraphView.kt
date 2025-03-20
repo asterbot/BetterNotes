@@ -46,7 +46,6 @@ fun GraphView(
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Gray)
             .pointerInput(Unit) {
                 detectTapGestures(
                     onPress = {
@@ -103,10 +102,6 @@ fun GraphView(
                         onClick(node.note)
                     },
                     shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Colors.darkTeal,
-
-                    ),
                     // don't even question it
                     modifier = Modifier.onGloballyPositioned { coordinates ->
                         buttonSize = coordinates.size

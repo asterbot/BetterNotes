@@ -1,10 +1,11 @@
 package boards.entities
+import org.bson.types.ObjectId
 import kotlin.test.*
 
 class BoardTest() {
     var boardList: MutableList<Board> = mutableListOf()
-    var board1: Board = Board(1, "name1", "desc1")
-    var board2: Board = Board(2, "name2", "desc2")
+    var board1: Board = Board(ObjectId(),"name1", "desc1")
+    var board2: Board = Board(ObjectId(),"name2", "desc2")
 
     @Test
     fun addBoard() {
