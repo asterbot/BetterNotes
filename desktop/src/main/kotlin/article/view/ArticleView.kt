@@ -57,6 +57,9 @@ import androidx.compose.ui.graphics.painter.BitmapPainter
 import io.github.vinceglb.filekit.absolutePath
 import io.github.vinceglb.filekit.path
 import java.io.File
+import androidx.compose.ui.*
+import androidx.compose.ui.platform.LocalClipboardManager
+
 
 data class ArticleScreen(
     val board: Board,
@@ -303,13 +306,13 @@ fun BlockFrame(
 
 
 //debug: if you click button quickly it allows multiple file pickers to open
-fun main() {
-    application {
-        Window(onCloseRequest = ::exitApplication) {
-            addMedia()
-        }
-    }
-}
+//fun main() {
+//    application {
+//        Window(onCloseRequest = ::exitApplication) {
+//            addMedia()
+//        }
+//    }
+//}
 
 fun cropImage() {
 
@@ -327,30 +330,9 @@ fun addMedia(isSelected: Boolean = true) {
             println("No file selected")
         }
     }
-    val receiveContentListener = remember {
-        receiveContentListener { transferableContent ->
-            // Handle the pasted data if it is image data
-            when {
-                // Check if the pasted data is an image or not
-                transferableContent.hasMediaType(MediaType.Image)) -> {
-                // Handle for each ClipData.Item object
-                // The consume() method returns a new TransferableContent object containging ignored ClipData.Item objects
-                transferableContent.consume { item ->
-                    val uri = item.uri
-                    if (uri != null) {
-                        imageList.add(uri)
-                    }
-                    // Mark the ClipData.Item object consumed when the retrieved URI is not null
-                    uri != null
-                }
-            }
-                // Return the given transferableContent when the pasted data is not an image
-                else -> transferableContent
-            }
-        }
-    }
+
     Column(
-        modifier = Modifier.fillMaxSize().contentReceiver(receiveContentListener)
+        modifier = Modifier.fillMaxSize()
     ) {
         if (isSelected && filePath == null) {
             Button(
@@ -385,6 +367,10 @@ fun addMedia(isSelected: Boolean = true) {
     }
 }
 
+fun wrapperFun(Box) {
+    val boxWidth by remember { mutableStateOf(size.width) }
+    val boxHeight by remember { mutableStateOf(size.height) }
+}
 @Composable
 fun EditableCanvas(
     block: ContentBlock,
@@ -424,8 +410,6 @@ fun EditableCanvas(
                         }
                     },
                     onDrag = { change, _ ->
-                        val boxWidth = size.width
-                        val boxHeight = size.height
 
                         val isInside = change.position.x in 0f..boxWidth.toFloat() &&
                                 change.position.y in 0f..boxHeight.toFloat()
