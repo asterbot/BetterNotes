@@ -1,11 +1,11 @@
 package article.view
 
 import LatexRenderer
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.content.MediaType.Companion.Image
+import androidx.compose.foundation.content.contentReceiver
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -51,7 +51,6 @@ import space.kscience.kmath.ast.rendering.FeaturedMathRendererWithPostProcess
 import space.kscience.kmath.ast.rendering.LatexSyntaxRenderer
 import space.kscience.kmath.ast.rendering.renderWithStringBuilder
 import androidx.compose.ui.res.painterResource
-import androidx.compose.foundation.Image
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.painter.BitmapPainter
@@ -311,6 +310,11 @@ fun main() {
         }
     }
 }
+
+fun cropImage() {
+
+}
+
 @Composable
 fun addMedia(isSelected: Boolean = true) {
     var filePath by remember { mutableStateOf<String?>(null) }
@@ -323,9 +327,30 @@ fun addMedia(isSelected: Boolean = true) {
             println("No file selected")
         }
     }
-
+    val receiveContentListener = remember {
+        receiveContentListener { transferableContent ->
+            // Handle the pasted data if it is image data
+            when {
+                // Check if the pasted data is an image or not
+                transferableContent.hasMediaType(MediaType.Image)) -> {
+                // Handle for each ClipData.Item object
+                // The consume() method returns a new TransferableContent object containging ignored ClipData.Item objects
+                transferableContent.consume { item ->
+                    val uri = item.uri
+                    if (uri != null) {
+                        imageList.add(uri)
+                    }
+                    // Mark the ClipData.Item object consumed when the retrieved URI is not null
+                    uri != null
+                }
+            }
+                // Return the given transferableContent when the pasted data is not an image
+                else -> transferableContent
+            }
+        }
+    }
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize().contentReceiver(receiveContentListener)
     ) {
         if (isSelected && filePath == null) {
             Button(
@@ -344,6 +369,14 @@ fun addMedia(isSelected: Boolean = true) {
                     painter = BitmapPainter(image = imageBitmap),
                     contentDescription = "everyone's favorite bird",
                     modifier = Modifier.fillMaxSize()
+                        .pointerInput(Unit) {
+                            detectTapGestures(
+                                onDoubleTap = {
+                                    cropImage()
+                                    println("crop mode :)")
+                                }
+                            )
+                        }
                 )
             } else {
                 Text(text = "File not found.")
