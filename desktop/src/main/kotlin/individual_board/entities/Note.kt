@@ -19,8 +19,7 @@ data class Note @OptIn(ExperimentalSerializationApi::class) constructor(
     var desc: String = "",
     var type: String? = "section", // options: "article", "section"
     @Contextual var contentBlocks: List<@Serializable(with = ObjectIdSerializer::class) ObjectId> = mutableListOf(),
-    var parentNotes: MutableList<Note> = mutableListOf(),
-    var relatedNotes: MutableList<Note> = mutableListOf(),
+    @Contextual var childNotes: List<@Serializable(with = ObjectIdSerializer::class) ObjectId> = mutableListOf(),
     var datetimeCreated: String = Instant.now().toString(),
     var datetimeUpdated: String = Instant.now().toString(),
     var datetimeAccessed: String = Instant.now().toString()

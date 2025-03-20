@@ -1,14 +1,21 @@
 package individual_board.model
-//import individual_board.entities.Section
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import boards.entities.Board
+import graph_ui.Edge
+import graph_ui.Node
+import graph_ui.Vec
 import individual_board.entities.Note
 import individual_board.entities.removeNote
+import kotlinx.coroutines.delay
 import org.bson.types.ObjectId
 import shared.ConnectionManager
 import shared.IPublisher
 import shared.articleModel
 import shared.persistence.IPersistence
 import java.time.Instant
+import kotlin.random.Random
 
 
 class IndvBoardModel(val persistence: IPersistence) : IPublisher() {
