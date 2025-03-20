@@ -68,7 +68,7 @@ fun AddNoteMenu(
     Box(
         modifier = modifier
     ) {
-        IconButton(onClick = { expanded = !expanded }) {
+        FilledIconButton(onClick = { expanded = !expanded }) {
             Icon(Icons.Default.Add, contentDescription = "Add")
         }
         DropdownMenu(
