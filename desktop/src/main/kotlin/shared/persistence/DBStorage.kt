@@ -4,7 +4,6 @@ import androidx.compose.ui.graphics.Path
 import article.entities.*
 import boards.entities.Board
 import com.mongodb.MongoException
-import com.mongodb.client.model.DropCollectionOptions
 import com.mongodb.client.model.Filters
 import com.mongodb.client.model.Updates
 import com.mongodb.kotlin.client.coroutine.MongoClient
@@ -14,8 +13,6 @@ import individual_board.entities.Note
 import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import org.bson.Document
 import org.bson.types.ObjectId
 import shared.ConnectionManager
@@ -122,6 +119,7 @@ class DBStorage() :IPersistence {
         runBlocking {
             boardsCollection.find().collect { board ->
                 val notesInBoard = board.notes
+                println(board)
                 println("DBSTORAGE DEBUG: All notes: $notesInBoard")
                 val noteList = mutableListOf<Note>()
                 notesInBoard.forEach { noteId ->

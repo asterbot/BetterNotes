@@ -55,6 +55,10 @@ dependencies {
     implementation("org.jetbrains.compose.ui:ui-graphics-desktop:1.5.0")
 
     implementation("org.scilab.forge:jlatexmath:1.0.7")
+
+    // code syntax highlighting
+    implementation("dev.snipme:highlights:1.0.0")
+
     
     testImplementation(kotlin("test"))
 }

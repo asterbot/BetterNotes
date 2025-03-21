@@ -37,10 +37,8 @@ import boards.entities.Board
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import com.mongodb.Block
 import individual_board.entities.Note
 import individual_board.view.IndividualBoardScreen
-import org.bson.types.Code
 import shared.Colors
 import shared.articleModel
 import shared.articleViewModel
@@ -268,6 +266,11 @@ fun BlockFrame(
                     }
                     LatexRenderer(latex)
                 }
+
+//                if (block.blockType == BlockType.CODE && !isSelected) {
+//                    val code = (block as CodeBlock).text
+//                    highlightCode(code)
+//                }
 
 
                 if (block.blockType == BlockType.CANVAS) {
