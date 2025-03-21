@@ -1,4 +1,5 @@
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -10,7 +11,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.Window
 import androidx.compose.runtime.*
-import boards.model.BoardModel
 
 // Navigator imports
 import cafe.adriel.voyager.navigator.Navigator
@@ -19,11 +19,38 @@ import cafe.adriel.voyager.navigator.CurrentScreen
 // Boards page imports
 import boards.view.BoardViewScreen
 import shared.*
+import kotlinx.coroutines.*
 
 // Filekit (delete "core" from import and don't use $verison in dependency)
 import io.github.vinceglb.filekit.FileKit
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Done
+import androidx.compose.material.icons.filled.Refresh
+
+// Concurrently executes both sections
+fun pingDB(scope: CoroutineScope) { // this: CoroutineScope
+    scope.launch {
+        while (true) {
+            delay(100L)
+//            println("Pinging DB")
+            dbStorage.pingDB()
+        }
+    }
+}
 
 fun main() {
+    val backgroundScope = CoroutineScope(Dispatchers.IO)
+
+    try{
+        pingDB(backgroundScope)
+    }
+    catch (e: Exception){
+        println("Mongo DB connection error")
+        ConnectionManager.updateConnection(ConnectionStatus.DISCONNECTED)
+    }
+
+
     // Initialize FileKit
     FileKit.init(appId = "cs-346-project")
     application {
@@ -47,22 +74,10 @@ fun AppScaffold() {
             // CurrentScreen will render the current screen from the navigator
             CurrentScreen()
 
-            // StickyButton stays on top of all screens
-            StickyButton(
-                onClick = {
-                    if (!ConnectionManager.isConnected) {
-                        // Not connected, attempt to connect
-                        if (!dbStorage.connect()){
-                            openAlertDialog.value = true
-                        }
-                        else{
-                            boardModel.initialize()
-                            individualBoardModel.initialize()
-                        }
-                    }
-                },
+            // This row stays on top of all screens
+            DBStatus(
                 modifier = Modifier
-                    .align(Alignment.TopStart)
+                    .align(Alignment.TopEnd)
                     .padding(8.dp)
             )
 
@@ -108,19 +123,28 @@ fun AppScaffold() {
 }
 
 @Composable
-fun StickyButton(
-    onClick: () -> Unit,
+fun DBStatus(
     modifier: Modifier = Modifier
 ) {
-    val connectionStatus by derivedStateOf { ConnectionManager.isConnected }
+//    val connectionStatus by derivedStateOf { ConnectionManager.isConnected }
+    val connectionStatus by derivedStateOf { ConnectionManager.connection }
+    val isConnected by derivedStateOf { ConnectionManager.isConnected }
 
-    Button(
-        onClick = onClick,
-        modifier = modifier,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = Colors.lightTeal
-        )
-    ) {
-        Text(text="DB connection: ${connectionStatus}")
+    Row(modifier = modifier) {
+        val icon = when (connectionStatus) {
+            ConnectionStatus.DISCONNECTED -> Icons.Default.Close
+            ConnectionStatus.CONNECTED -> Icons.Default.Done
+            else -> Icons.Default.Refresh
+        }
+        val color = if (isConnected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+        val statusText = when(connectionStatus) {
+            ConnectionStatus.CONNECTING -> "Connecting to DB ..."
+            ConnectionStatus.CONNECTED -> "Connected to DB"
+            ConnectionStatus.DISCONNECTED -> "Disconnected from DB"
+        }
+
+        Icon(imageVector = icon, contentDescription = statusText, tint = color)
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(statusText, color = color)
     }
 }
