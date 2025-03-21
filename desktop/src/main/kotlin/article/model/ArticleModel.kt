@@ -3,8 +3,6 @@ import androidx.compose.ui.graphics.Path
 import article.entities.*
 import boards.entities.Board
 import individual_board.entities.Note
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import org.bson.types.ObjectId
 import shared.ConnectionManager
 import shared.IPublisher
@@ -13,7 +11,6 @@ import shared.persistence.Create
 import shared.persistence.Delete
 import shared.persistence.IPersistence
 import shared.persistence.Update
-import javax.swing.text.StringContent
 
 // TODO: NOTE: should pass in board probably
 class ArticleModel(val persistence: IPersistence) : IPublisher() {
@@ -150,7 +147,8 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
     }
 
     // TODO: later (expand to other ContentBlock types)
-    fun saveBlock(index: Int, stringContent: String = "", pathsContent: MutableList<Path> = mutableListOf(),
+    fun saveBlock(index: Int, stringContent: String = "",
+                  pathsContent: MutableList<Path> = mutableListOf(), canvasHeight: Int = 0,
                   language: String = "kotlin", article: Note, board: Board) {
         contentBlockDict[article.id]?.let { contentBlocks ->
             if (index in 0..(contentBlocks.size - 1)) {
@@ -163,6 +161,8 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
                     (block as CodeBlock).text = stringContent
                 } else if (block is CanvasBlock) {
                     (block as CanvasBlock).paths = pathsContent
+                    (block as CanvasBlock).height = canvasHeight
+
                 } else if (block is MathBlock) {
                     (block as MathBlock).text = stringContent
                 }
