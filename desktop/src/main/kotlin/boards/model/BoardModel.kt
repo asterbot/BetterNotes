@@ -2,8 +2,12 @@ package boards.model;
 import boards.entities.*
 import shared.ConnectionManager
 import shared.IPublisher
+import shared.dbQueue
 import shared.individualBoardModel
+import shared.persistence.Create
+import shared.persistence.Delete
 import shared.persistence.IPersistence
+import shared.persistence.Update
 import java.time.Instant
 
 class BoardModel(val persistence: IPersistence) : IPublisher(){
@@ -20,6 +24,7 @@ class BoardModel(val persistence: IPersistence) : IPublisher(){
 
     fun initialize(){
         // Called when there is a reconnection
+        persistence.connect()
         if (ConnectionManager.isConnected) {
             boardList = persistence.readBoards().toMutableList()
             notifySubscribers()
@@ -38,6 +43,9 @@ class BoardModel(val persistence: IPersistence) : IPublisher(){
         if (ConnectionManager.isConnected) {
             persistence.addBoard(board);
         }
+        else{
+            dbQueue.addToQueue(Create(persistence, board))
+        }
 
         notifySubscribers();
     }
@@ -49,6 +57,9 @@ class BoardModel(val persistence: IPersistence) : IPublisher(){
         if (ConnectionManager.isConnected) {
             persistence.deleteBoard(board.id, board.notes);
         }
+        else{
+            dbQueue.addToQueue(Delete(persistence, board, noteListDependency = board.notes))
+        }
 
         notifySubscribers();
     }
@@ -58,6 +69,10 @@ class BoardModel(val persistence: IPersistence) : IPublisher(){
 
         if (ConnectionManager.isConnected) {
             persistence.updateBoard(board.id, name, desc, board.notes);
+        }
+        else{
+            dbQueue.addToQueue(Update(persistence, board,
+                mutableMapOf("name" to name, "desc" to desc, "notes" to board.notes)))
         }
 
         notifySubscribers();
