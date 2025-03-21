@@ -1,6 +1,4 @@
 package article.model
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.Path
 import article.entities.*
 import boards.entities.Board
@@ -149,7 +147,8 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
     }
 
     // TODO: later (expand to other ContentBlock types)
-    fun saveBlock(index: Int, stringContent: String = "", pathsContent: MutableList<Path> = mutableListOf(), canvasHeight: Int = 0, bListContent: MutableList<Byte> = mutableListOf(),
+    fun saveBlock(index: Int, stringContent: String = "",
+                  pathsContent: MutableList<Path> = mutableListOf(), canvasHeight: Int = 0, bListContent: MutableList<Byte> = mutableListOf(),
                   language: String = "kotlin", article: Note, board: Board) {
         contentBlockDict[article.id]?.let { contentBlocks ->
             if (index in 0..(contentBlocks.size - 1)) {
@@ -174,16 +173,14 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
                     persistence.updateContentBlock(block, stringContent, pathsContent, language, article, board.id)
                 }
                 else{
-                    dbQueue.addToQueue(
-                        Update(persistence, block, mutableMapOf(
+                    dbQueue.addToQueue(Update(persistence, block, mutableMapOf(
                         "text" to stringContent,
                         "pathsContent" to pathsContent,
                         "bListContent" to bListContent,
                         "language" to language,
                         "article" to article,
                         "boardId" to board.id
-                    ))
-                    )
+                    )))
                 }
             }
         }
