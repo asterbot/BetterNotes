@@ -149,7 +149,7 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
     }
 
     // TODO: later (expand to other ContentBlock types)
-    fun saveBlock(index: Int, stringContent: String = "", pathsContent: MutableList<Path> = mutableListOf(), canvasHeight: Int = 0,, bListContent: MutableList<Byte> = mutableListOf(),
+    fun saveBlock(index: Int, stringContent: String = "", pathsContent: MutableList<Path> = mutableListOf(), canvasHeight: Int = 0, bListContent: MutableList<Byte> = mutableListOf(),
                   language: String = "kotlin", article: Note, board: Board) {
         contentBlockDict[article.id]?.let { contentBlocks ->
             if (index in 0..(contentBlocks.size - 1)) {
