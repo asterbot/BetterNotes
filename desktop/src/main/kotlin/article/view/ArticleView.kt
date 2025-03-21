@@ -5,18 +5,22 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.material.Button
-import androidx.compose.material.ButtonDefaults
-import androidx.compose.material.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
@@ -24,12 +28,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import article.entities.*
@@ -37,13 +41,9 @@ import boards.entities.Board
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import com.mongodb.Block
 import individual_board.entities.Note
 import individual_board.view.IndividualBoardScreen
-import org.bson.types.Code
-import shared.Colors
-import shared.articleModel
-import shared.articleViewModel
+import shared.*
 import space.kscience.kmath.ast.parseMath
 import space.kscience.kmath.ast.rendering.FeaturedMathRendererWithPostProcess
 import space.kscience.kmath.ast.rendering.LatexSyntaxRenderer
@@ -104,14 +104,14 @@ fun ArticleCompose(board: Board, article: Note) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Text( // title
-                text = "Board ${board.name}",
-                fontSize = 30.sp,
+            Text( // article name
+                text = "Article: ${article.title}",
+                fontSize = 25.sp,
                 fontWeight = FontWeight.Bold
             )
-            Text( // article name
-                text = "Article ${article.title}",
-                fontSize = 20.sp
+            Text( // title
+                text = "From Board ${board.name}",
+                fontSize = 18.sp,
             )
 
             // row containing any useful functionality (as buttons)
@@ -120,13 +120,12 @@ fun ArticleCompose(board: Board, article: Note) {
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 // insert TextBlock at beginning
-                Button(
-                    onClick = { articleModel.addBlock(0, BlockType.PLAINTEXT, article, board) },
-                ) { Text(text = "Insert TextBlock") }
-                Button(
+                TextButton(
+                    colors = textButtonColours(),
                     onClick = { navigator.push(IndividualBoardScreen(board)) }
                 ) { Text("Back to current course") }
                 Button(
+                    colors = textButtonColours(),
                     onClick = {
                         println("DEBUG (THE BLOCKS):")
                         println("FROM MODEL: ${articleModel.contentBlockDict}")
@@ -152,12 +151,19 @@ fun ArticleCompose(board: Board, article: Note) {
                 ) { Text(text = "DEBUG") }
             }
 
+            if (contentBlocksList.contentBlocksList.isEmpty()) {
+                Text(
+                    text="\nNo content blocks: try adding one!",
+                    fontSize = 25.sp
+                )
+                AddBlockFrameButton(article, 0, "UP", ::selectAtIndex, board)
+            }
+
             LazyColumn( // lazy column stores all blocks
                 modifier = Modifier.fillMaxSize().padding(25.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
-
                 itemsIndexed(
                     contentBlocksList.contentBlocksList, // itemsIndexed iterates over this collection
                     key = { index: Int, block: ContentBlock -> block.id } // Jetpack Compose uses keys to track recompositions
@@ -205,12 +211,15 @@ fun BlockFrame(
         modifier = Modifier
             .fillMaxSize()
             .clickable { onBlockClick() }
+            .clip(RoundedCornerShape(10.dp))
     ) {
         Box(
             modifier = Modifier
                 .background(Colors.lightTeal)
                 .padding(horizontal = 15.dp, vertical = 10.dp)
+                .clip(RoundedCornerShape(10.dp)),
         ) {
+
             if (isSelected) {
                 BlockFrameMenu(blockIndex, menuButtonFuncs)
             }
@@ -222,6 +231,10 @@ fun BlockFrame(
             ) {
 
                 if (isSelected) {
+                    Text(
+                        text = "${block.blockType.name} Block",
+                        fontWeight = FontWeight.Bold
+                    )
                     AddBlockFrameButton(article, blockIndex, "UP", selectAtIndex, board)
                 }
 
@@ -275,7 +288,6 @@ fun BlockFrame(
                 if (block.blockType == BlockType.CANVAS) {
                     EditableCanvas(
                         block = block,
-                        100.dp,
                         onCanvasUpdate = {
                             articleModel.saveBlock(blockIndex, pathsContent=it, article=article, board = board)
                         })
@@ -293,9 +305,9 @@ fun BlockFrame(
 @Composable
 fun EditableCanvas(
     block: ContentBlock,
-    canvasHeight: Dp,
     onCanvasUpdate: (MutableList<Path>) -> Unit
 ) {
+
     var startPaths: MutableList<Path> = when (block.blockType) {
         BlockType.CANVAS -> { (block as CanvasBlock).paths }
         else -> mutableListOf()
@@ -311,7 +323,7 @@ fun EditableCanvas(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(canvasHeight)
+            .height((block as CanvasBlock).height.dp)
             .background(Color.White)
             .pointerInput(Unit) {
                 detectDragGestures(
@@ -371,14 +383,9 @@ fun EditableCanvas(
             }
 
     ) {
-        Button(
+        TextButton(
+            colors = textButtonColours(),
             onClick = { isErasing = !isErasing },
-            colors = ButtonDefaults.buttonColors(
-                backgroundColor = Colors.medTeal,
-                contentColor = Colors.white
-            ),
-            shape = CircleShape,
-            contentPadding = PaddingValues(10.dp),
         ) { Text(if (!isErasing) "Erase" else "Draw" ) }
 
         // drawing the existing path
@@ -466,52 +473,122 @@ fun EditableTextBox(
 @Composable
 fun BlockFrameMenu(index: Int, buttonFuncs: Map<String, (Int) -> Unit>) {
     // BlockFrameMenu consists of the buttons that do actions for all blocks (i.e. all types of ContentBlocks)
+
+    var hoveredButton by remember { mutableStateOf<String?>(null) }
+
     Box(
         modifier = Modifier.fillMaxSize(),
     ) {
-        Row(
-            modifier = Modifier.align(Alignment.TopEnd),
-            horizontalArrangement = Arrangement.spacedBy(5.dp)
+        Box (
+            modifier = Modifier.align(Alignment.TopEnd)
         ) {
-            @Composable
-            fun MenuButton(onClick: ((Int) -> Unit)?, desc: String) =
-                Button(
-                    onClick = {onClick?.invoke(index)},
-                    modifier = Modifier
-                        .height(30.dp)
-                        .widthIn(max=50.dp),
-                    contentPadding = PaddingValues(0.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        backgroundColor = Colors.medTeal,
-                        contentColor = Colors.white
-                    )
-                ) {Text(text=desc)}
+            Row(
+                modifier = Modifier.align(Alignment.TopEnd)
+            ) {
+                @Composable
+                fun MenuButton(onClick: ((Int) -> Unit)?, icon: ImageVector, desc: String) {
+                    val interactionSource = remember { MutableInteractionSource() }
+                    val isHovered by interactionSource.collectIsHoveredAsState()
 
-            MenuButton(buttonFuncs["Duplicate Block"], "D") // duplicate current block
-            MenuButton(buttonFuncs["Move Block Up"], "MU") // move current block up
-            MenuButton(buttonFuncs["Move Block Down"], "MD") // move current block down
-            MenuButton(buttonFuncs["Delete Block"], "G") // delete current block
+                    // toggle hoveredButton state given the button we are hovering over
+                    if (isHovered) {
+                        hoveredButton = desc
+                    } else if (hoveredButton == desc) {
+                        hoveredButton = null
+                    }
+
+                    IconButton(
+                        onClick = { onClick?.invoke(index) },
+                        colors = iconButtonColours(),
+                        modifier = Modifier.hoverable(interactionSource = interactionSource)
+                    ) {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = desc,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+
+                MenuButton(
+                    buttonFuncs["Duplicate Block"],
+                    Icons.Default.AddCircle,
+                    "Duplicate"
+                ) // duplicate current block
+                MenuButton(
+                    buttonFuncs["Move Block Up"],
+                    Icons.Default.KeyboardArrowUp,
+                    "Move Up"
+                ) // move current block up
+                MenuButton(
+                    buttonFuncs["Move Block Down"],
+                    Icons.Default.KeyboardArrowDown,
+                    "Move Down"
+                ) // move current block down
+                MenuButton(buttonFuncs["Delete Block"], Icons.Default.Delete, "Delete") // delete current block
+            }
+            if (hoveredButton != null) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .background(Colors.darkGrey.copy(alpha = 0.9f))
+                        .padding(horizontal = 4.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = hoveredButton.toString(),
+                        fontSize = 12.sp,
+                        color = Colors.white.copy(alpha = 0.9f)
+                    )
+                }
+            }
         }
     }
 }
 
 
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun AddBlockFrameButton(article: Note, index: Int, direction: String, selectAtIndex: (Int) -> Unit, board: Board) {
     // these buttons add a new (empty) ContentBlock above/below (depends on direction) the currently selected block
     // by default, insertBlock() creates a new Text block (assume that people use this the most)
     var showBlockTypes by remember { mutableStateOf(false) }
 
-    Button(
-        onClick = { showBlockTypes = !showBlockTypes },
-        colors = ButtonDefaults.buttonColors(
-            backgroundColor = Colors.medTeal,
-            contentColor = Colors.white
-        ),
-        shape = CircleShape,
-        contentPadding = PaddingValues(10.dp),
-    ) { Text(text = "+", fontSize = 20.sp) }
+    val interactionSource = remember { MutableInteractionSource() }
+    val isHovered by interactionSource.collectIsHoveredAsState()
+
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        IconButton(
+            onClick = { showBlockTypes = !showBlockTypes },
+            colors = iconButtonColours(),
+            modifier = Modifier.hoverable(interactionSource = interactionSource)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Add,
+                contentDescription = "Add Block Type",
+                modifier = Modifier.size(30.dp)
+            )
+        }
+
+        // Tooltip text that follows the mouse cursor
+        if (isHovered) {
+            Box(
+                modifier = Modifier
+                    .align(if (direction == "DOWN") Alignment.BottomCenter else Alignment.TopCenter)
+                    .background(Colors.darkGrey.copy(alpha=0.9f))
+                    .padding(horizontal = 4.dp, vertical = 4.dp)
+            ) {
+                Text(
+                    text = "Add New Block",
+                    fontSize = 12.sp,
+                    color = Colors.white.copy(alpha=0.9f)
+                )
+            }
+        }
+    }
 
     if (showBlockTypes) { InsertBlockTypesMenu(article, index, direction, selectAtIndex, board) }
 }
@@ -529,14 +606,13 @@ fun InsertBlockTypesMenu(article: Note, index: Int, direction: String, selectAtI
         horizontalArrangement = Arrangement.spacedBy(5.dp),
     ) {
         for (type in BlockType.entries) {
-            Button(
+            TextButton(
+                colors = textButtonColours(),
                 onClick = {
                     articleModel.addBlock(atAddIndex, type, article, board)
                     selectAtIndex(atAddIndex)
                 }
-            ) {
-                Text(type.name)
-            }
+            ) { Text(type.name) }
         }
     }
 }
