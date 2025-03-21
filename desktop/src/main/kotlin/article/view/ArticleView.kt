@@ -2,10 +2,8 @@ package article.view
 
 import LatexRenderer
 import androidx.compose.foundation.*
-import androidx.compose.foundation.content.MediaType.Companion.Image
-import androidx.compose.foundation.content.contentReceiver
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.hoverable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.*
@@ -13,6 +11,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material.Button
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -24,7 +23,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.painter.BitmapPainter
+import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.pointer.pointerInput
@@ -35,8 +39,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Window
-import androidx.compose.ui.window.application
 import article.entities.*
 import boards.entities.Board
 import cafe.adriel.voyager.core.screen.Screen
@@ -44,46 +46,14 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import individual_board.entities.Note
 import individual_board.view.IndividualBoardScreen
-import io.github.vinceglb.filekit.FileKit
+import io.github.vinceglb.filekit.absolutePath
 import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
-import org.bson.types.Code
-import shared.Colors
-import shared.articleModel
-import shared.articleViewModel
+import shared.*
 import space.kscience.kmath.ast.parseMath
 import space.kscience.kmath.ast.rendering.FeaturedMathRendererWithPostProcess
 import space.kscience.kmath.ast.rendering.LatexSyntaxRenderer
 import space.kscience.kmath.ast.rendering.renderWithStringBuilder
-import androidx.compose.ui.res.painterResource
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.*
-import androidx.compose.ui.graphics.painter.BitmapPainter
-import io.github.vinceglb.filekit.absolutePath
-import io.github.vinceglb.filekit.path
 import java.io.File
-import androidx.compose.ui.*
-import androidx.compose.ui.graphics.drawscope.clipRect
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.Button
-import androidx.compose.ui.geometry.Rect
-
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.Layout
-import androidx.compose.ui.unit.Constraints
-import androidx.compose.ui.unit.dp
-import org.jetbrains.skia.Bitmap
-import kotlin.math.roundToInt
-import androidx.compose.foundation.gestures.detectTapGestures
-import shared.*
 import kotlin.math.max
 
 data class ArticleScreen(
@@ -552,19 +522,13 @@ fun EditableCanvas(
         else -> mutableListOf()
     }
 
-    val currentHeight = remember(block) {
-        if (block.blockType == BlockType.CANVAS) (block as CanvasBlock).canvasHeight
-        else mutableStateOf(50f)
-    }
-
-
     val paths = remember { mutableStateListOf<Path>().apply { addAll(startPaths) } }
     var currentPath by remember { mutableStateOf(Path()) }
     var isDrawing by remember { mutableStateOf(false) }
     var isOutsideBox by remember { mutableStateOf(false) }
     var isErasing by remember { mutableStateOf(false) }
 
-    var canvasHeight by remember { mutableStateOf((block as CanvasBlock).height) }
+    var canvasHeight by remember { mutableStateOf((block as CanvasBlock).canvasHeight) }
     val resizeThreshold = LocalDensity.current.run { 30 }
     var isResizing by remember {mutableStateOf(false)}
 
@@ -642,94 +606,13 @@ fun EditableCanvas(
                         isResizing = false
                         currentPath = Path()
                     }
-                }
-
-                // Drawing canvas
-                Canvas(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(currentHeight.value.dp)
-                        .pointerInput(Unit) {
-                            detectDragGestures(
-                                onDragStart = { offset ->
-                                    if (offset.x in 0f..size.width.toFloat() && offset.y in 0f..size.height.toFloat()) {
-                                        isDrawing = true
-                                        isOutsideBox = false
-
-                                        if (isErasing) {
-                                            // Erase paths near the cursor
-                                            paths.removeAll { path -> isPointNearPath(offset, path) }
-                                        } else {
-                                            currentPath = Path().apply { moveTo(offset.x, offset.y) }
-                                        }
-                                    }
-                                },
-
-                                onDrag = { change, _ ->
-                                    val position = change.position
-                                    val isInside = position.x in 0f..size.width.toFloat() && change.position.y in 0f..size.height.toFloat()
-                                    if (isInside) {
-                                        if (isErasing) {
-                                            // Remove paths near the cursor position
-                                            paths.removeAll { path -> isPointNearPath(position, path) }
-                                        } else {
-                                            if (isOutsideBox) {
-                                                currentPath = Path().apply { moveTo(position.x, position.y) }
-                                                isOutsideBox = false
-                                            } else {
-                                                currentPath = Path().apply {
-                                                    addPath(currentPath)
-                                                    lineTo(position.x, position.y)
-                                                }
-                                            }
-                                        }
-                                    } else {
-                                        if (!isOutsideBox && !isErasing) {
-                                            paths.add(currentPath)
-                                            onCanvasUpdate(paths, currentHeight)
-                                            currentPath = Path()
-                                            isOutsideBox = true
-                                        }
-                                    }
-
-                                },
-                                onDragEnd = {
-                                    if (!isOutsideBox && !isErasing) {
-                                        paths.add(currentPath)
-                                        onCanvasUpdate(paths, currentHeight)
-                                    }
-                                    isDrawing = false
-                                    currentPath = Path()
-                                }
-                            )
-                        }
-                ) {
-                    // Draw existing paths
-                    paths.forEach { path ->
-
-                        drawPath(
-                            path = path,
-                            color = Color.Black,
-                            style = Stroke(width = 2f)
-                        )
-                    }
-
-                    // Draw current path being created
-                    if (isDrawing && !isErasing) {
-                        drawPath(
-                            path = currentPath,
-                            color = Color.Black,
-                            style = Stroke(width = 2f)
-                        )
-                    }
-                }
+                )
             }
-
     ) {
         TextButton(
             colors = textButtonColours(),
             onClick = { isErasing = !isErasing },
-        ) { Text(if (!isErasing) "Erase" else "Draw" ) }
+        ) { Text(if (!isErasing) "Erase" else "Draw") }
 
         // drawing the existing path
         Canvas(
@@ -756,7 +639,7 @@ fun EditableCanvas(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(Colors.lightGrey)
-                .align(Alignment.BottomCenter)
+                .align(Alignment.BottomEnd)
                 .height((resizeThreshold / LocalDensity.current.density).dp)
 
         ) {
@@ -768,7 +651,7 @@ fun EditableCanvas(
                 Icon(
                     imageVector = Icons.Default.Menu,
                     contentDescription = "Canvas Height Slider",
-                    modifier = Modifier.size(resizeThreshold.dp-5.dp),
+                    modifier = Modifier.size(resizeThreshold.dp - 5.dp),
                     tint = Colors.darkGrey
                 )
             }
@@ -896,7 +779,6 @@ fun isPointNearPath(point: Offset, path: Path, threshold: Float = 20f): Boolean 
     return (point.x in (pathBounds.left - threshold)..(pathBounds.right + threshold) &&
             point.y in (pathBounds.top - threshold)..(pathBounds.bottom + threshold))
 }
-
 
 
 @Composable
