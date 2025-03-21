@@ -56,6 +56,17 @@ dependencies {
 
     implementation("org.scilab.forge:jlatexmath:1.0.7")
 
+    // File Picker
+    implementation(platform("androidx.compose:compose-bom:2025.02.00"))
+    implementation("io.github.vinceglb:filekit-core:0.10.0-beta01")
+    implementation("io.github.vinceglb:filekit-coil:0.10.0-beta01")
+    implementation("io.github.vinceglb:filekit-dialogs:0.10.0-beta01")
+    implementation("io.github.vinceglb:filekit-dialogs-compose:0.10.0-beta01")
+//    implementation("io.github.vinceglb:filekit-core:$version")
+//    implementation("io.github.vinceglb:filekit-dialogs:$version")
+//    implementation("io.github.vinceglb:filekit-dialogs-compose:$version")
+//    implementation("io.github.vinceglb:filekit-coil:$version")
+
     testImplementation(kotlin("test"))
 }
 
@@ -74,7 +85,10 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "cs-346-project"
             packageVersion = "1.0.0"
+            // If using JVM target and Linux distribution
+            linux {
+                modules("jdk.security.auth")
+            }
         }
     }
 }
-
