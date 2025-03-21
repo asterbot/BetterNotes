@@ -37,7 +37,7 @@ dependencies {
 
     implementation("org.mongodb:bson-kotlinx:4.10.1")
     // For logging from Mongo's side
-    implementation("org.slf4j:slf4j-simple:2.0.7")
+//    implementation("org.slf4j:slf4j-simple:2.0.7")
 
     // DotEnv file reader
     implementation("io.github.cdimascio:dotenv-kotlin:6.5.1")
@@ -55,7 +55,7 @@ dependencies {
     implementation("org.jetbrains.compose.ui:ui-graphics-desktop:1.5.0")
 
     implementation("org.scilab.forge:jlatexmath:1.0.7")
-    
+
     testImplementation(kotlin("test"))
 }
 

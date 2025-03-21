@@ -8,7 +8,12 @@ import kotlinx.coroutines.launch
 import org.bson.types.ObjectId
 import shared.ConnectionManager
 import shared.IPublisher
+import shared.dbQueue
+import shared.persistence.Create
+import shared.persistence.Delete
 import shared.persistence.IPersistence
+import shared.persistence.Update
+import javax.swing.text.StringContent
 
 // TODO: NOTE: should pass in board probably
 class ArticleModel(val persistence: IPersistence) : IPublisher() {
@@ -46,6 +51,10 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
                 if (ConnectionManager.isConnected) {
                     persistence.insertContentBlock(article, blockToAdd, index, board.id)
                 }
+                else{
+                    dbQueue.addToQueue(Create(persistence, blockToAdd,
+                        boardDependency = board, noteDependency = article, indexDependency = index))
+                }
 
                 notifySubscribers()
             }
@@ -56,6 +65,10 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
 
                 if (ConnectionManager.isConnected) {
                     persistence.addContentBlock(article, blockToAdd, board.id)
+                }
+                else{
+                    dbQueue.addToQueue(Create(persistence, blockToAdd,
+                        boardDependency = board, noteDependency = article))
                 }
 
                 notifySubscribers()
@@ -72,7 +85,7 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
                 println("DEBUG: duplicated block at index $index into model")
 
                 if (ConnectionManager.isConnected) {
-                    persistence.duplicateContentBlock(article, dupBlock, index+1, board.id)
+                    persistence.insertContentBlock(article, dupBlock, index+1, board.id)
                 }
 
                 notifySubscribers()
@@ -90,7 +103,7 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
                 println("DEBUG: swapped blocks with indices $index and ${index - 1} in model")
 
                 if (ConnectionManager.isConnected) {
-                    persistence.swapContentBlocks(article, index, index-1, board.id)
+                    persistence.swapContentBlocks(article.id, index, index-1, board.id)
                 }
 
                 notifySubscribers()
@@ -108,7 +121,7 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
                 println("DEBUG: swapped blocks with indices $index and ${index + 1} in model")
 
                 if (ConnectionManager.isConnected) {
-                    persistence.swapContentBlocks(article, index, index+1, board.id)
+                    persistence.swapContentBlocks(article.id, index, index+1, board.id)
                 }
 
                 notifySubscribers()
@@ -125,7 +138,10 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
                 println("DEBUG: deleted block at index $index in model")
 
                 if (ConnectionManager.isConnected) {
-                    persistence.deleteContentBlock(article, toRemove.id, board.id)
+                    persistence.deleteContentBlock(article.id, toRemove.id, board.id)
+                }
+                else{
+                    dbQueue.addToQueue(Delete(persistence, toRemove, boardDependency = board, noteDependency = article))
                 }
 
                 notifySubscribers()
@@ -153,7 +169,15 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
                 // TODO: might need to fix for canvas? idk if it can handle it yet
                 if (ConnectionManager.isConnected) {
                     persistence.updateContentBlock(block, stringContent, pathsContent, language, article, board.id)
-
+                }
+                else{
+                    dbQueue.addToQueue(Update(persistence, block, mutableMapOf(
+                        "text" to stringContent,
+                        "pathsContent" to pathsContent,
+                        "language" to language,
+                        "article" to article,
+                        "boardId" to board.id
+                    )))
                 }
             }
         }
