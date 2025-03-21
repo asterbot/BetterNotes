@@ -119,7 +119,7 @@ class Update(override val persistence: IPersistence, val objToUpdate: Any,
             is Note -> {
                 assert(fields.containsKey("title"))
                 assert(fields.containsKey("desc"))
-                    persistence.updateNote(objToUpdate.id, (fields["title"] as String), (fields["desc"] as String), await = true)
+                    persistence.updateNote(objToUpdate.id, (fields["title"] as String), (fields["desc"] as String), (fields["relatedNotes"] as List<ObjectId>), await = true)
             }
 
             is ContentBlock -> {

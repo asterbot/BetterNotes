@@ -20,7 +20,7 @@ class GraphModel: IPublisher() {
     var edges = mutableListOf<Edge>()
 
     val gravityConstant = 1.1f
-    val forceConstant = 12000f // The higher the value, the further apart the nodes
+    val forceConstant = 14000f // The higher the value, the further apart the nodes
 
     var physicsRunning by mutableStateOf(true) // TODO: pause/resume when the screen is exited/clicked
 
@@ -60,15 +60,19 @@ class GraphModel: IPublisher() {
         // edges
         noteList.forEach { note ->
             val thisIndex = objectIdToIndex[note.id] ?: return@forEach
-            note.childNotes.forEach { childId ->
+            note.relatedNotes.forEach { childId ->
                 val childIndex = objectIdToIndex[childId]
                 if (childIndex != null) {
-                    edges.add(
-                        Edge(
-                            id1 = thisIndex,
-                            id2 = childIndex,
+                    // Make sure edge doesn't already exist in the other direction
+                    // (i.e. if A is connected to B, B should not be connected to A)
+                    if (edges.none { it.id1 == childIndex && it.id2 == thisIndex }) {
+                        edges.add(
+                            Edge(
+                                id1 = thisIndex,
+                                id2 = childIndex,
+                            )
                         )
-                    )
+                    }
                 }
             }
         }
@@ -131,8 +135,8 @@ class GraphModel: IPublisher() {
             val node1 = nodesCopy[edge.id1]
             val node2 = nodesCopy[edge.id2]
             val distVec = node1.pos.copy().sub(node2.pos)
-            node1.force.sub(distVec).mult(0.95f)
-            node2.force.add(distVec).mult(0.95f)
+            node1.force.sub(distVec).mult(0.9f)
+            node2.force.add(distVec).mult(0.9f)
         }
 
         // Update nodes

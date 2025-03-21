@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -98,6 +99,10 @@ fun GraphView(
             graph.nodes.forEach { node ->
                 var buttonSize by remember { mutableStateOf(IntSize.Zero) }
                 Button(
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+                    ),
+                    contentPadding = PaddingValues(8.dp),
                     onClick = {
                         onClick(node.note)
                     },
@@ -108,8 +113,9 @@ fun GraphView(
                     }.offset(
                         x = node.pos.x.pxToDp() - buttonSize.width.toFloat().pxToDp() / 2,
                         y = node.pos.y.pxToDp() - buttonSize.height.toFloat().pxToDp() / 2
-                    ).width(100.dp
-                    ).padding(0.dp)
+                    ).width(70.dp
+                    ).padding(0.dp
+                    )
                 ) {
                     Text(
                         text = node.note.title,
