@@ -82,6 +82,9 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import org.jetbrains.skia.Bitmap
 import kotlin.math.roundToInt
+import androidx.compose.foundation.gestures.detectTapGestures
+import shared.*
+import kotlin.math.max
 
 data class ArticleScreen(
     val board: Board,
