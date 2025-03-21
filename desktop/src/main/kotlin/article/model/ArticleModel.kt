@@ -1,6 +1,4 @@
 package article.model
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.Path
 import article.entities.*
 import boards.entities.Board
@@ -162,7 +160,7 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
                     (block as CodeBlock).text = stringContent
                 } else if (block is CanvasBlock) {
                     (block as CanvasBlock).paths = pathsContent
-                    (block as CanvasBlock).height = canvasHeight
+                    (block as CanvasBlock).canvasHeight = canvasHeight
 
                 } else if (block is MathBlock) {
                     (block as MathBlock).text = stringContent
