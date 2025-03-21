@@ -5,29 +5,34 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.content.MediaType.Companion.Image
 import androidx.compose.foundation.content.contentReceiver
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.material.Button
-import androidx.compose.material.ButtonDefaults
-import androidx.compose.material.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChange
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Window
@@ -37,7 +42,6 @@ import boards.entities.Board
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import com.mongodb.Block
 import individual_board.entities.Note
 import individual_board.view.IndividualBoardScreen
 import io.github.vinceglb.filekit.FileKit
@@ -134,14 +138,14 @@ fun ArticleCompose(board: Board, article: Note) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Text( // title
-                text = "Board ${board.name}",
-                fontSize = 30.sp,
+            Text( // article name
+                text = "Article: ${article.title}",
+                fontSize = 25.sp,
                 fontWeight = FontWeight.Bold
             )
-            Text( // article name
-                text = "Article ${article.title}",
-                fontSize = 20.sp
+            Text( // title
+                text = "From Board ${board.name}",
+                fontSize = 18.sp,
             )
 
             // row containing any useful functionality (as buttons)
@@ -150,13 +154,12 @@ fun ArticleCompose(board: Board, article: Note) {
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 // insert TextBlock at beginning
-                Button(
-                    onClick = { articleModel.addBlock(0, BlockType.PLAINTEXT, article, board) },
-                ) { Text(text = "Insert TextBlock") }
-                Button(
+                TextButton(
+                    colors = textButtonColours(),
                     onClick = { navigator.push(IndividualBoardScreen(board)) }
                 ) { Text("Back to current course") }
                 Button(
+                    colors = textButtonColours(),
                     onClick = {
                         println("DEBUG (THE BLOCKS):")
                         println("FROM MODEL: ${articleModel.contentBlockDict}")
@@ -182,12 +185,19 @@ fun ArticleCompose(board: Board, article: Note) {
                 ) { Text(text = "DEBUG") }
             }
 
+            if (contentBlocksList.contentBlocksList.isEmpty()) {
+                Text(
+                    text="\nNo content blocks: try adding one!",
+                    fontSize = 25.sp
+                )
+                AddBlockFrameButton(article, 0, "UP", ::selectAtIndex, board)
+            }
+
             LazyColumn( // lazy column stores all blocks
                 modifier = Modifier.fillMaxSize().padding(25.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
-
                 itemsIndexed(
                     contentBlocksList.contentBlocksList, // itemsIndexed iterates over this collection
                     key = { index: Int, block: ContentBlock -> block.id } // Jetpack Compose uses keys to track recompositions
@@ -235,12 +245,15 @@ fun BlockFrame(
         modifier = Modifier
             .fillMaxSize()
             .clickable { onBlockClick() }
+            .clip(RoundedCornerShape(10.dp))
     ) {
         Box(
             modifier = Modifier
                 .background(Colors.lightTeal)
                 .padding(horizontal = 15.dp, vertical = 10.dp)
+                .clip(RoundedCornerShape(10.dp)),
         ) {
+
             if (isSelected) {
                 BlockFrameMenu(blockIndex, menuButtonFuncs)
             }
@@ -252,6 +265,10 @@ fun BlockFrame(
             ) {
 
                 if (isSelected) {
+                    Text(
+                        text = "${block.blockType.name} Block",
+                        fontWeight = FontWeight.Bold
+                    )
                     AddBlockFrameButton(article, blockIndex, "UP", selectAtIndex, board)
                 }
 
@@ -302,18 +319,14 @@ fun BlockFrame(
                 }
 
 
+
                 if (block.blockType == BlockType.CANVAS) {
                     EditableCanvas(
                         block = block,
-                        onCanvasUpdate = { updatedPaths, updatedHeight ->
-                            articleModel.saveBlock(
-                                blockIndex,
-                                pathsContent = updatedPaths,
-                                heightContent = updatedHeight,
-                                article = article,
-                                board = board
-                            )
-                        })
+                        onCanvasUpdate = {paths, height ->
+                            articleModel.saveBlock(blockIndex, pathsContent=paths, canvasHeight=height, article=article, board = board)
+                        }
+                    )
                 }
 
                 if (block.blockType == BlockType.MEDIA) {
@@ -528,8 +541,9 @@ fun addMedia(isSelected: Boolean = true) {
 @Composable
 fun EditableCanvas(
     block: ContentBlock,
-    onCanvasUpdate: (MutableList<Path>, MutableState<Float>) -> Unit
+    onCanvasUpdate: (MutableList<Path>, Int) -> Unit
 ) {
+
     var startPaths: MutableList<Path> = when (block.blockType) {
         BlockType.CANVAS -> { (block as CanvasBlock).paths }
         else -> mutableListOf()
@@ -547,34 +561,83 @@ fun EditableCanvas(
     var isOutsideBox by remember { mutableStateOf(false) }
     var isErasing by remember { mutableStateOf(false) }
 
-    val resizeHandleSize = 5.dp
+    var canvasHeight by remember { mutableStateOf((block as CanvasBlock).height) }
+    val resizeThreshold = LocalDensity.current.run { 30 }
+    var isResizing by remember {mutableStateOf(false)}
 
-    Layout(
-        content = {
-            // Content 0: The main canvas
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(currentHeight.value.dp)
-                    .background(Color.White)
-            ) {
-                // Drawing tools
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Button(
-                        onClick = { isErasing = !isErasing },
-                        colors = ButtonDefaults.buttonColors(
-                            backgroundColor = Colors.medTeal,
-                            contentColor = Colors.white
-                        ),
-                        shape = CircleShape,
-                        contentPadding = PaddingValues(10.dp),
-                    ) {
-                        Text(if (!isErasing) "Erase" else "Draw")
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(canvasHeight.dp)
+            .background(Color.White)
+            .pointerInput(Unit) {
+                detectDragGestures(
+                    onDragStart = { offset ->
+                        val boxHeight = size.height.toFloat()
+                        val isNearBottomEdge = offset.y in (boxHeight - resizeThreshold)..boxHeight
+                        if (isNearBottomEdge) {
+                            isResizing = true
+                            isDrawing = false
+                            println("DEBUG: RESIZING CANVAS")
+                        }
+                        else {
+                            isDrawing = true
+                            isOutsideBox = false
+
+                            if (isErasing) {
+                                // Erase paths near the cursor
+                                paths.removeAll { path -> isPointNearPath(offset, path) }
+                            } else {
+                                currentPath = Path().apply { moveTo(offset.x, offset.y) }
+                            }
+                        }
+                    },
+                    onDrag = { change, _ ->
+                        if (isResizing) {
+                            val newHeight = max(50, (canvasHeight + 0.5*change.positionChange().y).toInt())
+                            canvasHeight = newHeight
+                        }
+                        else {
+                            val boxWidth = size.width
+                            val boxHeight = size.height
+
+                            val isInside = change.position.x in 0f..boxWidth.toFloat() &&
+                                    change.position.y in 0f..boxHeight.toFloat()
+
+                            if (isInside) {
+                                if (isErasing) {
+                                    // Remove paths near the cursor position
+                                    paths.removeAll { path -> isPointNearPath(change.position, path) }
+                                } else {
+                                    if (isOutsideBox) {
+                                        currentPath = Path().apply { moveTo(change.position.x, change.position.y) }
+                                        isOutsideBox = false
+                                    } else {
+                                        currentPath = Path().apply {
+                                            addPath(currentPath)
+                                            lineTo(change.position.x, change.position.y)
+                                        }
+                                    }
+                                }
+                            } else {
+                                if (!isOutsideBox && !isErasing) {
+                                    paths.add(currentPath)
+                                    onCanvasUpdate(paths, canvasHeight)
+                                    currentPath = Path()
+                                    isOutsideBox = true
+                                }
+                            }
+                        }
+                    },
+                    onDragEnd = {
+                        if (!isOutsideBox && !isErasing) {
+                            paths.add(currentPath)
+                            onCanvasUpdate(paths, canvasHeight)
+                        }
+                        isDrawing = false
+                        isResizing = false
+                        currentPath = Path()
                     }
                 }
 
@@ -659,44 +722,53 @@ fun EditableCanvas(
                 }
             }
 
-            // Content 1: The resize handle
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(resizeHandleSize)
-                    .background(Color.Black.copy(alpha = 0.5f))
-                    .pointerInput(Unit) {
-                        detectDragGestures { _, dragAmount ->
-                            // Update height with drag, ensuring at least 50dp
-                            currentHeight.value = (currentHeight.value + dragAmount.y).coerceAtLeast(50f)
-                        }
-                    }
-            )
+    ) {
+        TextButton(
+            colors = textButtonColours(),
+            onClick = { isErasing = !isErasing },
+        ) { Text(if (!isErasing) "Erase" else "Draw" ) }
+
+        // drawing the existing path
+        Canvas(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            paths.forEach { path ->
+                drawPath(
+                    path = path,
+                    color = Color.Black,
+                    style = Stroke(width = 2f)
+                )
+            }
+
+            // drawing the dragging path
+            if (isDrawing && !isErasing) {
+                drawPath(
+                    path = currentPath,
+                    color = Color.Black,
+                    style = Stroke(width = 2f)
+                )
+            }
         }
-    ) { measurables, constraints ->
-        val canvasMeasurable = measurables[0]
-        val handleMeasurable = measurables[1]
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Colors.lightGrey)
+                .align(Alignment.BottomCenter)
+                .height((resizeThreshold / LocalDensity.current.density).dp)
 
-        val canvasHeight = currentHeight.value.dp.roundToPx()
-        val handleHeight = resizeHandleSize.toPx().toInt()
-
-        val canvasConstraints = constraints.copy(
-            minHeight = 0,
-            maxHeight = Constraints.Infinity
-        )
-
-        val canvasPlaceable = canvasMeasurable.measure(canvasConstraints)
-        val handlePlaceable = handleMeasurable.measure(
-            constraints.copy(minHeight = handleHeight, maxHeight = handleHeight)
-        )
-
-        // Calculate total height
-        val totalHeight = canvasHeight + handleHeight
-
-        // Create the layout
-        layout(constraints.maxWidth, totalHeight) {
-            canvasPlaceable.placeRelative(0, 0)
-            handlePlaceable.placeRelative(0, canvasHeight)
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Menu,
+                    contentDescription = "Canvas Height Slider",
+                    modifier = Modifier.size(resizeThreshold.dp-5.dp),
+                    tint = Colors.darkGrey
+                )
+            }
         }
     }
 }
@@ -875,52 +947,122 @@ fun EditableTextBox(
 @Composable
 fun BlockFrameMenu(index: Int, buttonFuncs: Map<String, (Int) -> Unit>) {
     // BlockFrameMenu consists of the buttons that do actions for all blocks (i.e. all types of ContentBlocks)
+
+    var hoveredButton by remember { mutableStateOf<String?>(null) }
+
     Box(
         modifier = Modifier.fillMaxSize(),
     ) {
-        Row(
-            modifier = Modifier.align(Alignment.TopEnd),
-            horizontalArrangement = Arrangement.spacedBy(5.dp)
+        Box (
+            modifier = Modifier.align(Alignment.TopEnd)
         ) {
-            @Composable
-            fun MenuButton(onClick: ((Int) -> Unit)?, desc: String) =
-                Button(
-                    onClick = {onClick?.invoke(index)},
-                    modifier = Modifier
-                        .height(30.dp)
-                        .widthIn(max=50.dp),
-                    contentPadding = PaddingValues(0.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        backgroundColor = Colors.medTeal,
-                        contentColor = Colors.white
-                    )
-                ) {Text(text=desc)}
+            Row(
+                modifier = Modifier.align(Alignment.TopEnd)
+            ) {
+                @Composable
+                fun MenuButton(onClick: ((Int) -> Unit)?, icon: ImageVector, desc: String) {
+                    val interactionSource = remember { MutableInteractionSource() }
+                    val isHovered by interactionSource.collectIsHoveredAsState()
 
-            MenuButton(buttonFuncs["Duplicate Block"], "D") // duplicate current block
-            MenuButton(buttonFuncs["Move Block Up"], "MU") // move current block up
-            MenuButton(buttonFuncs["Move Block Down"], "MD") // move current block down
-            MenuButton(buttonFuncs["Delete Block"], "G") // delete current block
+                    // toggle hoveredButton state given the button we are hovering over
+                    if (isHovered) {
+                        hoveredButton = desc
+                    } else if (hoveredButton == desc) {
+                        hoveredButton = null
+                    }
+
+                    IconButton(
+                        onClick = { onClick?.invoke(index) },
+                        colors = iconButtonColours(),
+                        modifier = Modifier.hoverable(interactionSource = interactionSource)
+                    ) {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = desc,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+
+                MenuButton(
+                    buttonFuncs["Duplicate Block"],
+                    Icons.Default.AddCircle,
+                    "Duplicate"
+                ) // duplicate current block
+                MenuButton(
+                    buttonFuncs["Move Block Up"],
+                    Icons.Default.KeyboardArrowUp,
+                    "Move Up"
+                ) // move current block up
+                MenuButton(
+                    buttonFuncs["Move Block Down"],
+                    Icons.Default.KeyboardArrowDown,
+                    "Move Down"
+                ) // move current block down
+                MenuButton(buttonFuncs["Delete Block"], Icons.Default.Delete, "Delete") // delete current block
+            }
+            if (hoveredButton != null) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .background(Colors.darkGrey.copy(alpha = 0.9f))
+                        .padding(horizontal = 4.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = hoveredButton.toString(),
+                        fontSize = 12.sp,
+                        color = Colors.white.copy(alpha = 0.9f)
+                    )
+                }
+            }
         }
     }
 }
 
 
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun AddBlockFrameButton(article: Note, index: Int, direction: String, selectAtIndex: (Int) -> Unit, board: Board) {
     // these buttons add a new (empty) ContentBlock above/below (depends on direction) the currently selected block
     // by default, insertBlock() creates a new Text block (assume that people use this the most)
     var showBlockTypes by remember { mutableStateOf(false) }
 
-    Button(
-        onClick = { showBlockTypes = !showBlockTypes },
-        colors = ButtonDefaults.buttonColors(
-            backgroundColor = Colors.medTeal,
-            contentColor = Colors.white
-        ),
-        shape = CircleShape,
-        contentPadding = PaddingValues(10.dp),
-    ) { Text(text = "+", fontSize = 20.sp) }
+    val interactionSource = remember { MutableInteractionSource() }
+    val isHovered by interactionSource.collectIsHoveredAsState()
+
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        IconButton(
+            onClick = { showBlockTypes = !showBlockTypes },
+            colors = iconButtonColours(),
+            modifier = Modifier.hoverable(interactionSource = interactionSource)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Add,
+                contentDescription = "Add Block Type",
+                modifier = Modifier.size(30.dp)
+            )
+        }
+
+        // Tooltip text that follows the mouse cursor
+        if (isHovered) {
+            Box(
+                modifier = Modifier
+                    .align(if (direction == "DOWN") Alignment.BottomCenter else Alignment.TopCenter)
+                    .background(Colors.darkGrey.copy(alpha=0.9f))
+                    .padding(horizontal = 4.dp, vertical = 4.dp)
+            ) {
+                Text(
+                    text = "Add New Block",
+                    fontSize = 12.sp,
+                    color = Colors.white.copy(alpha=0.9f)
+                )
+            }
+        }
+    }
 
     if (showBlockTypes) { InsertBlockTypesMenu(article, index, direction, selectAtIndex, board) }
 }
@@ -938,14 +1080,13 @@ fun InsertBlockTypesMenu(article: Note, index: Int, direction: String, selectAtI
         horizontalArrangement = Arrangement.spacedBy(5.dp),
     ) {
         for (type in BlockType.entries) {
-            Button(
+            TextButton(
+                colors = textButtonColours(),
                 onClick = {
                     articleModel.addBlock(atAddIndex, type, article, board)
                     selectAtIndex(atAddIndex)
                 }
-            ) {
-                Text(type.name)
-            }
+            ) { Text(type.name) }
         }
     }
 }

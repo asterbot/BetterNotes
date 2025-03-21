@@ -5,7 +5,10 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.Path
-import kotlinx.serialization.*
+import kotlinx.serialization.Contextual
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import org.bson.codecs.kotlinx.ObjectIdSerializer
 import org.bson.types.ObjectId
 
@@ -92,7 +95,7 @@ data class CanvasBlock (
     @SerialName("_id")
     @Contextual override var id: ObjectId = ObjectId(),
     var paths: MutableList<Path> = mutableListOf<Path>(),
-    var canvasHeight: MutableState<Float> = mutableStateOf(0f)
+    var height: Int = 200
 ) : ContentBlock() {
     override val blockType = BlockType.CANVAS
     override fun copyBlock(): ContentBlock {
