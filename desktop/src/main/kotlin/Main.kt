@@ -21,6 +21,8 @@ import boards.view.BoardViewScreen
 import shared.*
 import kotlinx.coroutines.*
 
+// Filekit (delete "core" from import and don't use $verison in dependency)
+import io.github.vinceglb.filekit.FileKit
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Done
@@ -49,6 +51,8 @@ fun main() {
     }
 
 
+    // Initialize FileKit
+    FileKit.init(appId = "cs-346-project")
     application {
         Window(onCloseRequest = ::exitApplication) {
             // Starting screen
