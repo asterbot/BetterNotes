@@ -11,7 +11,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.material.Button
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -337,12 +336,15 @@ fun addMedia(isSelected: Boolean = true) {
         modifier = Modifier.fillMaxSize()
     ) {
         if (isSelected && filePath == null) {
-            Button(
+            TextButton(
                 modifier = Modifier.align(Alignment.CenterHorizontally),
-                onClick = { launcher.launch() }) {
+                colors = textButtonColours(),
+                onClick = { launcher.launch() },
+            ) {
                 Text("Pick a file")
             }
         }
+
         filePath?.let { path ->
             val file = File(path)
             if (file.exists()) {
