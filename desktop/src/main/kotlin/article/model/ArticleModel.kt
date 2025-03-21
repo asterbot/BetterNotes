@@ -5,8 +5,6 @@ import androidx.compose.ui.graphics.Path
 import article.entities.*
 import boards.entities.Board
 import individual_board.entities.Note
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import org.bson.types.ObjectId
 import shared.ConnectionManager
 import shared.IPublisher
@@ -15,7 +13,6 @@ import shared.persistence.Create
 import shared.persistence.Delete
 import shared.persistence.IPersistence
 import shared.persistence.Update
-import javax.swing.text.StringContent
 
 // TODO: NOTE: should pass in board probably
 class ArticleModel(val persistence: IPersistence) : IPublisher() {
@@ -165,7 +162,8 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
                     (block as CodeBlock).text = stringContent
                 } else if (block is CanvasBlock) {
                     (block as CanvasBlock).paths = pathsContent
-                    (block as CanvasBlock).canvasHeight = heightContent
+                    (block as CanvasBlock).height = canvasHeight
+
                 } else if (block is MathBlock) {
                     (block as MathBlock).text = stringContent
                 } else if (block is MediaBlock) {
