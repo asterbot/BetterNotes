@@ -228,13 +228,14 @@ class DBStorage() :IPersistence {
         if (await) runBlocking { job.join() }
     }
 
-    override fun updateNote(noteId: ObjectId, title: String, desc: String, await: Boolean) {
+    override fun updateNote(noteId: ObjectId, title: String, desc: String, relatedNotes: List<ObjectId>, await: Boolean) {
         val job = coroutineScope.launch {
             notesCollection.updateOne(
                 Filters.eq(noteId),
                 Updates.combine(
                     Updates.set("title", title),
                     Updates.set("desc", desc),
+                    Updates.set("relatedNotes", relatedNotes),
                     Updates.set("datetimeUpdated", Instant.now().toString()),
                     Updates.set("datetimeAccessed", Instant.now().toString())
                 )

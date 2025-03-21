@@ -138,8 +138,12 @@ fun IndividualBoardView(
     val noteToEdit = remember { mutableStateOf<Note?>(null) }
     val noteToDelete = remember { mutableStateOf<Note?>(null) }
 
-    fun addNote(title: String, desc: String, type: String){
-        individualBoardModel.addNote(Note(ObjectId(), title, desc, type), board)
+    fun addNote(title: String, desc: String, type: String, relatedNotes: List<Note>){
+        var relatedNotesIds = mutableListOf<ObjectId>()
+        for (note in relatedNotes){
+            relatedNotesIds.add(note.id)
+        }
+        individualBoardModel.addNote(Note(ObjectId(), title, desc, type, relatedNotes = relatedNotesIds), board)
         graphModel.initializeNotesByNoteList(noteList.noteList)
 
     }
@@ -149,9 +153,12 @@ fun IndividualBoardView(
         graphModel.initializeNotesByNoteList(noteList.noteList)
     }
 
-    fun editNote(note:Note, title: String, desc: String){
-        println("DEBUG: Edit ${note.type} called")
-        individualBoardModel.updateNote(note, board.id, title, desc)
+    fun editNote(note:Note, title: String, desc: String, relatedNotes: List<Note>){
+        var relatedNotesIds = mutableListOf<ObjectId>()
+        for (note in relatedNotes){
+            relatedNotesIds.add(note.id)
+        }
+        individualBoardModel.updateNote(note, board.id, title, desc, relatedNotesIds)
         graphModel.initializeNotesByNoteList(noteList.noteList)
     }
 
@@ -177,19 +184,19 @@ fun IndividualBoardView(
                     ) {
                         Text(
                             text = board.name,
-                            style = MaterialTheme.typography.h2,
-                            modifier = Modifier.padding(16.dp)
+                            style = MaterialTheme.typography.h4,
+                            modifier = Modifier.padding(10.dp)
                         )
 
                         Text(
                             text = board.desc,
                             style = MaterialTheme.typography.body1,
-                            modifier = Modifier.padding(16.dp)
+                            modifier = Modifier.padding(10.dp)
                         )
 
                         Button(
                             onClick = { navigator.push(BoardViewScreen()) },
-                            modifier = Modifier.padding(8.dp)
+                            modifier = Modifier.padding(2.dp)
                         ) {
                             Text("Back to All Boards")
                         }
@@ -271,9 +278,15 @@ fun IndividualBoardView(
                 AddNoteDialog(
                     type = "Article",
                     onDismissRequest = { openAddArticleDialog.value = false },
-                    onConfirmation = { title, desc ->
-                        addNote(title, desc, "article")
+                    onConfirmation = { title, desc, relatedNotes ->
+                        addNote(title, desc, "article", relatedNotes)
                         openAddArticleDialog.value = false
+                        println("relatedNotes: $relatedNotes")
+                    },
+                    onGetOtherNotes = { query ->
+                        noteList.noteList.filter {
+                            it.title.contains(query, ignoreCase = true)
+                        }
                     }
                 )
             }
@@ -282,9 +295,14 @@ fun IndividualBoardView(
                 AddNoteDialog(
                     type = "Section",
                     onDismissRequest = { openAddSectionDialog.value = false },
-                    onConfirmation = { title, desc ->
-                        addNote(title, desc, "section")
+                    onConfirmation = { title, desc, relatedNotes ->
+                        addNote(title, desc, "section", relatedNotes)
                         openAddSectionDialog.value = false
+                    },
+                    onGetOtherNotes = { query ->
+                        noteList.noteList.filter {
+                            it.title.contains(query, ignoreCase = true)
+                        }
                     }
                 )
             }
@@ -295,9 +313,17 @@ fun IndividualBoardView(
                     noteTitle = noteToEdit.value?.title ?: "",
                     noteDesc = noteToEdit.value?.desc ?: "",
                     onDismissRequest = { noteToEdit.value = null },
-                    onConfirmation = { title, desc ->
-                        editNote(noteToEdit.value as Note, title, desc)
+                    onConfirmation = { title, desc, relatedNotes ->
+                        editNote(noteToEdit.value as Note, title, desc, relatedNotes)
                         noteToEdit.value = null
+                    },
+                    initialRelatedNotes = noteList.noteList.filter { note ->
+                        noteToEdit.value?.relatedNotes?.contains(note.id) == true
+                    },
+                    onGetOtherNotes = { query ->
+                        noteList.noteList.filter {
+                            it.title.contains(query, ignoreCase = true) && it.id != noteToEdit.value?.id
+                        }
                     }
                 )
             }
