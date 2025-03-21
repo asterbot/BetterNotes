@@ -58,6 +58,8 @@ import io.github.vinceglb.filekit.absolutePath
 import io.github.vinceglb.filekit.path
 import java.io.File
 import androidx.compose.ui.*
+import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalClipboardManager
 
 
@@ -285,7 +287,7 @@ fun BlockFrame(
                 if (block.blockType == BlockType.CANVAS) {
                     EditableCanvas(
                         block = block,
-                        100.dp,
+                        100f,
                         onCanvasUpdate = {
                             articleModel.saveBlock(blockIndex, pathsContent=it, article=article)
                         })
@@ -367,14 +369,11 @@ fun addMedia(isSelected: Boolean = true) {
     }
 }
 
-fun wrapperFun(Box) {
-    val boxWidth by remember { mutableStateOf(size.width) }
-    val boxHeight by remember { mutableStateOf(size.height) }
-}
+
 @Composable
 fun EditableCanvas(
     block: ContentBlock,
-    canvasHeight: Dp,
+    canvasHeight: Float,
     onCanvasUpdate: (MutableList<Path>) -> Unit
 ) {
     var startPaths: MutableList<Path> = when (block.blockType) {
@@ -387,99 +386,130 @@ fun EditableCanvas(
     var isDrawing by remember { mutableStateOf(false) }
     var isOutsideBox by remember { mutableStateOf(false) }
     var isErasing by remember { mutableStateOf(false) } // Eraser mode toggle
-
-
-    Box(
+    var boxWidth by remember { mutableStateOf(0f) }
+    var boxHeight by remember { mutableStateOf(canvasHeight) }
+    var isResizing by remember { mutableStateOf(false) }
+    var resizeHandleSize = 10.dp
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .height(canvasHeight)
-            .background(Color.White)
-            .pointerInput(Unit) {
-                detectDragGestures(
-                    onDragStart = { offset ->
-                        if (offset.x in 0f..size.width.toFloat() && offset.y in 0f..size.height.toFloat()) {
-                            isDrawing = true
-                            isOutsideBox = false
-
-                            if (isErasing) {
-                                // Erase paths near the cursor
-                                paths.removeAll { path -> isPointNearPath(offset, path) }
-                            } else {
-                                currentPath = Path().apply { moveTo(offset.x, offset.y) }
+            // Use wrapContentHeight to allow the content to determine its height
+            .wrapContentHeight()
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(boxHeight.dp)
+                .background(Color.White)
+                .onGloballyPositioned { coordinates ->
+                    boxWidth = coordinates.size.width.toFloat()
+                    boxHeight = coordinates.size.height.toFloat()
+                }
+                .pointerInput(Unit) {
+                    detectDragGestures(
+                        onDragStart = { offset ->
+                            if (offset.y >= boxHeight - resizeHandleSize.toPx() && offset.y <= boxHeight) {
+                                isResizing = true
+                                isDrawing = false
                             }
-                        }
-                    },
-                    onDrag = { change, _ ->
+                            else if (offset.x in 0f..boxWidth && offset.y in 0f..boxHeight) {
+                                isDrawing = true
+                                isOutsideBox = false
 
-                        val isInside = change.position.x in 0f..boxWidth.toFloat() &&
-                                change.position.y in 0f..boxHeight.toFloat()
-
-                        if (isInside) {
-                            if (isErasing) {
-                                // Remove paths near the cursor position
-                                paths.removeAll { path -> isPointNearPath(change.position, path) }
-                            } else {
-                                if (isOutsideBox) {
-                                    currentPath = Path().apply { moveTo(change.position.x, change.position.y) }
-                                    isOutsideBox = false
+                                if (isErasing) {
+                                    // Erase paths near the cursor
+                                    paths.removeAll { path -> isPointNearPath(offset, path) }
                                 } else {
-                                    currentPath = Path().apply {
-                                        addPath(currentPath)
-                                        lineTo(change.position.x, change.position.y)
+                                    currentPath = Path().apply { moveTo(offset.x, offset.y) }
+                                }
+                            }
+                        },
+                        onDrag = { change, dragAmount ->
+                            if (isResizing) {
+                                boxHeight = (boxHeight + dragAmount.y).coerceAtLeast(50f)
+                            } else {
+                                val isInside = change.position.x in 0f..boxWidth &&
+                                        change.position.y in 0f..boxHeight
+
+                                if (isInside) {
+                                    if (isErasing) {
+                                        // Remove paths near the cursor position
+                                        paths.removeAll { path -> isPointNearPath(change.position, path) }
+                                    } else {
+                                        if (isOutsideBox) {
+                                            currentPath = Path().apply { moveTo(change.position.x, change.position.y) }
+                                            isOutsideBox = false
+                                        } else {
+                                            currentPath = Path().apply {
+                                                addPath(currentPath)
+                                                lineTo(change.position.x, change.position.y)
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    if (!isOutsideBox && !isErasing) {
+                                        paths.add(currentPath)
+                                        onCanvasUpdate(paths)
+                                        currentPath = Path()
+                                        isOutsideBox = true
                                     }
                                 }
                             }
-                        } else {
-                            if (!isOutsideBox && !isErasing) {
+                        },
+                        onDragEnd = {
+                            if (isResizing){
+                                isResizing = false
+                            }
+                            else if (!isOutsideBox && !isErasing) {
                                 paths.add(currentPath)
                                 onCanvasUpdate(paths)
-                                currentPath = Path()
-                                isOutsideBox = true
                             }
+                            isDrawing = false
+                            currentPath = Path()
                         }
-                    },
-                    onDragEnd = {
-                        if (!isOutsideBox && !isErasing) {
-                            paths.add(currentPath)
-                            onCanvasUpdate(paths)
-                        }
-                        isDrawing = false
-                        currentPath = Path()
+                    )
+                }
+
+        ) {
+            Button(
+                onClick = { isErasing = !isErasing },
+                colors = ButtonDefaults.buttonColors(
+                    backgroundColor = Colors.medTeal,
+                    contentColor = Colors.white
+                ),
+                shape = CircleShape,
+                contentPadding = PaddingValues(10.dp),
+            ) { Text(if (!isErasing) "Erase" else "Draw" ) }
+
+            // drawing the existing path
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                clipRect(0f, 0f, boxWidth, boxHeight) {
+                    paths.forEach { path ->
+                        drawPath(
+                            path = path,
+                            color = Color.Black,
+                            style = Stroke(width = 2f)
+                        )
                     }
-                )
-            }
+                }
 
-    ) {
-        Button(
-            onClick = { isErasing = !isErasing },
-            colors = ButtonDefaults.buttonColors(
-                backgroundColor = Colors.medTeal,
-                contentColor = Colors.white
-            ),
-            shape = CircleShape,
-            contentPadding = PaddingValues(10.dp),
-        ) { Text(if (!isErasing) "Erase" else "Draw" ) }
-
-        // drawing the existing path
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            paths.forEach { path ->
-                drawPath(
-                    path = path,
-                    color = Color.Black,
-                    style = Stroke(width = 2f)
-                )
+                // drawing the dragging path
+                if (isDrawing && !isErasing) {
+                    drawPath(
+                        path = currentPath,
+                        color = Color.Black,
+                        style = Stroke(width = 2f)
+                    )
+                }
             }
-
-            // drawing the dragging path
-            if (isDrawing && !isErasing) {
-                drawPath(
-                    path = currentPath,
-                    color = Color.Black,
-                    style = Stroke(width = 2f)
-                )
-            }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(resizeHandleSize)
+                    .align(Alignment.BottomCenter)
+                    .background(Color.LightGray.copy(alpha = 0.5f))
+            )
         }
-
     }
 }
 
