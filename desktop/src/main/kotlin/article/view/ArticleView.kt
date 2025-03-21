@@ -31,6 +31,8 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChange
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -48,6 +50,7 @@ import space.kscience.kmath.ast.parseMath
 import space.kscience.kmath.ast.rendering.FeaturedMathRendererWithPostProcess
 import space.kscience.kmath.ast.rendering.LatexSyntaxRenderer
 import space.kscience.kmath.ast.rendering.renderWithStringBuilder
+import kotlin.math.max
 
 data class ArticleScreen(
     val board: Board,
@@ -285,12 +288,14 @@ fun BlockFrame(
                 }
 
 
+
                 if (block.blockType == BlockType.CANVAS) {
                     EditableCanvas(
                         block = block,
-                        onCanvasUpdate = {
-                            articleModel.saveBlock(blockIndex, pathsContent=it, article=article, board = board)
-                        })
+                        onCanvasUpdate = {paths, height ->
+                            articleModel.saveBlock(blockIndex, pathsContent=paths, canvasHeight=height, article=article, board = board)
+                        }
+                    )
                 }
 
                 if (isSelected) {
@@ -305,7 +310,7 @@ fun BlockFrame(
 @Composable
 fun EditableCanvas(
     block: ContentBlock,
-    onCanvasUpdate: (MutableList<Path>) -> Unit
+    onCanvasUpdate: (MutableList<Path>, Int) -> Unit
 ) {
 
     var startPaths: MutableList<Path> = when (block.blockType) {
@@ -319,16 +324,27 @@ fun EditableCanvas(
     var isOutsideBox by remember { mutableStateOf(false) }
     var isErasing by remember { mutableStateOf(false) } // Eraser mode toggle
 
+    var canvasHeight by remember { mutableStateOf((block as CanvasBlock).height) }
+    val resizeThreshold = LocalDensity.current.run { 30 }
+    var isResizing by remember {mutableStateOf(false)}
+
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height((block as CanvasBlock).height.dp)
+            .height(canvasHeight.dp)
             .background(Color.White)
             .pointerInput(Unit) {
                 detectDragGestures(
                     onDragStart = { offset ->
-                        if (offset.x in 0f..size.width.toFloat() && offset.y in 0f..size.height.toFloat()) {
+                        val boxHeight = size.height.toFloat()
+                        val isNearBottomEdge = offset.y in (boxHeight - resizeThreshold)..boxHeight
+                        if (isNearBottomEdge) {
+                            isResizing = true
+                            isDrawing = false
+                            println("DEBUG: RESIZING CANVAS")
+                        }
+                        else {
                             isDrawing = true
                             isOutsideBox = false
 
@@ -341,42 +357,49 @@ fun EditableCanvas(
                         }
                     },
                     onDrag = { change, _ ->
-                        val boxWidth = size.width
-                        val boxHeight = size.height
+                        if (isResizing) {
+                            val newHeight = max(50, (canvasHeight + 0.5*change.positionChange().y).toInt())
+                            canvasHeight = newHeight
+                        }
+                        else {
+                            val boxWidth = size.width
+                            val boxHeight = size.height
 
-                        val isInside = change.position.x in 0f..boxWidth.toFloat() &&
-                                change.position.y in 0f..boxHeight.toFloat()
+                            val isInside = change.position.x in 0f..boxWidth.toFloat() &&
+                                    change.position.y in 0f..boxHeight.toFloat()
 
-                        if (isInside) {
-                            if (isErasing) {
-                                // Remove paths near the cursor position
-                                paths.removeAll { path -> isPointNearPath(change.position, path) }
-                            } else {
-                                if (isOutsideBox) {
-                                    currentPath = Path().apply { moveTo(change.position.x, change.position.y) }
-                                    isOutsideBox = false
+                            if (isInside) {
+                                if (isErasing) {
+                                    // Remove paths near the cursor position
+                                    paths.removeAll { path -> isPointNearPath(change.position, path) }
                                 } else {
-                                    currentPath = Path().apply {
-                                        addPath(currentPath)
-                                        lineTo(change.position.x, change.position.y)
+                                    if (isOutsideBox) {
+                                        currentPath = Path().apply { moveTo(change.position.x, change.position.y) }
+                                        isOutsideBox = false
+                                    } else {
+                                        currentPath = Path().apply {
+                                            addPath(currentPath)
+                                            lineTo(change.position.x, change.position.y)
+                                        }
                                     }
                                 }
-                            }
-                        } else {
-                            if (!isOutsideBox && !isErasing) {
-                                paths.add(currentPath)
-                                onCanvasUpdate(paths)
-                                currentPath = Path()
-                                isOutsideBox = true
+                            } else {
+                                if (!isOutsideBox && !isErasing) {
+                                    paths.add(currentPath)
+                                    onCanvasUpdate(paths, canvasHeight)
+                                    currentPath = Path()
+                                    isOutsideBox = true
+                                }
                             }
                         }
                     },
                     onDragEnd = {
                         if (!isOutsideBox && !isErasing) {
                             paths.add(currentPath)
-                            onCanvasUpdate(paths)
+                            onCanvasUpdate(paths, canvasHeight)
                         }
                         isDrawing = false
+                        isResizing = false
                         currentPath = Path()
                     }
                 )
@@ -389,7 +412,9 @@ fun EditableCanvas(
         ) { Text(if (!isErasing) "Erase" else "Draw" ) }
 
         // drawing the existing path
-        Canvas(modifier = Modifier.fillMaxSize()) {
+        Canvas(
+            modifier = Modifier.fillMaxSize()
+        ) {
             paths.forEach { path ->
                 drawPath(
                     path = path,
@@ -407,7 +432,27 @@ fun EditableCanvas(
                 )
             }
         }
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Colors.lightGrey)
+                .align(Alignment.BottomCenter)
+                .height((resizeThreshold / LocalDensity.current.density).dp)
 
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Menu,
+                    contentDescription = "Canvas Height Slider",
+                    modifier = Modifier.size(resizeThreshold.dp-5.dp),
+                    tint = Colors.darkGrey
+                )
+            }
+        }
     }
 }
 
