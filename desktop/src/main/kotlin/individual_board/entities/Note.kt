@@ -6,6 +6,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.bson.codecs.kotlinx.ObjectIdSerializer
 import org.bson.types.ObjectId
+import java.time.Instant
 import java.util.*
 
 /* Notes */
@@ -18,8 +19,10 @@ data class Note @OptIn(ExperimentalSerializationApi::class) constructor(
     var desc: String = "",
     var type: String? = "section", // options: "article", "section"
     @Contextual var contentBlocks: List<@Serializable(with = ObjectIdSerializer::class) ObjectId> = mutableListOf(),
-    var parentNotes: MutableList<Note> = mutableListOf(),
-    var relatedNotes: MutableList<Note> = mutableListOf(),
+    @Contextual var relatedNotes: List<@Serializable(with = ObjectIdSerializer::class) ObjectId> = mutableListOf(),
+    var datetimeCreated: String = Instant.now().toString(),
+    var datetimeUpdated: String = Instant.now().toString(),
+    var datetimeAccessed: String = Instant.now().toString()
 )
 
 

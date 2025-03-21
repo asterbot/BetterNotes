@@ -37,7 +37,7 @@ dependencies {
 
     implementation("org.mongodb:bson-kotlinx:4.10.1")
     // For logging from Mongo's side
-    implementation("org.slf4j:slf4j-simple:2.0.7")
+//    implementation("org.slf4j:slf4j-simple:2.0.7")
 
     // DotEnv file reader
     implementation("io.github.cdimascio:dotenv-kotlin:6.5.1")
@@ -66,7 +66,7 @@ dependencies {
 //    implementation("io.github.vinceglb:filekit-dialogs:$version")
 //    implementation("io.github.vinceglb:filekit-dialogs-compose:$version")
 //    implementation("io.github.vinceglb:filekit-coil:$version")
-    
+
     testImplementation(kotlin("test"))
 }
 

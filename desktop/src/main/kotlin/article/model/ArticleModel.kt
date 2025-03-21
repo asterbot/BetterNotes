@@ -1,12 +1,21 @@
 package article.model
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.Path
 import article.entities.*
+import boards.entities.Board
 import individual_board.entities.Note
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import org.bson.types.ObjectId
 import shared.ConnectionManager
 import shared.IPublisher
+import shared.dbQueue
+import shared.persistence.Create
+import shared.persistence.Delete
 import shared.persistence.IPersistence
-import javax.sql.rowset.RowSetMetaDataImpl
+import shared.persistence.Update
+import javax.swing.text.StringContent
 
 // TODO: NOTE: should pass in board probably
 class ArticleModel(val persistence: IPersistence) : IPublisher() {
@@ -31,7 +40,7 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
     }
 
 
-    fun addBlock(index: Int, type: BlockType, article: Note) {
+    fun addBlock(index: Int, type: BlockType, article: Note, board: Board) {
         println("DEBUG: inserting empty block at index $index (attempt)")
 
         contentBlockDict[article.id]?.let { contentBlocks ->
@@ -42,7 +51,11 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
                 println("DEBUG: inserted block at index $index into model")
 
                 if (ConnectionManager.isConnected) {
-                    persistence.insertContentBlock(article, blockToAdd, index)
+                    persistence.insertContentBlock(article, blockToAdd, index, board.id)
+                }
+                else{
+                    dbQueue.addToQueue(Create(persistence, blockToAdd,
+                        boardDependency = board, noteDependency = article, indexDependency = index))
                 }
 
                 notifySubscribers()
@@ -53,7 +66,11 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
                 println("DEBUG: inserted block at index $index (from the end) into model")
 
                 if (ConnectionManager.isConnected) {
-                    persistence.addContentBlock(article, blockToAdd)
+                    persistence.addContentBlock(article, blockToAdd, board.id)
+                }
+                else{
+                    dbQueue.addToQueue(Create(persistence, blockToAdd,
+                        boardDependency = board, noteDependency = article))
                 }
 
                 notifySubscribers()
@@ -61,7 +78,7 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
         }
     }
 
-    fun duplicateBlock(index: Int, article: Note) {
+    fun duplicateBlock(index: Int, article: Note, board: Board) {
         println("DEBUG: duplicating block at index $index (attempt)")
         contentBlockDict[article.id]?.let { contentBlocks ->
             if (index in 0..(contentBlocks.size - 1)) {
@@ -70,7 +87,7 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
                 println("DEBUG: duplicated block at index $index into model")
 
                 if (ConnectionManager.isConnected) {
-                    persistence.duplicateContentBlock(article, dupBlock, index+1)
+                    persistence.insertContentBlock(article, dupBlock, index+1, board.id)
                 }
 
                 notifySubscribers()
@@ -78,7 +95,7 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
         }
     }
 
-    fun moveBlockUp(index: Int, article: Note) {
+    fun moveBlockUp(index: Int, article: Note, board: Board) {
         println("DEBUG: moving up block at index $index (attempt)")
         contentBlockDict[article.id]?.let { contentBlocks ->
             if (index in 1..(contentBlocks.size - 1)) {
@@ -88,7 +105,7 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
                 println("DEBUG: swapped blocks with indices $index and ${index - 1} in model")
 
                 if (ConnectionManager.isConnected) {
-                    persistence.swapContentBlocks(article, index, index-1)
+                    persistence.swapContentBlocks(article.id, index, index-1, board.id)
                 }
 
                 notifySubscribers()
@@ -96,7 +113,7 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
         }
     }
 
-    fun moveBlockDown(index: Int, article: Note) {
+    fun moveBlockDown(index: Int, article: Note, board: Board) {
         println("DEBUG: moving down block at index $index (attempt)")
         contentBlockDict[article.id]?.let { contentBlocks ->
             if (index in 0..(contentBlocks.size - 2)) {
@@ -106,7 +123,7 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
                 println("DEBUG: swapped blocks with indices $index and ${index + 1} in model")
 
                 if (ConnectionManager.isConnected) {
-                    persistence.swapContentBlocks(article, index, index+1)
+                    persistence.swapContentBlocks(article.id, index, index+1, board.id)
                 }
 
                 notifySubscribers()
@@ -114,7 +131,7 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
         }
     }
 
-    fun deleteBlock(index: Int, article: Note) {
+    fun deleteBlock(index: Int, article: Note, board: Board) {
         println("DEBUG: deleting block at index $index (attempt)")
         contentBlockDict[article.id]?.let { contentBlocks ->
             if (index in 0..(contentBlocks.size - 1)) {
@@ -123,7 +140,10 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
                 println("DEBUG: deleted block at index $index in model")
 
                 if (ConnectionManager.isConnected) {
-                    persistence.deleteContentBlock(article, toRemove.id)
+                    persistence.deleteContentBlock(article.id, toRemove.id, board.id)
+                }
+                else{
+                    dbQueue.addToQueue(Delete(persistence, toRemove, boardDependency = board, noteDependency = article))
                 }
 
                 notifySubscribers()
@@ -132,8 +152,8 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
     }
 
     // TODO: later (expand to other ContentBlock types)
-    fun saveBlock(index: Int, stringContent: String = "", pathsContent: MutableList<Path> = mutableListOf(), bListContent: MutableList<Byte> = mutableListOf(),
-                  language: String = "kotlin", article: Note) {
+    fun saveBlock(index: Int, stringContent: String = "", pathsContent: MutableList<Path> = mutableListOf(), heightContent: MutableState<Float> = mutableStateOf(0f), bListContent: MutableList<Byte> = mutableListOf(),
+                  language: String = "kotlin", article: Note, board: Board) {
         contentBlockDict[article.id]?.let { contentBlocks ->
             if (index in 0..(contentBlocks.size - 1)) {
                 var block = contentBlocks[index]
@@ -145,6 +165,7 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
                     (block as CodeBlock).text = stringContent
                 } else if (block is CanvasBlock) {
                     (block as CanvasBlock).paths = pathsContent
+                    (block as CanvasBlock).canvasHeight = heightContent
                 } else if (block is MathBlock) {
                     (block as MathBlock).text = stringContent
                 } else if (block is MediaBlock) {
@@ -152,11 +173,22 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
                 }
                 // TODO: might need to fix for canvas? idk if it can handle it yet
                 if (ConnectionManager.isConnected) {
-                    persistence.updateContentBlock(block, stringContent, pathsContent, language)
+                    persistence.updateContentBlock(block, stringContent, pathsContent, language, article, board.id)
                 }
-
-                notifySubscribers()
+                else{
+                    dbQueue.addToQueue(
+                        Update(persistence, block, mutableMapOf(
+                        "text" to stringContent,
+                        "pathsContent" to pathsContent,
+                        "bListContent" to bListContent,
+                        "language" to language,
+                        "article" to article,
+                        "boardId" to board.id
+                    ))
+                    )
+                }
             }
         }
+        notifySubscribers()
     }
 }

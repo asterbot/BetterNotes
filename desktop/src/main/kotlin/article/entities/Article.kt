@@ -1,5 +1,9 @@
 package article.entities
 
+import androidx.compose.runtime.MutableFloatState
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.Path
 import kotlinx.serialization.*
 import org.bson.codecs.kotlinx.ObjectIdSerializer
@@ -88,10 +92,11 @@ data class CanvasBlock (
     @SerialName("_id")
     @Contextual override var id: ObjectId = ObjectId(),
     var paths: MutableList<Path> = mutableListOf<Path>(),
+    var canvasHeight: MutableState<Float> = mutableStateOf(0f)
 ) : ContentBlock() {
     override val blockType = BlockType.CANVAS
     override fun copyBlock(): ContentBlock {
-        return CanvasBlock(paths=paths).apply { this.id = ObjectId() }
+        return CanvasBlock(paths=paths, canvasHeight=canvasHeight).apply { this.id = ObjectId() }
     }
 }
 

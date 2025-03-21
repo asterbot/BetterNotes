@@ -1,20 +1,20 @@
 package shared
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
-import androidx.compose.material3.Icon
+import androidx.compose.foundation.lazy.*
+import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import individual_board.entities.Note
+
 
 @Composable
 fun ConfirmationDialog(
@@ -131,12 +131,24 @@ fun AddBoardDialog(
 fun AddNoteDialog(
     type: String,
     onDismissRequest: () -> Unit,
-    onConfirmation: (boardName: String, boardDesc: String) -> Unit
+    onConfirmation: (noteName: String, noteDesc: String, relatedNotes: List<Note>) -> Unit,
+    onGetOtherNotes: (String) -> List<Note>
 ) {
     var noteTitle by remember { mutableStateOf(TextFieldValue("")) }
     var noteDesc by remember { mutableStateOf(TextFieldValue("")) }
 
+    // related notes
+    var query by remember { mutableStateOf("") }
+    var suggestions by remember { mutableStateOf(listOf<Note>()) }
+    var relatedNotes by remember { mutableStateOf(listOf<Note>()) }
+
     var isError by remember { mutableStateOf(false) }
+
+    LaunchedEffect(query) {
+        suggestions = onGetOtherNotes(query)
+    }
+
+    suggestions = suggestions.filter { it !in relatedNotes }
 
     AlertDialog(
         icon = { Icons.Default.Add },
@@ -162,6 +174,58 @@ fun AddNoteDialog(
                     label = { androidx.compose.material.Text("Note Description") },
                     modifier = Modifier.fillMaxWidth()
                 )
+                Spacer(modifier = Modifier.height(8.dp))
+                // Autocomplete field for related notes
+                TextField(
+                    value = query,
+                    onValueChange = { query = it },
+                    label = { androidx.compose.material.Text("Add Related Note") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                LazyColumn {
+                    items(suggestions) { note ->
+                        Text(
+                            text = note.title,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    // Add the note if it's not already selected
+                                    if (note !in relatedNotes) {
+                                        relatedNotes = relatedNotes + note
+                                    }
+                                    // Clear the query and suggestions once a selection is made
+                                    query = ""
+                                    suggestions = suggestions.filter { it !in relatedNotes }
+                                }
+                                .padding(8.dp)
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                // Display selected related notes as chips (or simple texts)
+                if (relatedNotes.isNotEmpty()) {
+                    Text("Related Notes:")
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
+                        relatedNotes.forEach { note ->
+                            Surface(
+                                modifier = Modifier
+                                    .padding(4.dp)
+                                    .clickable {
+                                        // Remove the note when clicked (optional)
+                                        relatedNotes = relatedNotes - note
+                                        suggestions = suggestions.filter { it !in relatedNotes }
+                                    },
+                                shape = MaterialTheme.shapes.small,
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                            ) {
+                                Text(
+                                    text = note.title,
+                                    modifier = Modifier.padding(8.dp)
+                                )
+                            }
+                        }
+                    }
+                }
             }
         },
         onDismissRequest = {
@@ -176,10 +240,12 @@ fun AddNoteDialog(
                     else {
                         onConfirmation(
                             noteTitle.text,
-                            noteDesc.text
+                            noteDesc.text,
+                            relatedNotes
                         )
                         noteTitle = TextFieldValue("")
                         noteDesc = TextFieldValue("")
+                        relatedNotes = emptyList()
                     }
                 }
             ) {
@@ -192,6 +258,7 @@ fun AddNoteDialog(
                     onDismissRequest()
                     noteTitle = TextFieldValue("")
                     noteDesc = TextFieldValue("")
+                    relatedNotes = emptyList()
                 }
             ) {
                 Text("Cancel")
@@ -279,21 +346,33 @@ fun EditBoardDialog(
 fun EditNoteDialog(
     type: String?,
     onDismissRequest: () -> Unit,
-    onConfirmation: (noteTitle: String, noteDesc: String) -> Unit,
+    onConfirmation: (noteTitle: String, noteDesc: String, relatedNotes: List<Note>) -> Unit,
     noteTitle: String,
-    noteDesc: String
+    noteDesc: String,
+    initialRelatedNotes: List<Note>,
+    onGetOtherNotes: (String) -> List<Note>
 ) {
     var newNoteTitle by remember { mutableStateOf(TextFieldValue(noteTitle)) }
     var newNoteDesc by remember { mutableStateOf(TextFieldValue(noteDesc)) }
 
+    var query by remember { mutableStateOf("") }
+    var suggestions by remember { mutableStateOf(emptyList<Note>()) }
+    var relatedNotes by remember { mutableStateOf(initialRelatedNotes.toMutableStateList()) }
+
     var isError by remember { mutableStateOf(false) }
 
+    // Update suggestions on query change
+    LaunchedEffect(query) {
+        suggestions = onGetOtherNotes(query)
+            .filter { it !in relatedNotes }
+    }
+
     AlertDialog(
-        icon = { Icons.Default.Add },
+        icon = { Icon(Icons.Default.Edit, contentDescription = null) },
         title = { Text(text = "Edit ${type}") },
         text = {
             Column(modifier = Modifier.padding(16.dp)) {
-                // Input field for title
+                // Title field
                 TextField(
                     value = newNoteTitle,
                     onValueChange = { newText ->
@@ -305,13 +384,63 @@ fun EditNoteDialog(
                     isError = isError,
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                // Input field for description
+                // Description field
                 TextField(
                     value = newNoteDesc,
                     onValueChange = { newNoteDesc = it },
                     label = { androidx.compose.material.Text("Note Description") },
                     modifier = Modifier.fillMaxWidth()
                 )
+                Spacer(modifier = Modifier.height(8.dp))
+                // Related note search input
+                TextField(
+                    value = query,
+                    onValueChange = { query = it },
+                    label = { androidx.compose.material.Text("Add Related Note") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                // Suggestions list
+                LazyColumn {
+                    items(suggestions) { note ->
+                        Text(
+                            text = note.title,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    if (note !in relatedNotes) {
+                                        relatedNotes.add(note)
+                                        query = ""
+                                        suggestions = emptyList()
+                                    }
+                                }
+                                .padding(8.dp)
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                // Chips for current related notes
+                if (relatedNotes.isNotEmpty()) {
+                    Text("Related Notes:")
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
+                        relatedNotes.forEach { note ->
+                            Surface(
+                                modifier = Modifier
+                                    .padding(4.dp)
+                                    .clickable {
+                                        relatedNotes.remove(note)
+                                        suggestions = onGetOtherNotes(query).filter { it !in relatedNotes }
+                                    },
+                                shape = MaterialTheme.shapes.small,
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                            ) {
+                                Text(
+                                    text = note.title,
+                                    modifier = Modifier.padding(8.dp)
+                                )
+                            }
+                        }
+                    }
+                }
             }
         },
         onDismissRequest = {
@@ -322,20 +451,20 @@ fun EditNoteDialog(
                 onClick = {
                     if (newNoteTitle.text.isBlank()) {
                         isError = true
-                    }
-                    else {
+                    } else {
                         onConfirmation(
                             newNoteTitle.text,
-                            newNoteDesc.text
+                            newNoteDesc.text,
+                            relatedNotes
                         )
                         newNoteTitle = TextFieldValue("")
                         newNoteDesc = TextFieldValue("")
+                        relatedNotes.clear()
                     }
                 }
             ) {
                 Text("Save")
             }
-
         },
         dismissButton = {
             TextButton(
@@ -343,6 +472,7 @@ fun EditNoteDialog(
                     onDismissRequest()
                     newNoteTitle = TextFieldValue("")
                     newNoteDesc = TextFieldValue("")
+                    relatedNotes.clear()
                 }
             ) {
                 Text("Cancel")

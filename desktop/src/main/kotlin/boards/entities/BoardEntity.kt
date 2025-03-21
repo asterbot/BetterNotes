@@ -6,6 +6,7 @@ import kotlinx.serialization.json.Json
 import org.bson.codecs.kotlinx.ObjectIdSerializer
 import org.bson.codecs.pojo.annotations.BsonProperty
 import org.bson.types.ObjectId
+import java.time.Instant
 
 // Entities holds the main data for the class and provides manipulator functions
 
@@ -17,6 +18,9 @@ data class Board @OptIn(ExperimentalSerializationApi::class) constructor(
     var desc: String,
     // For some reason we need to serialize each objectId independently when storing in lists?
     @Contextual var notes: List<@Serializable(with = ObjectIdSerializer::class) ObjectId> = mutableListOf(),
+    var datetimeCreated: String = Instant.now().toString(),
+    var datetimeUpdated: String = Instant.now().toString(),
+    var datetimeAccessed: String = Instant.now().toString()
 )
 
 fun MutableList<Board>.addBoard(element: Board): Boolean {
