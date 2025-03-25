@@ -22,12 +22,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.painter.BitmapPainter
-import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.pointer.pointerInput
@@ -47,6 +44,7 @@ import individual_board.entities.Note
 import individual_board.view.IndividualBoardScreen
 import io.github.vinceglb.filekit.absolutePath
 import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
+import io.github.vinceglb.filekit.exists
 import shared.*
 import space.kscience.kmath.ast.parseMath
 import space.kscience.kmath.ast.rendering.FeaturedMathRendererWithPostProcess
@@ -302,7 +300,12 @@ fun BlockFrame(
                 }
 
                 if (block.blockType == BlockType.MEDIA) {
-                    addMedia(isSelected)
+                    addMedia( block = block,
+                        isSelected = isSelected,
+                        onMediaUpdate = {bList ->
+                            articleModel.saveBlock(blockIndex, bListContent = bList, article = article,board = board)
+                        }
+                    )
                 }
 
                 if (isSelected) {
@@ -320,22 +323,32 @@ fun cropImage() {
 }
 
 @Composable
-fun addMedia(isSelected: Boolean = true) {
-    var filePath by remember { mutableStateOf<String?>(null) }
-
-    val launcher = rememberFilePickerLauncher { file ->
-        if (file != null) {
-            filePath = file.absolutePath()
-            println(filePath)
-        } else {
-            println("No file selected")
-        }
+fun addMedia(block: ContentBlock, isSelected: Boolean = true, onMediaUpdate: (MutableList<Byte>) -> Unit) {
+    // Initialize the byte list from the block
+    val initialBytes = when (block.blockType) {
+        BlockType.MEDIA -> (block as MediaBlock).bList
+        else -> mutableListOf()
     }
 
+    // Use remember to maintain state across recompositions
+    var imageBytes by remember { mutableStateOf(initialBytes) }
+    var filePath by remember { mutableStateOf<String?>(null) }
+
+        val launcher = rememberFilePickerLauncher { file ->
+                if (file != null) {
+                    filePath = file.absolutePath()
+                    println(filePath)
+                    if (file.exists()) {
+                        imageBytes = File(filePath).readBytes().toMutableList()
+                    }
+                } else {
+                    println("No file selected")
+                }
+        }
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
-        if (isSelected && filePath == null) {
+        if (isSelected && filePath == null && imageBytes.isEmpty()) {
             TextButton(
                 modifier = Modifier.align(Alignment.CenterHorizontally),
                 colors = textButtonColours(),
@@ -344,32 +357,81 @@ fun addMedia(isSelected: Boolean = true) {
                 Text("Pick a file")
             }
         }
+    }
 
-        filePath?.let { path ->
-            val file = File(path)
-            if (file.exists()) {
-                // Read file bytes and create an ImageBitmap.
-                val imageBytes = file.readBytes()
-                val imageBitmap = org.jetbrains.skia.Image.makeFromEncoded(imageBytes).toComposeImageBitmap()
-                Image(
-                    painter = BitmapPainter(image = imageBitmap),
-                    contentDescription = "everyone's favorite bird",
-                    modifier = Modifier.fillMaxSize()
-                        .pointerInput(Unit) {
-                            detectTapGestures(
-                                onDoubleTap = {
-                                    cropImage()
-                                    println("crop mode :)")
-                                }
-                            )
+    if (imageBytes.isNotEmpty()) {
+        onMediaUpdate(imageBytes)
+        val imageBitmap = org.jetbrains.skia.Image.makeFromEncoded(imageBytes.toByteArray()).toComposeImageBitmap()
+        Image(
+            painter = BitmapPainter(image = imageBitmap),
+            contentDescription = "everyone's favorite bird",
+            modifier = Modifier.fillMaxSize()
+                .pointerInput(Unit) {
+                    detectTapGestures(
+                        onDoubleTap = {
+                            cropImage()
+                            println("crop mode :)")
                         }
-                )
-            } else {
-                Text(text = "File not found.")
-            }
-        }
+                    )
+                }
+        )
+    } else {
+        println("File cannot be displayed")
     }
 }
+
+
+//@Composable
+//fun addMedia(isSelected: Boolean = true) {
+//    var filePath by remember { mutableStateOf<String?>(null) }
+//
+//    val launcher = rememberFilePickerLauncher { file ->
+//        if (file != null) {
+//            filePath = file.absolutePath()
+//            println(filePath)
+//        } else {
+//            println("No file selected")
+//        }
+//    }
+//
+//    Column(
+//        modifier = Modifier.fillMaxSize()
+//    ) {
+//        if (isSelected && filePath == null) {
+//            TextButton(
+//                modifier = Modifier.align(Alignment.CenterHorizontally),
+//                colors = textButtonColours(),
+//                onClick = { launcher.launch() },
+//            ) {
+//                Text("Pick a file")
+//            }
+//        }
+//
+//        filePath?.let { path ->
+//            val file = File(path)
+//            if (file.exists()) {
+//                // Read file bytes and create an ImageBitmap.
+//                val imageBytes = file.readBytes()
+//                val imageBitmap = org.jetbrains.skia.Image.makeFromEncoded(imageBytes).toComposeImageBitmap()
+//                Image(
+//                    painter = BitmapPainter(image = imageBitmap),
+//                    contentDescription = "everyone's favorite bird",
+//                    modifier = Modifier.fillMaxSize()
+//                        .pointerInput(Unit) {
+//                            detectTapGestures(
+//                                onDoubleTap = {
+//                                    cropImage()
+//                                    println("crop mode :)")
+//                                }
+//                            )
+//                        }
+//                )
+//            } else {
+//                Text(text = "File not found.")
+//            }
+//        }
+//    }
+//}
 
 
 //@Composable
