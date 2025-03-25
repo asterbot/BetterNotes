@@ -383,6 +383,7 @@ fun addMedia(block: ContentBlock, isSelected: Boolean = true, onMediaUpdate: (Mu
     }
 }
 
+// original version with path and canvas
 //@Composable
 //fun EditableCanvas(
 //    block: ContentBlock,
@@ -537,6 +538,8 @@ fun addMedia(block: ContentBlock, isSelected: Boolean = true, onMediaUpdate: (Mu
 //            point.y in (pathBounds.top - threshold)..(pathBounds.bottom + threshold))
 //}
 
+
+// nothing is being drawn when dragging on the screen
 //@Composable
 //fun EditableCanvas() {
 //
@@ -671,6 +674,8 @@ fun addMedia(block: ContentBlock, isSelected: Boolean = true, onMediaUpdate: (Mu
 //    }
 //}
 
+
+// lines are not saved after lift of mouse
 //@Composable
 //fun EditableCanvas() {
 //    val paths = remember { mutableStateListOf<Path>() }
@@ -818,7 +823,7 @@ fun addMedia(block: ContentBlock, isSelected: Boolean = true, onMediaUpdate: (Mu
 //}
 
 
-// lines are saved
+// lines are saved, best version yet
 @Composable
 fun EditableCanvas() {
     val paths = remember { mutableStateListOf<Path>() }
