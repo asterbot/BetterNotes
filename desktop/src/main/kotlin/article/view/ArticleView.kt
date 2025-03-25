@@ -671,6 +671,154 @@ fun addMedia(block: ContentBlock, isSelected: Boolean = true, onMediaUpdate: (Mu
 //    }
 //}
 
+//@Composable
+//fun EditableCanvas() {
+//    val paths = remember { mutableStateListOf<Path>() }
+//    var currentPath by remember { mutableStateOf(Path()) }
+//    var isDrawing by remember { mutableStateOf(false) }
+//    var isOutsideBox by remember { mutableStateOf(false) }
+//    var isErasing by remember { mutableStateOf(false) }
+//
+//    var canvasHeight by remember { mutableStateOf(100) }
+//    val resizeThreshold = LocalDensity.current.run { 30 }
+//    var isResizing by remember { mutableStateOf(false) }
+//
+//    var bitmap by remember { mutableStateOf(ImageBitmap(800, 600)) } // Initialize bitmap
+//    val canvasPaint = Paint().apply { color = Color.Black }
+//
+//    // Function to update bitmap with paths
+//    fun updateBitmapWithPaths() {
+//        val canvas = Canvas(bitmap) // Canvas to draw on the bitmap
+//
+//        // Draw all paths on the canvas
+//        paths.forEach { path ->
+//            canvas.drawPath(path, canvasPaint)
+//        }
+//
+//        // Draw the current dragging path
+//        if (isDrawing && !isErasing) {
+//            canvas.drawPath(currentPath, canvasPaint)
+//        }
+//    }
+//
+//    Box(
+//        modifier = Modifier
+//            .fillMaxWidth()
+//            .height(canvasHeight.dp)
+//            .background(Color.White)
+//            .pointerInput(Unit) {
+//                detectDragGestures(
+//                    onDragStart = { offset ->
+//                        val boxHeight = size.height.toFloat()
+//                        val isNearBottomEdge = offset.y in (boxHeight - resizeThreshold)..boxHeight
+//                        if (isNearBottomEdge) {
+//                            isResizing = true
+//                            isDrawing = false
+//                            println("DEBUG: RESIZING CANVAS")
+//                        } else {
+//                            isDrawing = true
+//                            isOutsideBox = false
+//
+//                            if (isErasing) {
+//                                // Erase paths near the cursor
+//                                paths.removeAll { path -> isPointNearPath(offset, path) }
+//                            } else {
+//                                currentPath = Path().apply { moveTo(offset.x, offset.y) }
+//                            }
+//                        }
+//                    },
+//                    onDrag = { change, _ ->
+//                        if (isResizing) {
+//                            val newHeight = max(50, (canvasHeight + 0.5 * change.positionChange().y).toInt())
+//                            canvasHeight = newHeight
+//                        } else {
+//                            val boxWidth = size.width
+//                            val boxHeight = size.height
+//
+//                            val isInside = change.position.x in 0f..boxWidth.toFloat() &&
+//                                    change.position.y in 0f..boxHeight.toFloat()
+//
+//                            if (isInside) {
+//                                if (isErasing) {
+//                                    // Remove paths near the cursor position
+//                                    paths.removeAll { path -> isPointNearPath(change.position, path) }
+//                                } else {
+//                                    if (isOutsideBox) {
+//                                        currentPath = Path().apply { moveTo(change.position.x, change.position.y) }
+//                                        isOutsideBox = false
+//                                    } else {
+//                                        currentPath = Path().apply {
+//                                            addPath(currentPath)
+//                                            lineTo(change.position.x, change.position.y)
+//                                        }
+//                                    }
+//                                }
+//                            } else {
+//                                if (!isOutsideBox && !isErasing) {
+//                                    paths.add(currentPath)
+//                                    currentPath = Path()
+//                                    isOutsideBox = true
+//                                }
+//                            }
+//                        }
+//                    },
+//                    onDragEnd = {
+//                        if (!isOutsideBox && !isErasing) {
+//                            paths.add(currentPath)
+//                        }
+//                        isDrawing = false
+//                        isResizing = false
+//                        currentPath = Path()
+//                    }
+//                )
+//            }
+//    ) {
+//        TextButton(
+//            onClick = { isErasing = !isErasing },
+//        ) { Text(if (!isErasing) "Erase" else "Draw") }
+//
+//        Canvas(
+//            modifier = Modifier.fillMaxSize()
+//        ) {
+//            // Update bitmap with current paths and drawing state
+//            updateBitmapWithPaths()
+//
+//            // Drawing the dragging path (on top of previous paths)
+//            if (isDrawing && !isErasing) {
+//                drawPath(currentPath, color = Color.Black, style = Stroke(width = 4f))
+//            }
+//        }
+//    }
+//
+//    Box(
+//        modifier = Modifier
+//            .fillMaxWidth()
+//            .background(Color.LightGray)
+//            //.align(Alignment.BottomCenter)
+//            .height((resizeThreshold / LocalDensity.current.density).dp)
+//    ) {
+//        Column(
+//            modifier = Modifier.fillMaxSize(),
+//            horizontalAlignment = Alignment.CenterHorizontally,
+//            verticalArrangement = Arrangement.Center
+//        ) {
+//            Icon(
+//                imageVector = Icons.Default.Menu,
+//                contentDescription = "Canvas Height Slider",
+//                modifier = Modifier.size(resizeThreshold.dp - 5.dp),
+//                tint = Color.DarkGray
+//            )
+//        }
+//    }
+//}
+//fun isPointNearPath(point: Offset, path: Path, threshold: Float = 20f): Boolean {
+//    val pathBounds = path.getBounds()
+//    return (point.x in (pathBounds.left - threshold)..(pathBounds.right + threshold) &&
+//            point.y in (pathBounds.top - threshold)..(pathBounds.bottom + threshold))
+//}
+
+
+// lines are saved
 @Composable
 fun EditableCanvas() {
     val paths = remember { mutableStateListOf<Path>() }
@@ -755,7 +903,7 @@ fun EditableCanvas() {
                                 }
                             } else {
                                 if (!isOutsideBox && !isErasing) {
-                                    paths.add(currentPath)
+                                    paths.add(currentPath) // Add the completed path
                                     currentPath = Path()
                                     isOutsideBox = true
                                 }
@@ -764,7 +912,7 @@ fun EditableCanvas() {
                     },
                     onDragEnd = {
                         if (!isOutsideBox && !isErasing) {
-                            paths.add(currentPath)
+                            paths.add(currentPath) // Add the current path to the list when drag ends
                         }
                         isDrawing = false
                         isResizing = false
@@ -782,6 +930,11 @@ fun EditableCanvas() {
         ) {
             // Update bitmap with current paths and drawing state
             updateBitmapWithPaths()
+
+            // Drawing the paths stored in the list (for persistence)
+            paths.forEach { path ->
+                drawPath(path, color = Color.Black, style = Stroke(width = 4f))
+            }
 
             // Drawing the dragging path (on top of previous paths)
             if (isDrawing && !isErasing) {
@@ -811,12 +964,13 @@ fun EditableCanvas() {
         }
     }
 }
-fun isPointNearPath(point: Offset, path: Path, threshold: Float = 20f): Boolean {
+
+// Check if a point is near any path for erasing purposes
+private fun isPointNearPath(point: Offset, path: Path, threshold: Float = 20f): Boolean {
     val pathBounds = path.getBounds()
     return (point.x in (pathBounds.left - threshold)..(pathBounds.right + threshold) &&
             point.y in (pathBounds.top - threshold)..(pathBounds.bottom + threshold))
 }
-
 
 @Composable
 fun EditableTextBox(
