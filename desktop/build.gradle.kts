@@ -67,6 +67,9 @@ dependencies {
 //    implementation("io.github.vinceglb:filekit-dialogs-compose:$version")
 //    implementation("io.github.vinceglb:filekit-coil:$version")
 
+    // color picker
+    implementation("com.github.skydoves:colorpicker-compose:1.1.2")
+
     testImplementation(kotlin("test"))
 }
 

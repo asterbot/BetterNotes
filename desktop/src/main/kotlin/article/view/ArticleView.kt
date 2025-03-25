@@ -55,6 +55,12 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
 import kotlin.math.max
+import com.github.skydoves.colorpicker.compose.AlphaSlider
+import com.github.skydoves.colorpicker.compose.AlphaTile
+import com.github.skydoves.colorpicker.compose.BrightnessSlider
+import com.github.skydoves.colorpicker.compose.ColorEnvelope
+import com.github.skydoves.colorpicker.compose.HsvColorPicker
+import com.github.skydoves.colorpicker.compose.rememberColorPickerController
 
 data class ArticleScreen(
     val board: Board,
@@ -838,6 +844,8 @@ fun EditableCanvas() {
 
     var bitmap by remember { mutableStateOf(ImageBitmap(800, 600)) } // Initialize bitmap
     val canvasPaint = Paint().apply { color = Color.Black }
+
+    val controller = rememberColorPickerController()
 
     // Function to update bitmap with paths
     fun updateBitmapWithPaths() {
