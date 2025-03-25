@@ -45,11 +45,14 @@ import individual_board.view.IndividualBoardScreen
 import io.github.vinceglb.filekit.absolutePath
 import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.exists
+import org.jetbrains.skia.Bitmap
 import shared.*
 import space.kscience.kmath.ast.parseMath
 import space.kscience.kmath.ast.rendering.FeaturedMathRendererWithPostProcess
 import space.kscience.kmath.ast.rendering.LatexSyntaxRenderer
 import space.kscience.kmath.ast.rendering.renderWithStringBuilder
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 import java.io.File
 import kotlin.math.max
 
@@ -401,7 +404,6 @@ fun EditableCanvas(
     val resizeThreshold = LocalDensity.current.run { 30 }
     var isResizing by remember {mutableStateOf(false)}
 
-
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -534,6 +536,7 @@ fun isPointNearPath(point: Offset, path: Path, threshold: Float = 20f): Boolean 
     return (point.x in (pathBounds.left - threshold)..(pathBounds.right + threshold) &&
             point.y in (pathBounds.top - threshold)..(pathBounds.bottom + threshold))
 }
+
 
 
 @Composable
