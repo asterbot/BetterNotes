@@ -40,27 +40,21 @@ import boards.entities.Board
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import com.github.skydoves.colorpicker.compose.ColorEnvelope
+import com.github.skydoves.colorpicker.compose.HsvColorPicker
+import com.github.skydoves.colorpicker.compose.rememberColorPickerController
 import individual_board.entities.Note
 import individual_board.view.IndividualBoardScreen
 import io.github.vinceglb.filekit.absolutePath
 import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.exists
-import org.jetbrains.skia.Bitmap
 import shared.*
 import space.kscience.kmath.ast.parseMath
 import space.kscience.kmath.ast.rendering.FeaturedMathRendererWithPostProcess
 import space.kscience.kmath.ast.rendering.LatexSyntaxRenderer
 import space.kscience.kmath.ast.rendering.renderWithStringBuilder
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
 import java.io.File
 import kotlin.math.max
-import com.github.skydoves.colorpicker.compose.AlphaSlider
-import com.github.skydoves.colorpicker.compose.AlphaTile
-import com.github.skydoves.colorpicker.compose.BrightnessSlider
-import com.github.skydoves.colorpicker.compose.ColorEnvelope
-import com.github.skydoves.colorpicker.compose.HsvColorPicker
-import com.github.skydoves.colorpicker.compose.rememberColorPickerController
 
 data class ArticleScreen(
     val board: Board,
@@ -146,16 +140,22 @@ fun ArticleCompose(board: Board, article: Note) {
                             for (contentBlock in articleContentBlocks) {
                                 if (contentBlock.blockType == BlockType.CANVAS) {
                                     println("\tCANVAS HAS ${(contentBlock as CanvasBlock).paths.size} PATHS")
-                                } else {
+                                } else if (contentBlock.blockType == BlockType.MEDIA) {
+                                    println("\tMEDIA HAS ${((contentBlock as MediaBlock).bList.size)} BYTE ARRAY")
+                                }
+                                else {
                                     println("\t$contentBlock")
                                 }
                             }
                         }
-                        println("FROM VIEWMODEL: ${contentBlocksList.contentBlocksList}")
+                        // println("FROM VIEWMODEL: ${contentBlocksList.contentBlocksList}")
                         for (contentBlock in contentBlocksList.contentBlocksList) {
                             if (contentBlock.blockType == BlockType.CANVAS) {
                                 println("\tCANVAS HAS ${(contentBlock as CanvasBlock).paths.size} PATHS")
-                            } else {
+                            } else if (contentBlock.blockType == BlockType.MEDIA) {
+                                println("\tMEDIA HAS ${((contentBlock as MediaBlock).bList.size)} BYTE ARRAY")
+                            }
+                            else {
                                 println("\t$contentBlock")
                             }
                         }
@@ -263,7 +263,7 @@ fun BlockFrame(
                         EditableTextBox(
                             block = block,
                             onTextChange = {
-                                if (block.blockType == BlockType.CODE){
+                                if (block.blockType == BlockType.CODE) {
                                     articleModel.saveBlock(blockIndex, stringContent = it, article = article,
                                         language = (block as CodeBlock).language, board = board)
                                 }
@@ -312,7 +312,7 @@ fun BlockFrame(
                     addMedia( block = block,
                         isSelected = isSelected,
                         onMediaUpdate = {bList ->
-                            articleModel.saveBlock(blockIndex, bListContent = bList, article = article,board = board)
+                            articleModel.saveBlock(blockIndex, bList = bList, article = article,board = board)
                         }
                     )
                 }
@@ -830,8 +830,9 @@ fun addMedia(block: ContentBlock, isSelected: Boolean = true, onMediaUpdate: (Mu
 
 
 // lines are saved, best version yet
+// block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int) -> Unit
 @Composable
-fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int) -> Unit) {
+fun EditableCanvas() {
     val paths = remember { mutableStateListOf<Path>() }
     var currentPath by remember { mutableStateOf(Path()) }
     var isDrawing by remember { mutableStateOf(false) }

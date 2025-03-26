@@ -4,7 +4,6 @@ import androidx.compose.ui.graphics.Path
 import article.entities.*
 import boards.entities.Board
 import com.mongodb.MongoException
-import com.mongodb.client.model.DropCollectionOptions
 import com.mongodb.client.model.Filters
 import com.mongodb.client.model.Updates
 import com.mongodb.kotlin.client.coroutine.MongoClient
@@ -14,15 +13,12 @@ import individual_board.entities.Note
 import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import org.bson.BsonInt64
 import org.bson.Document
 import org.bson.types.ObjectId
 import shared.ConnectionManager
 import shared.ConnectionStatus
 import java.time.Instant
-import kotlin.jvm.internal.Ref.ObjectRef
 
 
 class DBStorage() :IPersistence {
@@ -32,7 +28,7 @@ class DBStorage() :IPersistence {
 
     private val connectionString = dotenv["CONNECTION_STRING"]
 
-    private val databaseName = "cs346-notes-db"
+    private val databaseName = "cs346-mock-db"
 
     private val uri = connectionString
 
@@ -309,6 +305,19 @@ class DBStorage() :IPersistence {
                                 id = block.getObjectId("_id"),
                                 text = block.getString("text"),
                             )
+                            "MEDIA" ->{
+                                val bList = block["bList"] as? List<*>
+                                println(bList!!::class)
+                                val byteList = bList.mapNotNull {
+                                    (it as? Number)?.toByte()
+                                }.toMutableList()
+
+
+                                MediaBlock(
+                                id = block.getObjectId("_id"),
+                                bList = byteList
+                                )
+                            }
                             else -> TextBlock(
                                 id = ObjectId(),
                                 text = "BAD!!!!!! THIS SHOULD NOT HAPPEN!!!!!!!",
@@ -447,13 +456,16 @@ class DBStorage() :IPersistence {
     override fun updateContentBlock (
         block: ContentBlock,
         text: String,
-        pathsContent: MutableList< Path>,
+        pathsContent: MutableList<Path>,
+        bList: MutableList<Byte>,
         language: String,
         article: Note,
         boardId: ObjectId,
         await: Boolean
     ) {
         val now = Instant.now().toString()
+
+        println(block.id)
 
         val job = coroutineScope.launch {
 
@@ -464,6 +476,7 @@ class DBStorage() :IPersistence {
                     Updates.set("text", text),
                     Updates.set("language", language),
                     // Updates.set("paths", pathsContent) // Uncomment if needed
+                    Updates.set("bList", bList),
                 )
             )
 

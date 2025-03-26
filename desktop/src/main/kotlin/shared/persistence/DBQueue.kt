@@ -4,7 +4,6 @@ import androidx.compose.ui.graphics.Path
 import article.entities.ContentBlock
 import boards.entities.Board
 import individual_board.entities.Note
-import kotlinx.coroutines.runBlocking
 import org.bson.types.ObjectId
 import java.util.*
 
@@ -133,6 +132,7 @@ class Update(override val persistence: IPersistence, val objToUpdate: Any,
                     persistence.updateContentBlock(objToUpdate,
                         fields["text"] as String,
                         fields["pathsContent"] as MutableList<Path>,
+                        fields["bList"] as MutableList<Byte>,
                         fields["language"] as String,
                         fields["article"] as Note,
                         fields["boardId"] as ObjectId,

@@ -113,6 +113,7 @@ data class MathBlock(
     }
 }
 
+@Serializable
 data class MediaBlock(
     @SerialName("_id")
     @Contextual override var id: ObjectId = ObjectId(),

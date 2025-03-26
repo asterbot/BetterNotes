@@ -147,7 +147,7 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
     }
 
     // TODO: later (expand to other ContentBlock types)
-    fun saveBlock(index: Int, stringContent: String = "", pathsContent: MutableList<Path> = mutableListOf(), canvasHeight: Int = 0, bListContent: MutableList<Byte> = mutableListOf(),
+    fun saveBlock(index: Int, stringContent: String = "", pathsContent: MutableList<Path> = mutableListOf(), canvasHeight: Int = 0, bList: MutableList<Byte> = mutableListOf(),
                   language: String = "kotlin", article: Note, board: Board) {
         contentBlockDict[article.id]?.let { contentBlocks ->
             if (index in 0..(contentBlocks.size - 1)) {
@@ -165,18 +165,18 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
                 } else if (block is MathBlock) {
                     (block as MathBlock).text = stringContent
                 } else if (block is MediaBlock) {
-                    (block as MediaBlock).bList = bListContent
+                    (block as MediaBlock).bList = bList
                 }
                 // TODO: might need to fix for canvas? idk if it can handle it yet
                 if (ConnectionManager.isConnected) {
-                    persistence.updateContentBlock(block, stringContent, pathsContent, language, article, board.id)
+                    persistence.updateContentBlock(block, stringContent, pathsContent, bList, language, article, board.id)
                 }
-                else{
+                else {
                     dbQueue.addToQueue(
                         Update(persistence, block, mutableMapOf(
                         "text" to stringContent,
                         "pathsContent" to pathsContent,
-                        "bListContent" to bListContent,
+                        "bList" to bList,
                         "language" to language,
                         "article" to article,
                         "boardId" to board.id

@@ -32,6 +32,8 @@ interface IPersistence {
     fun addContentBlock(article: Note, contentBlock: ContentBlock, boardId: ObjectId, await: Boolean = false) // add to end
     fun swapContentBlocks(articleId: ObjectId, index1: Int, index2: Int, boardId: ObjectId, await: Boolean = false)
     fun deleteContentBlock(articleId: ObjectId, contentBlockId: ObjectId, boardId: ObjectId, await: Boolean = false)
-    fun updateContentBlock(block: ContentBlock, text: String, pathsContent: MutableList<Path>, language:String, article: Note, boardId: ObjectId, await: Boolean = false)
+    fun updateContentBlock(block: ContentBlock, text: String, pathsContent: MutableList<Path>,
+                           bList: MutableList<Byte>, language:String,
+                           article: Note, boardId: ObjectId, await: Boolean = false)
 
 }
