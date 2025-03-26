@@ -831,7 +831,7 @@ fun addMedia(block: ContentBlock, isSelected: Boolean = true, onMediaUpdate: (Mu
 
 // lines are saved, best version yet
 @Composable
-fun EditableCanvas() {
+fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int) -> Unit) {
     val paths = remember { mutableStateListOf<Path>() }
     var currentPath by remember { mutableStateOf(Path()) }
     var isDrawing by remember { mutableStateOf(false) }
