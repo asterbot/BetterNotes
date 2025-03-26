@@ -69,6 +69,7 @@ dependencies {
 
     // color picker
     implementation("com.github.skydoves:colorpicker-compose:1.1.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.7.3")
 
     testImplementation(kotlin("test"))
 }

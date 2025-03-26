@@ -843,9 +843,29 @@ fun EditableCanvas() {
     var isResizing by remember { mutableStateOf(false) }
 
     var bitmap by remember { mutableStateOf(ImageBitmap(800, 600)) } // Initialize bitmap
-    val canvasPaint = Paint().apply { color = Color.Black }
+    var myColor by remember {mutableStateOf(Color.Black)}
+    var canvasPaint by remember { mutableStateOf(Paint().apply { color = myColor }) }
+
 
     val controller = rememberColorPickerController()
+    Box(
+        modifier = Modifier.fillMaxWidth().height(150.dp)
+    ) {
+        HsvColorPicker(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(450.dp)
+                .padding(10.dp),
+            controller = controller,
+            initialColor = Color.Black,
+            onColorChanged = { colorEnvelope: ColorEnvelope ->
+                // do something
+                myColor = colorEnvelope.color
+                println("color changed to $myColor!!")
+            }
+
+        )
+    }
 
     // Function to update bitmap with paths
     fun updateBitmapWithPaths() {
@@ -946,12 +966,12 @@ fun EditableCanvas() {
 
             // Drawing the paths stored in the list (for persistence)
             paths.forEach { path ->
-                drawPath(path, color = Color.Black, style = Stroke(width = 4f))
+                drawPath(path, color = Color(0xFF00FF00), style = Stroke(width = 4f))
             }
 
             // Drawing the dragging path (on top of previous paths)
             if (isDrawing && !isErasing) {
-                drawPath(currentPath, color = Color.Black, style = Stroke(width = 4f))
+                drawPath(currentPath, color = myColor, style = Stroke(width = 4f))
             }
         }
     }
