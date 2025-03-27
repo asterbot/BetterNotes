@@ -128,7 +128,7 @@ fun ArticleCompose(board: Board, article: Note) {
                 // insert TextBlock at beginning
                 TextButton(
                     colors = textButtonColours(),
-                    onClick = { navigator.push(IndividualBoardScreen(board)) }
+                    onClick = { ScreenManager.push(navigator, IndividualBoardScreen(board)) }
                 ) { Text("Back to current course") }
                 Button(
                     colors = textButtonColours(),

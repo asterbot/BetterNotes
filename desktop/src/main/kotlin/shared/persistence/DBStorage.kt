@@ -4,7 +4,6 @@ import androidx.compose.ui.graphics.Path
 import article.entities.*
 import boards.entities.Board
 import com.mongodb.MongoException
-import com.mongodb.client.model.DropCollectionOptions
 import com.mongodb.client.model.Filters
 import com.mongodb.client.model.Updates
 import com.mongodb.kotlin.client.coroutine.MongoClient
@@ -14,15 +13,12 @@ import individual_board.entities.Note
 import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import org.bson.BsonInt64
 import org.bson.Document
 import org.bson.types.ObjectId
 import shared.ConnectionManager
 import shared.ConnectionStatus
 import java.time.Instant
-import kotlin.jvm.internal.Ref.ObjectRef
 
 
 class DBStorage() :IPersistence {

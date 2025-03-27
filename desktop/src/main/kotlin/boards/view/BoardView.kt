@@ -1,21 +1,22 @@
 package boards.view
 
 import androidx.compose.foundation.VerticalScrollbar
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
-import androidx.compose.runtime.*
-import androidx.compose.ui.*
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.MaterialTheme
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import boards.entities.Board
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
@@ -47,7 +48,7 @@ fun BoardButton(
             onClick = {
                 println("DEBUG: Clicked ${board.name}")
                 boardModel.updateAccessed(board)
-                navigator.push(IndividualBoardScreen(board))
+                ScreenManager.push(navigator, IndividualBoardScreen(board))
             },
             modifier = Modifier.fillMaxSize(),
             shape = RoundedCornerShape(10.dp)
