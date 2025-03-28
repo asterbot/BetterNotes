@@ -27,6 +27,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Refresh
+import login.view.LoginView
+import login.view.LoginViewScreen
 
 // Concurrently executes both sections
 fun pingDB(scope: CoroutineScope) { // this: CoroutineScope
@@ -70,7 +72,7 @@ fun AppScaffold() {
     // Create the navigator with the starting screen
     Box(modifier = Modifier.fillMaxSize()) {
         // The navigator goes in the background
-        Navigator(BoardViewScreen()) { _ ->
+        Navigator(LoginViewScreen()) { _ ->
             // CurrentScreen will render the current screen from the navigator
             CurrentScreen()
 

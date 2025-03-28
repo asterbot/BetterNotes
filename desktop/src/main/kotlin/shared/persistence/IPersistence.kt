@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.Path
 import article.entities.ContentBlock
 import boards.entities.Board
 import individual_board.entities.Note
+import login.entities.User
 import org.bson.types.ObjectId
 
 interface IPersistence {
@@ -11,6 +12,10 @@ interface IPersistence {
     fun connect(): Boolean
     // Pings DB to check if connection is active or not, and updates global state
     suspend fun pingDB(): Boolean
+
+    // Users
+    fun addUser(user: User)
+    fun authenticate(username: String, password: String): Boolean
 
     // Boards
     fun readBoards(): List<Board>

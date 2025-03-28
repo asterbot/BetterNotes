@@ -16,6 +16,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import login.entities.User
 import org.bson.BsonInt64
 import org.bson.Document
 import org.bson.types.ObjectId
@@ -23,6 +24,7 @@ import shared.ConnectionManager
 import shared.ConnectionStatus
 import java.time.Instant
 import kotlin.jvm.internal.Ref.ObjectRef
+import org.mindrot.jbcrypt.BCrypt
 
 
 class DBStorage() :IPersistence {
@@ -32,7 +34,7 @@ class DBStorage() :IPersistence {
 
     private val connectionString = dotenv["CONNECTION_STRING"]
 
-    private val databaseName = "cs346-notes-db"
+    private val databaseName = "cs346-users-db"
 
     private val uri = connectionString
 
@@ -47,9 +49,13 @@ class DBStorage() :IPersistence {
     private lateinit var contentBlocksDocumentCollection: MongoCollection<Document>
     private lateinit var contentBlockCollection: MongoCollection<ContentBlock>
 
+    private lateinit var usersCollection: MongoCollection<User>
+
 
     // To make everything run in a coroutine!
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
+
+    val storedHashedPassword: String = BCrypt.hashpw("mySecurePassword", BCrypt.gensalt())
 
     override fun connect(): Boolean {
         try {
@@ -63,6 +69,7 @@ class DBStorage() :IPersistence {
             notesCollection = database.getCollection<Note>("notes")
             contentBlocksDocumentCollection = database.getCollection<Document>("contentblocks")
             contentBlockCollection = database.getCollection<ContentBlock>("contentblocks")
+            usersCollection = database.getCollection<User>("users")
 
             ConnectionManager.updateConnection(ConnectionStatus.CONNECTED)
 
@@ -76,6 +83,7 @@ class DBStorage() :IPersistence {
             notesCollection = database.getCollection("dummy-notes")
             contentBlocksDocumentCollection = database.getCollection("dummy-contentblocks")
             contentBlockCollection = database.getCollection<ContentBlock>("dummy-contentblocks")
+            usersCollection = database.getCollection("dummy-users")
 
             ConnectionManager.updateConnection(ConnectionStatus.DISCONNECTED)
 
@@ -106,6 +114,27 @@ class DBStorage() :IPersistence {
             ConnectionManager.updateConnection(ConnectionStatus.DISCONNECTED)
             false
         }
+    }
+
+
+    override fun addUser(user: User) {
+        runBlocking {
+            usersCollection.insertOne(user)
+        }
+    }
+
+    override fun authenticate(username: String, password: String): Boolean{
+        val userData: User?
+        runBlocking {
+            userData = usersCollection.find(Filters.eq(User::userName.name, username)).firstOrNull()
+        }
+        if (userData==null){
+            // user not in DB
+            println("here??")
+            return false;
+        }
+        println(BCrypt.checkpw(password, userData.passwordHash))
+        return (BCrypt.checkpw(password, userData.passwordHash))
     }
 
 

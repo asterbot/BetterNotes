@@ -13,6 +13,7 @@ import shared.persistence.DBStorage
 import individual_board.model.IndvBoardModel as IndividualBoardModel
 import boards.model.BoardModel
 import graph_ui.*
+import login.model.LoginModel
 import shared.persistence.Operation
 
 val dbStorage: DBStorage = DBStorage()
@@ -26,6 +27,8 @@ lateinit var individualBoardViewModel: IndividualBoardViewModel
 
 val articleModel = ArticleModel(dbStorage)
 lateinit var articleViewModel: ArticleViewModel
+
+val loginModel = LoginModel(dbStorage)
 
 val graphModel = GraphModel()
 val graphViewModel = GraphViewModel(graphModel)

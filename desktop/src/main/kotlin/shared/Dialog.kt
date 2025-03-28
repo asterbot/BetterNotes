@@ -3,15 +3,14 @@ package shared
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.input.*
 import androidx.compose.ui.unit.dp
 import individual_board.entities.Note
 
@@ -480,3 +479,93 @@ fun EditNoteDialog(
         }
     )
 }
+
+
+@Composable
+fun SignUpDialog(
+    onDismissRequest: () -> Unit,
+    onConfirmation: (boardName: String, boardDesc: String) -> Unit
+) {
+    var username by remember { mutableStateOf(TextFieldValue("")) }
+    var password by remember { mutableStateOf(TextFieldValue("")) }
+
+    var isError by remember { mutableStateOf(false) }
+
+    var passwordVisible by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        icon = { Icons.Default.Add },
+        title = { Text(text = "Sign up!") },
+        text = {
+            Column(modifier = Modifier.padding(16.dp)) {
+                // Input field for title
+                OutlinedTextField(
+                    value = username,
+                    onValueChange = { username = it },
+                    label = { Text("Username") },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Email,
+                        imeAction = ImeAction.Next
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                // Input field for description
+                androidx.compose.material.OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { androidx.compose.material.Text("Password") },
+                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Done
+                    ),
+                    trailingIcon = {
+                        androidx.compose.material.IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                            androidx.compose.material.Icon(
+                                imageVector = if (passwordVisible) Icons.Filled.Lock else Icons.Filled.Lock,
+                                contentDescription = if (passwordVisible) "Hide password" else "Show password"
+                            )
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        onDismissRequest = {
+            onDismissRequest()
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    if (username.text.isBlank()) {
+                        isError = true
+                    }
+                    else {
+                        onConfirmation(
+                            username.text,
+                            password.text
+                        )
+                        username = TextFieldValue("")
+                        password = TextFieldValue("")
+                    }
+                }
+            ) {
+                Text("Create Account!")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = {
+                    onDismissRequest()
+                    username = TextFieldValue("")
+                    password = TextFieldValue("")
+                }
+            ) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+
