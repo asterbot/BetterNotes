@@ -90,12 +90,12 @@ data class CodeBlock (
 data class CanvasBlock (
     @SerialName("_id")
     @Contextual override var id: ObjectId = ObjectId(),
-    var paths: MutableList<Path> = mutableListOf<Path>(),
+    var bList: MutableList<Byte> = mutableListOf(),
     var canvasHeight: Int = 200
 ) : ContentBlock() {
     override val blockType = BlockType.CANVAS
     override fun copyBlock(): ContentBlock {
-        return CanvasBlock(paths=paths, canvasHeight=canvasHeight).apply { this.id = ObjectId() }
+        return CanvasBlock(bList=bList, canvasHeight=canvasHeight).apply { this.id = ObjectId() }
     }
 }
 

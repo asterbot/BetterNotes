@@ -48,13 +48,26 @@ import individual_board.view.IndividualBoardScreen
 import io.github.vinceglb.filekit.absolutePath
 import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.exists
+import org.jetbrains.skia.Bitmap
+import org.jetbrains.skia.EncodedImageFormat
+import org.jetbrains.skia.Image.Companion.makeFromBitmap
+import org.jetbrains.skia.Image.Companion.makeFromEncoded
 import shared.*
 import space.kscience.kmath.ast.parseMath
 import space.kscience.kmath.ast.rendering.FeaturedMathRendererWithPostProcess
 import space.kscience.kmath.ast.rendering.LatexSyntaxRenderer
 import space.kscience.kmath.ast.rendering.renderWithStringBuilder
+import java.io.ByteArrayOutputStream
 import java.io.File
 import kotlin.math.max
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.toComposeImageBitmap
+import androidx.compose.ui.window.Window
+import androidx.compose.ui.window.application
+import java.awt.image.BufferedImage
+import javax.imageio.ImageIO
+import java.io.ByteArrayInputStream
+import java.io.IOException
 
 data class ArticleScreen(
     val board: Board,
@@ -139,7 +152,8 @@ fun ArticleCompose(board: Board, article: Note) {
                         articleModel.contentBlockDict[article.id]?.let {articleContentBlocks ->
                             for (contentBlock in articleContentBlocks) {
                                 if (contentBlock.blockType == BlockType.CANVAS) {
-                                    println("\tCANVAS HAS ${(contentBlock as CanvasBlock).paths.size} PATHS")
+                                    println()
+                                    println("\tCANVAS HAS ${(contentBlock as CanvasBlock).bList.size} PATHS")
                                 } else if (contentBlock.blockType == BlockType.MEDIA) {
                                     println("\tMEDIA HAS ${((contentBlock as MediaBlock).bList.size)} BYTE ARRAY")
                                 }
@@ -151,7 +165,7 @@ fun ArticleCompose(board: Board, article: Note) {
                         // println("FROM VIEWMODEL: ${contentBlocksList.contentBlocksList}")
                         for (contentBlock in contentBlocksList.contentBlocksList) {
                             if (contentBlock.blockType == BlockType.CANVAS) {
-                                println("\tCANVAS HAS ${(contentBlock as CanvasBlock).paths.size} PATHS")
+                                println("\tCANVAS HAS ${(contentBlock as CanvasBlock).bList.size} PATHS")
                             } else if (contentBlock.blockType == BlockType.MEDIA) {
                                 println("\tMEDIA HAS ${((contentBlock as MediaBlock).bList.size)} BYTE ARRAY")
                             }
@@ -301,10 +315,10 @@ fun BlockFrame(
 
                 if (block.blockType == BlockType.CANVAS) {
                     EditableCanvas(
-//                        block = block,
-//                        onCanvasUpdate = {paths, height ->
-//                            articleModel.saveBlock(blockIndex, pathsContent=paths, canvasHeight=height, article=article, board = board)
-//                        }
+                        block = block,
+                        onCanvasUpdate = {bList, height ->
+                            articleModel.saveBlock(blockIndex, bList=bList, canvasHeight=height, article=article, board = board)
+                        }
                     )
                 }
 
@@ -329,6 +343,22 @@ fun BlockFrame(
 
 fun cropImage() {
 
+}
+
+fun loadImageFromBytes(imageBytes: ByteArray): ImageBitmap? {
+    return try {
+        // Create an InputStream from the byte array
+        val inputStream = ByteArrayInputStream(imageBytes)
+
+        // Use ImageIO to read the image
+        val bufferedImage: BufferedImage = ImageIO.read(inputStream)
+
+        // Convert the BufferedImage to ImageBitmap (for Jetpack Compose)
+        bufferedImage.toComposeImageBitmap()
+    } catch (e: IOException) {
+        println("Error loading image: ${e.message}")
+        null
+    }
 }
 
 @Composable
@@ -370,9 +400,11 @@ fun addMedia(block: ContentBlock, isSelected: Boolean = true, onMediaUpdate: (Mu
 
     if (imageBytes.isNotEmpty()) {
         onMediaUpdate(imageBytes)
-        val imageBitmap = org.jetbrains.skia.Image.makeFromEncoded(imageBytes.toByteArray()).toComposeImageBitmap()
+//        val imageBitmap = makeFromEncoded(imageBytes.toByteArray()).toComposeImageBitmap()
+        val imageBitmap = loadImageFromBytes(imageBytes.toByteArray())
+
         Image(
-            painter = BitmapPainter(image = imageBitmap),
+            bitmap = imageBitmap!!,
             contentDescription = "everyone's favorite bird",
             modifier = Modifier.fillMaxSize()
                 .pointerInput(Unit) {
@@ -832,22 +864,30 @@ fun addMedia(block: ContentBlock, isSelected: Boolean = true, onMediaUpdate: (Mu
 // lines are saved, best version yet
 // block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int) -> Unit
 @Composable
-fun EditableCanvas() {
+fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int) -> Unit) {
+
+    val initialBytes = when (block.blockType) {
+        BlockType.CANVAS -> (block as CanvasBlock).bList
+        else -> mutableListOf()
+    }
+    var imageBytes by remember { mutableStateOf(initialBytes) }
     val paths = remember { mutableStateListOf<Path>() }
     var currentPath by remember { mutableStateOf(Path()) }
     var isDrawing by remember { mutableStateOf(false) }
     var isOutsideBox by remember { mutableStateOf(false) }
     var isErasing by remember { mutableStateOf(false) }
 
+    var canvasWidth by remember { mutableStateOf(0) }
     var canvasHeight by remember { mutableStateOf(100) }
     val resizeThreshold = LocalDensity.current.run { 30 }
     var isResizing by remember { mutableStateOf(false) }
 
-    var bitmap by remember { mutableStateOf(ImageBitmap(800, 600)) } // Initialize bitmap
+    // var bitmap by remember { mutableStateOf(byteListToImageBitmap(imageBytes)) } // Initialize bitmap
     var myColor by remember {mutableStateOf(Color.Black)}
     var canvasPaint by remember { mutableStateOf(Paint().apply { color = myColor }) }
 
 
+    // color wheel box
     val controller = rememberColorPickerController()
     Box(
         modifier = Modifier.fillMaxWidth().height(150.dp)
@@ -866,21 +906,6 @@ fun EditableCanvas() {
             }
 
         )
-    }
-
-    // Function to update bitmap with paths
-    fun updateBitmapWithPaths() {
-        val canvas = Canvas(bitmap) // Canvas to draw on the bitmap
-
-        // Draw all paths on the canvas
-        paths.forEach { path ->
-            canvas.drawPath(path, canvasPaint)
-        }
-
-        // Draw the current dragging path
-        if (isDrawing && !isErasing) {
-            canvas.drawPath(currentPath, canvasPaint)
-        }
     }
 
     Box(
@@ -916,6 +941,7 @@ fun EditableCanvas() {
                         } else {
                             val boxWidth = size.width
                             val boxHeight = size.height
+                            canvasWidth = boxWidth
 
                             val isInside = change.position.x in 0f..boxWidth.toFloat() &&
                                     change.position.y in 0f..boxHeight.toFloat()
@@ -959,22 +985,42 @@ fun EditableCanvas() {
             onClick = { isErasing = !isErasing },
         ) { Text(if (!isErasing) "Erase" else "Draw") }
 
+        var bitmap by remember { mutableStateOf(ImageBitmap(canvasWidth, canvasHeight)) } // Initialize bitmap
+
         Canvas(
             modifier = Modifier.fillMaxSize()
         ) {
-            // Update bitmap with current paths and drawing state
-            updateBitmapWithPaths()
-
+            val canvas = Canvas(bitmap) // Canvas to draw on the bitmap
             // Drawing the paths stored in the list (for persistence)
             paths.forEach { path ->
-                drawPath(path, color = Color(0xFF00FF00), style = Stroke(width = 4f))
+                // drawPath(path, color = Color(0xFF00FF00), style = Stroke(width = 4f))
+                canvas.drawPath(path, canvasPaint)
             }
 
             // Drawing the dragging path (on top of previous paths)
             if (isDrawing && !isErasing) {
-                drawPath(currentPath, color = myColor, style = Stroke(width = 4f))
+                // drawPath(currentPath, color = myColor, style = Stroke(width = 4f))
+                canvas.drawPath(currentPath, canvasPaint)
             }
+            // imageBytes.addAll(imageBitmapToByteArray(bitmap).toMutableList())  // Convert the current image to bytes
+            onCanvasUpdate(imageBytes, canvasHeight)
+            val byteArrayOutputStream = ByteArrayOutputStream()
         }
+    }
+
+    var isRendering by remember { mutableStateOf(false) }
+    TextButton(
+        onClick = {
+            isRendering = !isRendering
+        },
+    ) { Text("Render") }
+
+    if (isRendering) {
+        Image(
+            bitmap = loadImageFromBytes(imageBytes.toByteArray())!!,
+            contentDescription = "everyone's favorite bird",
+            modifier = Modifier.fillMaxSize()
+        )
     }
 
     Box(
@@ -1005,6 +1051,56 @@ private fun isPointNearPath(point: Offset, path: Path, threshold: Float = 20f): 
     return (point.x in (pathBounds.left - threshold)..(pathBounds.right + threshold) &&
             point.y in (pathBounds.top - threshold)..(pathBounds.bottom + threshold))
 }
+
+fun main () {
+    application {
+        Window(onCloseRequest = ::exitApplication) {
+            interestingCanvas()
+        }
+    }
+}
+@Composable
+fun interestingCanvas() {
+    val width = 500  // Width of the canvas in pixels
+    val height = 500 // Height of the canvas in pixels
+
+    // Example canvas data: 2D array of RGB pixel values (white background initially)
+    val canvas = remember { mutableStateOf(Array(height) { Array(width) { IntArray(3) { 255 } } }) }
+
+    Box(
+        modifier = Modifier.size(500.dp)
+            .pointerInput(Unit) {
+                detectDragGestures { change, dragAmount ->
+                    val x = change.position.x.toInt()
+                    val y = change.position.y.toInt()
+
+                    // Ensure within bounds
+                    if (x in 0 until width && y in 0 until height) {
+                        // Modify the pixel color at (x, y) on drag
+                        canvas.value[y][x] = intArrayOf(255, 0, 0) // Red color on drag
+                    }
+                }
+            }
+    ) {
+        Canvas(modifier = Modifier.size(500.dp)) {
+            for (y in 0 until height) {
+                for (x in 0 until width) {
+                    // Get the RGB values for the current pixel
+                    val pixel = canvas.value[y][x]
+                    val color = Color(pixel[0] / 255f, pixel[1] / 255f, pixel[2] / 255f) // RGB -> Color
+
+                    // Draw each pixel as a 1x1 rectangle
+                    drawRect(
+                        color = color,
+                        size = androidx.compose.ui.geometry.Size(1f, 1f),  // 1x1 pixel
+                        topLeft = Offset(x.toFloat(), y.toFloat())  // Position the pixel at (x, y)
+                    )
+                }
+            }
+        }
+    }
+}
+
 
 @Composable
 fun EditableTextBox(

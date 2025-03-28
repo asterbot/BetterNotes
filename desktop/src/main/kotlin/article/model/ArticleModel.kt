@@ -159,7 +159,7 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
                 } else if (block is CodeBlock) {
                     (block as CodeBlock).text = stringContent
                 } else if (block is CanvasBlock) {
-                    (block as CanvasBlock).paths = pathsContent
+                    (block as CanvasBlock).bList = bList
                     (block as CanvasBlock).canvasHeight = canvasHeight
 
                 } else if (block is MathBlock) {
