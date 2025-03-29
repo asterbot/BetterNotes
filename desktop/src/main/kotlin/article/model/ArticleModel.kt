@@ -34,11 +34,13 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
         }
     }
 
+    // helper function for gluing blocks together
     fun glueBlocks(upperBlock: ContentBlock, lowerBlock: ContentBlock) {
         upperBlock.gluedBelow = true
         lowerBlock.gluedAbove = true
     }
 
+    // helper function for toggling glue states
     fun toggleGlueBlocks(upperBlock: ContentBlock, lowerBlock: ContentBlock) {
         upperBlock.gluedBelow = !upperBlock.gluedBelow
         lowerBlock.gluedAbove = !lowerBlock.gluedAbove

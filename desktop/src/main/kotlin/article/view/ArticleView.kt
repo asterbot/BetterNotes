@@ -204,7 +204,8 @@ fun ArticleCompose(board: Board, article: Note) {
                         debugState = debugState,
                         board = board,
                         gluedAbove = block.gluedAbove,
-                        gluedBelow = block.gluedBelow
+                        gluedBelow = block.gluedBelow,
+                        numContentBlocks = contentBlocksList.contentBlocksList.size
                     )
 
                     // visually disconnect blocks if not glued
@@ -232,7 +233,8 @@ fun BlockFrame(
     debugState: Boolean,
     board: Board,
     gluedAbove: Boolean,
-    gluedBelow: Boolean
+    gluedBelow: Boolean,
+    numContentBlocks: Int
 ) {
     var block by remember { mutableStateOf(articleViewModel.contentBlocksList[blockIndex]) }
 
@@ -259,7 +261,7 @@ fun BlockFrame(
                 Spacer(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height((if (glueParam) 0 else 20).dp)
+                        .height((if (glueParam) 0 else 25).dp)
                         .background(Colors.lightTeal)
                 )
                 if (dir == "Below") {
@@ -282,7 +284,7 @@ fun BlockFrame(
 
 
                 if (isSelected) {
-                    BlockFrameMenu(blockIndex, menuButtonFuncs)
+                    BlockFrameMenu(blockIndex, menuButtonFuncs, numContentBlocks)
                 }
 
                 Column(
@@ -906,7 +908,7 @@ fun EditableTextBox(
 }
 
 @Composable
-fun BlockFrameMenu(index: Int, buttonFuncs: Map<String, (Int) -> Unit>) {
+fun BlockFrameMenu(index: Int, buttonFuncs: Map<String, (Int) -> Unit>, numContentBlocks: Int) {
     // BlockFrameMenu consists of the buttons that do actions for all blocks (i.e. all types of ContentBlocks)
 
     var hoveredGlueButton by remember { mutableStateOf<String?>(null) }
@@ -917,11 +919,12 @@ fun BlockFrameMenu(index: Int, buttonFuncs: Map<String, (Int) -> Unit>) {
     ) {
 
         @Composable
-        fun MenuButton(onClick: ((Int) -> Unit)?, icon: ImageVector, desc: String) {
+        fun MenuButton(onClick: ((Int) -> Unit)?, icon: ImageVector, desc: String, disabledCond: Boolean = false) {
             val interactionSource = remember { MutableInteractionSource() }
             val isHovered by interactionSource.collectIsHoveredAsState()
 
             // toggle hoveredButton state given the button we are hovering over
+            // need to consider two cases for glue/other buttons (mutable states)
             if (desc.startsWith("Toggle Glue")) {
                 if (isHovered && hoveredGlueButton != desc) {
                     hoveredGlueButton = desc
@@ -941,7 +944,8 @@ fun BlockFrameMenu(index: Int, buttonFuncs: Map<String, (Int) -> Unit>) {
             IconButton(
                 onClick = { onClick?.invoke(index) },
                 colors = iconButtonColours(),
-                modifier = Modifier.hoverable(interactionSource = interactionSource).size(40.dp)
+                modifier = Modifier.hoverable(interactionSource = interactionSource).size(40.dp),
+                enabled = !disabledCond
             ) {
                 Icon(
                     imageVector = icon,
@@ -964,13 +968,16 @@ fun BlockFrameMenu(index: Int, buttonFuncs: Map<String, (Int) -> Unit>) {
                 MenuButton(
                     buttonFuncs["Toggle Glue Above"],
                     Icons.Filled.KeyboardArrowUp,
-                    "Toggle Glue Above"
+                    "Toggle Glue Above",
+                    disabledCond = (index == 0)
+
                 )
                 // toggle glue with block below
                 MenuButton(
                     buttonFuncs["Toggle Glue Below"],
                     Icons.Filled.KeyboardArrowDown,
-                    "Toggle Glue Below"
+                    "Toggle Glue Below",
+                    disabledCond = (index == numContentBlocks-1)
                 )
             }
             if (hoveredGlueButton != null) {
@@ -1007,13 +1014,15 @@ fun BlockFrameMenu(index: Int, buttonFuncs: Map<String, (Int) -> Unit>) {
                 MenuButton(
                     buttonFuncs["Move Block Up"],
                     Icons.Default.KeyboardArrowUp,
-                    "Move Up"
+                    "Move Up",
+                    disabledCond = (index == 0)
                 )
                 // move current block down
                 MenuButton(
                     buttonFuncs["Move Block Down"],
                     Icons.Default.KeyboardArrowDown,
-                    "Move Down"
+                    "Move Down",
+                    disabledCond = (index == numContentBlocks-1)
                 )
                 // delete current block
                 MenuButton(
