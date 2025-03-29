@@ -90,12 +90,12 @@ fun ArticleCompose(board: Board, article: Note) {
             selectedBlock = index + 1
         },
         "Move Block Up" to { index ->
-            articleModel.moveBlockUp(index, article, board)
-            selectedBlock = index - 1
+            val newIndex = articleModel.moveBlockUp(index, article, board)
+            selectedBlock = (if (newIndex == -1) selectedBlock else newIndex)
         },
         "Move Block Down" to { index ->
-            articleModel.moveBlockDown(index, article, board)
-            selectedBlock = index + 1
+            val newIndex = articleModel.moveBlockDown(index, article, board)
+            selectedBlock = (if (newIndex == -1) selectedBlock else newIndex)
         },
         "Delete Block" to { index ->
             articleModel.deleteBlock(index, article, board)
@@ -286,7 +286,7 @@ fun BlockFrame(
 
 
                 if (isSelected) {
-                    BlockFrameMenu(blockIndex, menuButtonFuncs, numContentBlocks)
+                    BlockFrameMenu(blockIndex, menuButtonFuncs, numContentBlocks, gluedAbove, gluedBelow)
                 }
 
                 Column(
@@ -910,7 +910,8 @@ fun EditableTextBox(
 }
 
 @Composable
-fun BlockFrameMenu(index: Int, buttonFuncs: Map<String, (Int) -> Unit>, numContentBlocks: Int) {
+fun BlockFrameMenu(index: Int, buttonFuncs: Map<String, (Int) -> Unit>, numContentBlocks: Int,
+                   gluedAbove: Boolean, gluedBelow: Boolean) {
     // BlockFrameMenu consists of the buttons that do actions for all blocks (i.e. all types of ContentBlocks)
 
     var hoveredGlueButton by remember { mutableStateOf<String?>(null) }
@@ -1010,20 +1011,20 @@ fun BlockFrameMenu(index: Int, buttonFuncs: Map<String, (Int) -> Unit>, numConte
                 MenuButton(
                     buttonFuncs["Duplicate Block"],
                     Icons.Default.CopyAll,
-                    "Duplicate"
+                    "Duplicate Block"
                 )
                 // move current block up
                 MenuButton(
                     buttonFuncs["Move Block Up"],
-                    Icons.Default.KeyboardArrowUp,
-                    "Move Up",
+                    if (gluedAbove) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardDoubleArrowUp,
+                    if (gluedAbove) "Move Block Up" else "Move Glued Block Up",
                     disabledCond = (index == 0)
                 )
                 // move current block down
                 MenuButton(
                     buttonFuncs["Move Block Down"],
-                    Icons.Default.KeyboardArrowDown,
-                    "Move Down",
+                    if (gluedBelow) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardDoubleArrowDown,
+                    if (gluedBelow) "Move Block Down" else "Move Glued Block Down",
                     disabledCond = (index == numContentBlocks-1)
                 )
                 // delete current block

@@ -428,14 +428,20 @@ class DBStorage() :IPersistence {
         if (await) runBlocking{ job.join() }
     }
 
-    override fun swapContentBlocks(articleId: ObjectId, index1: Int, index2: Int, boardId: ObjectId, await: Boolean) {
+    override fun swapContentBlocks(articleId: ObjectId, upperBlockStart: Int, upperBlockEnd: Int,
+                                   lowerBlockStart: Int, lowerBlockEnd: Int, boardId: ObjectId, await: Boolean) {
         val job = coroutineScope.launch {
             notesCollection.find(Filters.eq(articleId)).firstOrNull()?.let {articleDocument ->
                 var blockIds = articleDocument.contentBlocks.toMutableList()
-                // swap indices of content blocks in article field
-                val temp: ObjectId = blockIds[index1]
-                blockIds[index1] = blockIds[index2]
-                blockIds[index2] = temp
+
+                // swap ids between upper and lower blocks
+                for (offset in 0..lowerBlockEnd-lowerBlockStart) {
+                    val toMoveIndex = lowerBlockStart + offset
+                    val toInsertIndex = upperBlockStart + offset
+                    val idToMove = blockIds[toMoveIndex]
+                    blockIds.removeAt(toMoveIndex)
+                    blockIds.add(toInsertIndex, idToMove)
+                }
                 // then, add back to the document (i.e. update)
                 notesCollection.updateOne(
                     Filters.eq(articleId),

@@ -31,7 +31,8 @@ interface IPersistence {
     fun readContentBlocks(): MutableMap<ObjectId, MutableList<ContentBlock>>
     fun insertContentBlock(article: Note, contentBlock: ContentBlock, index: Int, boardId: ObjectId, await: Boolean = false) // insert to index
     fun addContentBlock(article: Note, contentBlock: ContentBlock, boardId: ObjectId, await: Boolean = false) // add to end
-    fun swapContentBlocks(articleId: ObjectId, index1: Int, index2: Int, boardId: ObjectId, await: Boolean = false)
+    fun swapContentBlocks(articleId: ObjectId, upperBlockStart: Int, upperBlockEnd: Int,
+                          lowerBlockStart: Int, lowerBlockEnd: Int, boardId: ObjectId, await: Boolean = false)
     fun deleteContentBlock(articleId: ObjectId, contentBlockId: ObjectId, boardId: ObjectId, await: Boolean = false)
     fun updateContentBlock(
         block: ContentBlock, text: String, pathsContent: MutableList<Path>, language: String, gluedAbove: Boolean, gluedBelow: Boolean,
