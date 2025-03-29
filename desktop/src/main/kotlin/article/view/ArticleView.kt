@@ -210,7 +210,7 @@ fun ArticleCompose(board: Board, article: Note) {
 
                     // visually disconnect blocks if not glued
                     if (!block.gluedBelow) {
-                        Spacer(modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.size(25.dp))
                     }
                 }
             }
@@ -242,7 +242,7 @@ fun BlockFrame(
         modifier = Modifier
             .fillMaxSize()
             .clickable { onBlockClick() }
-            .clip(RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(8.dp))
     ) {
         Column(
             modifier = Modifier.fillMaxWidth()
@@ -254,7 +254,7 @@ fun BlockFrame(
                     Spacer(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(5.dp)
+                            .height(4.dp)
                             .background(if (glueParam) Colors.lightTeal else Colors.medTeal)
                     )
                 }
@@ -268,7 +268,7 @@ fun BlockFrame(
                     Spacer(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(5.dp)
+                            .height(4.dp)
                             .background(if (glueParam) Colors.lightTeal else Colors.medTeal)
                     )
                 }
@@ -280,7 +280,7 @@ fun BlockFrame(
             Box(
                 modifier = Modifier
                     .background(Colors.lightTeal)
-                    .padding(5.dp)
+                    .padding(horizontal=5.dp)
                     .clip(RoundedCornerShape(5.dp)),
             ) {
 
