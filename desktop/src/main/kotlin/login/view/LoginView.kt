@@ -37,10 +37,7 @@ import boards.view.BoardViewScreen
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import shared.Colors
-import shared.SignUpDialog
-import shared.dbStorage
-import shared.loginModel
+import shared.*
 
 class LoginViewScreen: Screen{
     @Composable
@@ -127,6 +124,9 @@ fun LoginView(){
                 Button(
                     onClick = {
                         if (dbStorage.authenticate(username, password)) {
+                            LoginManager.logIn()
+                            loginModel.changeCurrentUser(username)
+                            initializeModels()
                             navigator.push(BoardViewScreen())
                         }
                         else{

@@ -71,6 +71,8 @@ fun AppScaffold() {
 
     val openAlertDialog = remember { mutableStateOf(false) }
 
+    val loggedIn by derivedStateOf { LoginManager.loggedIn }
+
     // Create the navigator with the starting screen
     Box(modifier = Modifier.fillMaxSize()) {
         // The navigator goes in the background
@@ -84,8 +86,10 @@ fun AppScaffold() {
                     .padding(8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                NavButtons()
-                Spacer(modifier = Modifier.height(5.dp))
+                if (loggedIn){
+                    NavButtons()
+                    Spacer(modifier = Modifier.height(5.dp))
+                }
                 DBStatus()
             }
 

@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import login.entities.User
+import login.model.LoginModel
 import org.bson.BsonInt64
 import org.bson.Document
 import org.bson.types.ObjectId
@@ -24,6 +25,8 @@ import shared.ConnectionStatus
 import java.time.Instant
 import kotlin.jvm.internal.Ref.ObjectRef
 import org.mindrot.jbcrypt.BCrypt
+import shared.loginModel
+import kotlin.math.log
 
 
 class DBStorage() :IPersistence {
@@ -54,7 +57,6 @@ class DBStorage() :IPersistence {
     // To make everything run in a coroutine!
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
-    val storedHashedPassword: String = BCrypt.hashpw("mySecurePassword", BCrypt.gensalt())
 
     override fun connect(): Boolean {
         try {
@@ -117,6 +119,14 @@ class DBStorage() :IPersistence {
 
 
     override fun addUser(user: User) {
+        val userData: User?
+        runBlocking {
+            userData = usersCollection.find(Filters.eq(User::userName.name, user.userName)).firstOrNull()
+        }
+        if (userData != null || user.userName == "dummy-user") {
+            println("User exists!")
+            return
+        }
         runBlocking {
             usersCollection.insertOne(user)
         }
@@ -141,7 +151,7 @@ class DBStorage() :IPersistence {
         val boards = mutableListOf<Board>()
 
         runBlocking {
-            boardsCollection.find().collect {
+            boardsCollection.find(Filters.eq(Board::userId.name, loginModel.currentUser)).collect {
                 boards.add(it)
             }
         }
@@ -150,10 +160,10 @@ class DBStorage() :IPersistence {
     }
 
     override fun addBoard(board: Board) {
+        board.userId = loginModel.currentUser
         coroutineScope.launch {
             boardsCollection.insertOne(board)
         }
-
     }
 
     override fun deleteBoard(boardId: ObjectId, noteIds: List<ObjectId>) {
@@ -196,7 +206,7 @@ class DBStorage() :IPersistence {
         val toRet: MutableMap<ObjectId, MutableList<Note>> = mutableMapOf()
 
         runBlocking {
-            boardsCollection.find().collect { board ->
+            boardsCollection.find(Filters.eq(Board::userId.name, loginModel.currentUser)).collect { board ->
                 val notesInBoard = board.notes
                 println("DBSTORAGE DEBUG: All notes: $notesInBoard")
                 val noteList = mutableListOf<Note>()
@@ -214,6 +224,7 @@ class DBStorage() :IPersistence {
     }
 
     override fun addNote(board: Board, note: Note, await: Boolean) {
+        note.userId = loginModel.currentUser
         val job = coroutineScope.launch {
             notesCollection.insertOne(note)
 
@@ -304,7 +315,7 @@ class DBStorage() :IPersistence {
     override fun readContentBlocks(): MutableMap<ObjectId, MutableList<ContentBlock>> {
         val toRet: MutableMap<ObjectId, MutableList<ContentBlock>> = mutableMapOf()
         runBlocking {
-            notesCollection.find().collect { note ->
+            notesCollection.find(Filters.eq(Board::userId.name, loginModel.currentUser)).collect { note ->
                 // NOTE: i think it's ok to not check if the note is an article or not
                 // just let the code go through each note regardless
                 val blocksInArticle = note.contentBlocks
@@ -358,6 +369,7 @@ class DBStorage() :IPersistence {
 
     override fun insertContentBlock(article: Note, contentBlock: ContentBlock, index: Int, boardId: ObjectId,
                                     await: Boolean) {
+        contentBlock.userId = loginModel.currentUser
         val job = coroutineScope.launch {
             contentBlockCollection.insertOne(contentBlock)
 
@@ -390,6 +402,7 @@ class DBStorage() :IPersistence {
     }
 
     override fun addContentBlock(article: Note, contentBlock: ContentBlock, boardId: ObjectId, await: Boolean) {
+        contentBlock.userId = loginModel.currentUser
         val job = coroutineScope.launch {
             // add contentBlock to collection
             contentBlockCollection.insertOne(contentBlock)

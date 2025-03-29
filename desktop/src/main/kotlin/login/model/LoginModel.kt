@@ -1,5 +1,8 @@
 package login.model
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import login.entities.User
 import org.bson.types.ObjectId
 import org.mindrot.jbcrypt.BCrypt
@@ -8,7 +11,7 @@ import shared.persistence.IPersistence
 
 class LoginModel(val persistence: IPersistence) {
 
-    val currentUser: String = "dummy-user"
+    var currentUser by mutableStateOf("dummy-user")
 
     init {
         persistence.connect()
@@ -17,6 +20,10 @@ class LoginModel(val persistence: IPersistence) {
     fun initialize() {
         // Called when there is a reconnection
         persistence.connect()
+    }
+
+    fun changeCurrentUser(newUser: String) {
+        currentUser = newUser
     }
 
     fun addUser(username: String, password: String){

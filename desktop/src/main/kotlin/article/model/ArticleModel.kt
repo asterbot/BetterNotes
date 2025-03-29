@@ -19,11 +19,11 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
 
     init {
         persistence.connect()
-        if (ConnectionManager.isConnected){
-            contentBlockDict = persistence.readContentBlocks()
-            notifySubscribers()
-        }
-        println("DEBUG: initialized ArticleModel")
+//        if (ConnectionManager.isConnected){
+//            contentBlockDict = persistence.readContentBlocks()
+//            notifySubscribers()
+//        }
+//        println("DEBUG: initialized ArticleModel")
     }
 
     fun initialize() {

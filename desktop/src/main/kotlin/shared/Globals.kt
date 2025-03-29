@@ -39,6 +39,23 @@ val loginModel = LoginModel(dbStorage)
 val graphModel = GraphModel()
 val graphViewModel = GraphViewModel(graphModel)
 
+fun initializeModels(){
+    boardModel.initialize()
+    individualBoardModel.initialize()
+    articleModel.initialize()
+}
+
+object LoginManager{
+    var loggedIn by mutableStateOf(false)
+
+    fun logIn(){
+        loggedIn = true
+    }
+
+    fun logOut(){
+        loggedIn = false
+    }
+}
 
 // Managing connection status
 
@@ -80,6 +97,12 @@ object ScreenManager {
     var currScreenIndex by mutableStateOf(0)
 
     init {
+        visitedScreens.add(BoardViewScreen())
+        currScreenIndex = visitedScreens.size - 1
+    }
+
+    fun reset(){
+        visitedScreens.clear()
         visitedScreens.add(BoardViewScreen())
         currScreenIndex = visitedScreens.size - 1
     }
