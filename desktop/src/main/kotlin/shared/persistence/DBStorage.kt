@@ -28,7 +28,7 @@ class DBStorage() :IPersistence {
 
     private val connectionString = dotenv["CONNECTION_STRING"]
 
-    private val databaseName = "cs346-notes-db"
+    private val databaseName = "cs346-gluetest-db"
 
     private val uri = connectionString
 
@@ -310,6 +310,8 @@ class DBStorage() :IPersistence {
                                 text = "BAD!!!!!! THIS SHOULD NOT HAPPEN!!!!!!!",
                             )
                         }
+                        blockCasted.gluedAbove = block.getBoolean("gluedAbove")
+                        blockCasted.gluedBelow = block.getBoolean("gluedBelow")
                         contentBlockList.add(blockCasted)
                     }
 
@@ -323,6 +325,47 @@ class DBStorage() :IPersistence {
         return toRet
     }
 
+    override fun updateGlueStatus(
+        contentBlock: ContentBlock,
+        gluedAbove: Boolean,
+        gluedBelow: Boolean,
+        article: Note,
+        boardId: ObjectId,
+        await: Boolean
+    ) {
+        val now = Instant.now().toString()
+
+        val job = coroutineScope.launch {
+
+            // Update the content block in the content block collection
+            contentBlocksDocumentCollection.updateOne(
+                Filters.eq(contentBlock.id),
+                Updates.combine(
+                    Updates.set("gluedAbove", gluedAbove),
+                    Updates.set("gluedBelow", gluedBelow)
+                )
+            )
+
+            // Update the note's datetime fields
+            notesCollection.updateOne(
+                Filters.eq(article.id),
+                Updates.combine(
+                    Updates.set("datetimeUpdated", now),
+                    Updates.set("datetimeAccessed", now)
+                )
+            )
+
+            // Update the board's datetime fields
+            boardsCollection.updateOne(
+                Filters.eq(boardId),
+                Updates.combine(
+                    Updates.set("datetimeUpdated", now),
+                    Updates.set("datetimeAccessed", now)
+                )
+            )
+        }
+        if (await) runBlocking{ job.join() }
+    }
 
     override fun insertContentBlock(article: Note, contentBlock: ContentBlock, index: Int, boardId: ObjectId,
                                     await: Boolean) {
@@ -443,8 +486,10 @@ class DBStorage() :IPersistence {
     override fun updateContentBlock (
         block: ContentBlock,
         text: String,
-        pathsContent: MutableList< Path>,
+        pathsContent: MutableList<Path>,
         language: String,
+        gluedAbove: Boolean,
+        gluedBelow: Boolean,
         article: Note,
         boardId: ObjectId,
         await: Boolean
@@ -459,6 +504,8 @@ class DBStorage() :IPersistence {
                 Updates.combine(
                     Updates.set("text", text),
                     Updates.set("language", language),
+                    Updates.set("gluedAbove", gluedAbove),
+                    Updates.set("gluedBelow", gluedBelow),
                     // Updates.set("paths", pathsContent) // Uncomment if needed
                 )
             )

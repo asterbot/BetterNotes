@@ -4,7 +4,6 @@ import androidx.compose.ui.graphics.Path
 import article.entities.ContentBlock
 import boards.entities.Board
 import individual_board.entities.Note
-import kotlinx.coroutines.runBlocking
 import org.bson.types.ObjectId
 import java.util.*
 
@@ -128,12 +127,16 @@ class Update(override val persistence: IPersistence, val objToUpdate: Any,
                 assert(fields.containsKey("language"))
                 assert(fields.containsKey("article"))
                 assert(fields.containsKey("boardId"))
+                assert(fields.containsKey("gluedAbove"))
+                assert(fields.containsKey("gluedBelow"))
                 if (objToUpdate.id !in contentBlocksInserted){
                     // If it is newly inserted, do not update here too!
                     persistence.updateContentBlock(objToUpdate,
                         fields["text"] as String,
                         fields["pathsContent"] as MutableList<Path>,
                         fields["language"] as String,
+                        fields["gluedAbove"] as Boolean,
+                        fields["gluedBelow"] as Boolean,
                         fields["article"] as Note,
                         fields["boardId"] as ObjectId,
                         await = true)

@@ -40,6 +40,8 @@ sealed class ContentBlock {
     abstract val blockType: BlockType
     @SerialName("_id")
     @Contextual abstract var id: ObjectId
+    var gluedAbove: Boolean = false
+    var gluedBelow: Boolean = false
     abstract fun copyBlock(): ContentBlock
 }
 

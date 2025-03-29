@@ -34,42 +34,126 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
         }
     }
 
+    fun glueBlocks(upperBlock: ContentBlock, lowerBlock: ContentBlock) {
+        upperBlock.gluedBelow = true
+        lowerBlock.gluedAbove = true
+    }
 
-    fun addBlock(index: Int, type: BlockType, article: Note, board: Board) {
+    fun toggleGlueBlocks(upperBlock: ContentBlock, lowerBlock: ContentBlock) {
+        upperBlock.gluedBelow = !upperBlock.gluedBelow
+        lowerBlock.gluedAbove = !lowerBlock.gluedAbove
+    }
+
+    fun toggleGlueUpwards(index: Int, article: Note, board: Board) {
+        println("DEBUG: toggling glue between blocks with indices $index and ${index - 1} (attempt)")
+        contentBlockDict[article.id]?.let { contentBlocks ->
+            if (index in 1..(contentBlocks.size - 1)) {
+                toggleGlueBlocks(contentBlocks[index-1], contentBlocks[index])
+                println("DEBUG: toggled glue between blocks with indices $index and ${index - 1} in model")
+            }
+
+            if (ConnectionManager.isConnected) {
+                var updateBlock = contentBlocks[index-1]
+                persistence.updateGlueStatus(updateBlock, updateBlock.gluedAbove, updateBlock.gluedBelow, article, board.id)
+                updateBlock = contentBlocks[index]
+                persistence.updateGlueStatus(updateBlock, updateBlock.gluedAbove, updateBlock.gluedBelow, article, board.id)
+            }
+
+            notifySubscribers()
+        }
+    }
+
+    fun toggleGlueDownwards(index: Int, article: Note, board: Board) {
+        println("DEBUG: toggling glue between blocks with indices $index and ${index + 1} (attempt)")
+        contentBlockDict[article.id]?.let { contentBlocks ->
+            if (index in 0..(contentBlocks.size - 2)) {
+                toggleGlueBlocks(contentBlocks[index], contentBlocks[index+1])
+                println("DEBUG: toggled glue between blocks with indices $index and ${index + 1} in model")
+            }
+
+            if (ConnectionManager.isConnected) {
+                var updateBlock = contentBlocks[index]
+                persistence.updateGlueStatus(updateBlock, updateBlock.gluedAbove, updateBlock.gluedBelow, article, board.id)
+                updateBlock = contentBlocks[index+1]
+                persistence.updateGlueStatus(updateBlock, updateBlock.gluedAbove, updateBlock.gluedBelow, article, board.id)
+            }
+
+            notifySubscribers()
+        }
+    }
+
+    fun addBlock(index: Int, direction: String?, type: BlockType, article: Note, board: Board) {
+        // direction can be either "UP" or "DOWN"
         println("DEBUG: inserting empty block at index $index (attempt)")
 
         contentBlockDict[article.id]?.let { contentBlocks ->
             val blockToAdd = type.createDefaultBlock()
-            // index is a valid value, insert as normal
-            if (index in 0..(contentBlocks.size - 1)) {
+            // index is a valid value, insert as expected
+            if (index in 0..contentBlocks.size) {
                 contentBlocks.add(index, blockToAdd)
                 println("DEBUG: inserted block at index $index into model")
-
-                if (ConnectionManager.isConnected) {
-                    persistence.insertContentBlock(article, blockToAdd, index, board.id)
-                }
-                else{
-                    dbQueue.addToQueue(Create(persistence, blockToAdd,
-                        boardDependency = board, noteDependency = article, indexDependency = index))
-                }
-
-                notifySubscribers()
             }
-            // special case where we insert downwards (index out of range of existing block array, so append instead)
-            else if (index == contentBlocks.size) {
-                contentBlocks.add(blockToAdd)
-                println("DEBUG: inserted block at index $index (from the end) into model")
 
-                if (ConnectionManager.isConnected) {
-                    persistence.addContentBlock(article, blockToAdd, board.id)
-                }
-                else{
-                    dbQueue.addToQueue(Create(persistence, blockToAdd,
-                        boardDependency = board, noteDependency = article))
-                }
+            /*
+            next, reapply glue to surrounding blocks
+            when adding a block, we consider what the initial state of the blocks were before insertion (5 cases):
+                1) there are blocks above and below, but they were not glued
+                    then, we attach the new block to whatever direction we called this function from
+                2) there are blocks above and below, and they were glued together before
+                    then, the added block should be glued to both to maintain glued-block formation
+                3) only a block is above the added block (i.e. must have inserted downwards)
+                    then, we glue the added block to the one above it
+                4) only a block is below the added block (i.e. must have inserted upwards)
+                    then, we glue the added block to the one below it
+                5) no blocks are above or below
+                    then, this is the first inserted block (don't do anything)
+            */
 
-                notifySubscribers()
+            // case 5) (skip it)
+            if (contentBlocks.size > 1) {
+                // case 4)
+                if (index == 0) {
+                    glueBlocks(contentBlocks[index], contentBlocks[index + 1])
+                }
+                // case 3)
+                else if (index == contentBlocks.size - 1) {
+                    glueBlocks(contentBlocks[index-1], contentBlocks[index])
+                }
+                else {
+                    // case 2)
+                    if (contentBlocks[index-1].gluedBelow && contentBlocks[index+1].gluedAbove) {
+                        glueBlocks(contentBlocks[index-1], contentBlocks[index])
+                        glueBlocks(contentBlocks[index], contentBlocks[index+1])
+                    }
+                    // case 1)
+                    else if (!contentBlocks[index-1].gluedBelow && !contentBlocks[index+1].gluedAbove) {
+                        // "UP" <=> we added the new block above an old one
+                        if (direction == "UP") {
+                            glueBlocks(contentBlocks[index], contentBlocks[index+1])
+                        } else {
+                            glueBlocks(contentBlocks[index-1], contentBlocks[index])
+                        }
+                    }
+                }
             }
+
+            if (ConnectionManager.isConnected) {
+                // update surrounding blocks' glue status (is possible)
+                if (index - 1 >= 0) {
+                    val updateBlock = contentBlocks[index - 1]
+                    persistence.updateGlueStatus(updateBlock, updateBlock.gluedAbove, updateBlock.gluedBelow, article, board.id)
+                }
+                if (index + 1 <= contentBlocks.size-1) {
+                    val updateBlock = contentBlocks[index + 1]
+                    persistence.updateGlueStatus(updateBlock, updateBlock.gluedAbove, updateBlock.gluedBelow, article, board.id)
+                }
+                persistence.insertContentBlock(article, blockToAdd, index, board.id)
+            }
+            else{
+                dbQueue.addToQueue(Create(persistence, blockToAdd,
+                    boardDependency = board, noteDependency = article, indexDependency = index))
+            }
+            notifySubscribers()
         }
     }
 
@@ -81,10 +165,31 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
                 contentBlocks.add(index + 1, dupBlock)
                 println("DEBUG: duplicated block at index $index into model")
 
+                /*
+                when duplicating, there are two cases:
+                    1) the block we are duplicating from is NOT glued at the bottom
+                        then, we simply attach the duplicated block to the original
+                    2) the block we are duplicating is glued at the bottom
+                        then, there existed a block below the original that it was glued to
+                        so, the duplicated block should be glued on both sides
+                */
+                // case 2)
+                if (contentBlocks[index].gluedBelow) {
+                    glueBlocks(contentBlocks[index+1], contentBlocks[index+2])
+                }
+                // cases 1) and 2)
+                glueBlocks(contentBlocks[index], contentBlocks[index+1])
+
                 if (ConnectionManager.isConnected) {
+                    // update glue for surrounding blocks
+                    var updateBlock = contentBlocks[index]
+                    persistence.updateGlueStatus(updateBlock, updateBlock.gluedAbove, updateBlock.gluedBelow, article, board.id)
+                    if (index+2 <= contentBlocks.size-1) {
+                        updateBlock = contentBlocks[index+2]
+                        persistence.updateGlueStatus(updateBlock, updateBlock.gluedAbove, updateBlock.gluedBelow, article, board.id)
+                    }
                     persistence.insertContentBlock(article, dupBlock, index+1, board.id)
                 }
-
                 notifySubscribers()
             }
         }
@@ -131,10 +236,42 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
         contentBlockDict[article.id]?.let { contentBlocks ->
             if (index in 0..(contentBlocks.size - 1)) {
                 val toRemove: ContentBlock = contentBlocks[index]
+
+                /*
+                when deleting a block, there are 4 cases:
+                    1) the deleted block is glued on neither end
+                        then, deleting this block has no effect on anything (no need to change anything)
+                    2) the deleted block is glued on both ends
+                        then, when deleting, the upper and lower blocks become glued together (no need to change anything)
+                    3) the deleted block is only glued above
+                        then, it was initially glued to a block above, and its bottom should now become un-glued
+                    4) the deleted lock is only glued below
+                        then, it was initially glued to a block below, and its top should now become un-glued
+                */
+
+                if (toRemove.gluedAbove && !toRemove.gluedBelow) {
+                    // case 3)
+                    contentBlocks[index-1].gluedBelow = false
+                }
+                else if (!toRemove.gluedAbove && toRemove.gluedBelow) {
+                    // case 4)
+                    contentBlocks[index + 1].gluedAbove = false
+                }
+
+                // once glue has been updated, delete the block
                 contentBlocks.removeAt(index)
                 println("DEBUG: deleted block at index $index in model")
 
                 if (ConnectionManager.isConnected) {
+                    // update any glue that could have been changed
+                    if (index-1 >= 0) {
+                        val updateBlock = contentBlocks[index-1]
+                        persistence.updateGlueStatus(updateBlock, updateBlock.gluedAbove, updateBlock.gluedBelow, article, board.id)
+                    }
+                    if (index+1 <= contentBlocks.size-1) {
+                        val updateBlock = contentBlocks[index+1]
+                        persistence.updateGlueStatus(updateBlock, updateBlock.gluedAbove, updateBlock.gluedBelow, article, board.id)
+                    }
                     persistence.deleteContentBlock(article.id, toRemove.id, board.id)
                 }
                 else{
@@ -148,7 +285,7 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
 
     // TODO: later (expand to other ContentBlock types)
     fun saveBlock(index: Int, stringContent: String = "", pathsContent: MutableList<Path> = mutableListOf(), canvasHeight: Int = 0, bListContent: MutableList<Byte> = mutableListOf(),
-                  language: String = "kotlin", article: Note, board: Board) {
+                  language: String = "kotlin", gluedAbove: Boolean, gluedBelow: Boolean, article: Note, board: Board) {
         contentBlockDict[article.id]?.let { contentBlocks ->
             if (index in 0..(contentBlocks.size - 1)) {
                 var block = contentBlocks[index]
@@ -168,8 +305,11 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
                     (block as MediaBlock).bList = bListContent
                 }
                 // TODO: might need to fix for canvas? idk if it can handle it yet
+                block.gluedAbove = gluedAbove
+                block.gluedBelow = gluedBelow
+
                 if (ConnectionManager.isConnected) {
-                    persistence.updateContentBlock(block, stringContent, pathsContent, language, article, board.id)
+                    persistence.updateContentBlock(block, stringContent, pathsContent, language, gluedAbove, gluedBelow, article, board.id)
                 }
                 else{
                     dbQueue.addToQueue(

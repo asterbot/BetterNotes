@@ -27,11 +27,15 @@ interface IPersistence {
     fun updateNoteAccessed(noteId: ObjectId, boardId: ObjectId, await: Boolean = false)
 
     // ContentBlocks: TODO
+    fun updateGlueStatus(contentBlock: ContentBlock, gluedAbove: Boolean, gluedBelow: Boolean, article: Note, boardId: ObjectId, await: Boolean = false)
     fun readContentBlocks(): MutableMap<ObjectId, MutableList<ContentBlock>>
     fun insertContentBlock(article: Note, contentBlock: ContentBlock, index: Int, boardId: ObjectId, await: Boolean = false) // insert to index
     fun addContentBlock(article: Note, contentBlock: ContentBlock, boardId: ObjectId, await: Boolean = false) // add to end
     fun swapContentBlocks(articleId: ObjectId, index1: Int, index2: Int, boardId: ObjectId, await: Boolean = false)
     fun deleteContentBlock(articleId: ObjectId, contentBlockId: ObjectId, boardId: ObjectId, await: Boolean = false)
-    fun updateContentBlock(block: ContentBlock, text: String, pathsContent: MutableList<Path>, language:String, article: Note, boardId: ObjectId, await: Boolean = false)
+    fun updateContentBlock(
+        block: ContentBlock, text: String, pathsContent: MutableList<Path>, language: String, gluedAbove: Boolean, gluedBelow: Boolean,
+        article: Note, boardId: ObjectId, await: Boolean = false
+    )
 
 }
