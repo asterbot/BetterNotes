@@ -952,7 +952,7 @@ fun BlockFrameMenu(index: Int, buttonFuncs: Map<String, (Int) -> Unit>, numConte
                 Icon(
                     imageVector = icon,
                     contentDescription = desc,
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(25.dp)
                 )
             }
         }
@@ -969,7 +969,7 @@ fun BlockFrameMenu(index: Int, buttonFuncs: Map<String, (Int) -> Unit>, numConte
                 // toggle glue with block above
                 MenuButton(
                     buttonFuncs["Toggle Glue Above"],
-                    Icons.Filled.KeyboardArrowUp,
+                    Icons.Filled.ArrowUpward,
                     "Toggle Glue Above",
                     disabledCond = (index == 0)
 
@@ -977,7 +977,7 @@ fun BlockFrameMenu(index: Int, buttonFuncs: Map<String, (Int) -> Unit>, numConte
                 // toggle glue with block below
                 MenuButton(
                     buttonFuncs["Toggle Glue Below"],
-                    Icons.Filled.KeyboardArrowDown,
+                    Icons.Filled.ArrowDownward,
                     "Toggle Glue Below",
                     disabledCond = (index == numContentBlocks-1)
                 )
@@ -1009,7 +1009,7 @@ fun BlockFrameMenu(index: Int, buttonFuncs: Map<String, (Int) -> Unit>, numConte
                 // duplicate current block
                 MenuButton(
                     buttonFuncs["Duplicate Block"],
-                    Icons.Default.AddCircle,
+                    Icons.Default.CopyAll,
                     "Duplicate"
                 )
                 // move current block up
