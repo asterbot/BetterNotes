@@ -700,7 +700,7 @@ fun ChangePasswordDialog(
                     }
                 }
             ) {
-                Text("Create Account!")
+                Text("Change Password!")
             }
         },
         dismissButton = {
