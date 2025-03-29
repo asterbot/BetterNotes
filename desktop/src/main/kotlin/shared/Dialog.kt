@@ -610,7 +610,9 @@ fun ChangePasswordDialog(
 
     var isError by remember { mutableStateOf(false) }
 
-    var passwordVisible by remember { mutableStateOf(false) }
+    var passwordVisible1 by remember { mutableStateOf(false) }
+    var passwordVisible2 by remember { mutableStateOf(false) }
+    var passwordVisible3 by remember { mutableStateOf(false) }
 
     AlertDialog(
         icon = { Icons.Default.Add },
@@ -622,16 +624,16 @@ fun ChangePasswordDialog(
                     value = oldPassword,
                     onValueChange = { oldPassword = it },
                     label = { androidx.compose.material.Text("Old Password") },
-                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    visualTransformation = if (passwordVisible1) VisualTransformation.None else PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Password,
                         imeAction = ImeAction.Done
                     ),
                     trailingIcon = {
-                        androidx.compose.material.IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                        androidx.compose.material.IconButton(onClick = { passwordVisible1 = !passwordVisible1 }) {
                             androidx.compose.material.Icon(
-                                imageVector = if (passwordVisible) Icons.Filled.Lock else Icons.Filled.Lock,
-                                contentDescription = if (passwordVisible) "Hide password" else "Show password"
+                                imageVector = if (passwordVisible1) Icons.Filled.Lock else Icons.Filled.Lock,
+                                contentDescription = if (passwordVisible1) "Hide password" else "Show password"
                             )
                         }
                     },
@@ -643,16 +645,16 @@ fun ChangePasswordDialog(
                     value = newPassword,
                     onValueChange = { newPassword = it },
                     label = { androidx.compose.material.Text("New Password") },
-                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    visualTransformation = if (passwordVisible2) VisualTransformation.None else PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Password,
                         imeAction = ImeAction.Done
                     ),
                     trailingIcon = {
-                        androidx.compose.material.IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                        androidx.compose.material.IconButton(onClick = { passwordVisible2 = !passwordVisible2 }) {
                             androidx.compose.material.Icon(
-                                imageVector = if (passwordVisible) Icons.Filled.Lock else Icons.Filled.Lock,
-                                contentDescription = if (passwordVisible) "Hide password" else "Show password"
+                                imageVector = if (passwordVisible2) Icons.Filled.Lock else Icons.Filled.Lock,
+                                contentDescription = if (passwordVisible2) "Hide password" else "Show password"
                             )
                         }
                     },
@@ -664,16 +666,16 @@ fun ChangePasswordDialog(
                     value = confirmPassword,
                     onValueChange = { confirmPassword = it },
                     label = { androidx.compose.material.Text("Confirm New Password") },
-                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    visualTransformation = if (passwordVisible3) VisualTransformation.None else PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Password,
                         imeAction = ImeAction.Done
                     ),
                     trailingIcon = {
-                        androidx.compose.material.IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                        androidx.compose.material.IconButton(onClick = { passwordVisible3 = !passwordVisible3 }) {
                             androidx.compose.material.Icon(
-                                imageVector = if (passwordVisible) Icons.Filled.Lock else Icons.Filled.Lock,
-                                contentDescription = if (passwordVisible) "Hide password" else "Show password"
+                                imageVector = if (passwordVisible3) Icons.Filled.Lock else Icons.Filled.Lock,
+                                contentDescription = if (passwordVisible3) "Hide password" else "Show password"
                             )
                         }
                     },
