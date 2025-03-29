@@ -273,6 +273,8 @@ fun BlockFrame(
                     )
                 }
             }
+
+
             GluedBlockBorder(gluedAbove, "Above")
 
             Box(

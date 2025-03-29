@@ -197,20 +197,48 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
         }
     }
 
+    // helper function for moveBlockUp/Down
+    fun swapPosAndGlue(contentBlocks: MutableList<ContentBlock>, index1: Int, index2: Int) {
+        val temp = contentBlocks[index1]
+        contentBlocks[index1] = contentBlocks[index2]
+        contentBlocks[index2] = temp
+        val tempGluedAbove = contentBlocks[index1].gluedAbove
+        contentBlocks[index1].gluedAbove = contentBlocks[index2].gluedAbove
+        contentBlocks[index2].gluedAbove = tempGluedAbove
+        val tempGluedBelow = contentBlocks[index1].gluedBelow
+        contentBlocks[index1].gluedBelow = contentBlocks[index2].gluedBelow
+        contentBlocks[index2].gluedBelow = tempGluedBelow
+    }
+
     fun moveBlockUp(index: Int, article: Note, board: Board) {
         println("DEBUG: moving up block at index $index (attempt)")
         contentBlockDict[article.id]?.let { contentBlocks ->
             if (index in 1..(contentBlocks.size - 1)) {
-                val temp = contentBlocks[index]
-                contentBlocks[index] = contentBlocks[index - 1]
-                contentBlocks[index - 1] = temp
-                println("DEBUG: swapped blocks with indices $index and ${index - 1} in model")
+                /*
+                for glued blocks, there are two cases to consider when moving a block up:
+                    1) the block's top edge is glued
+                        then, we are inside a "chunk" of glued blocks, so we interchange positions within
+                    2) the block's top edge is NOT glued
+                        then, by moving a block "upwards", we are swapping "chunks" of glued blocks,
+                        instead of individual contentBlocks
+                */
+                if (contentBlocks[index].gluedAbove) {
+                    // case 1): swap individual content blocks *and their glue states
+                    swapPosAndGlue(contentBlocks, index, index-1)
+                    println("DEBUG: swapped blocks with indices $index and ${index - 1} in model")
 
-                if (ConnectionManager.isConnected) {
-                    persistence.swapContentBlocks(article.id, index, index-1, board.id)
+                    if (ConnectionManager.isConnected) {
+                        var updateBlock = contentBlocks[index]
+                        persistence.updateGlueStatus(updateBlock, updateBlock.gluedAbove, updateBlock.gluedBelow, article, board.id)
+                        updateBlock = contentBlocks[index-1]
+                        persistence.updateGlueStatus(updateBlock, updateBlock.gluedAbove, updateBlock.gluedBelow, article, board.id)
+                        persistence.swapContentBlocks(article.id, index, index-1, board.id)
+                    }
+
+                    notifySubscribers()
+                } else {
+                    val a = 4;
                 }
-
-                notifySubscribers()
             }
         }
     }
@@ -219,16 +247,23 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
         println("DEBUG: moving down block at index $index (attempt)")
         contentBlockDict[article.id]?.let { contentBlocks ->
             if (index in 0..(contentBlocks.size - 2)) {
-                val temp = contentBlocks[index]
-                contentBlocks[index] = contentBlocks[index + 1]
-                contentBlocks[index + 1] = temp
-                println("DEBUG: swapped blocks with indices $index and ${index + 1} in model")
+                // we consider the same cases for glued blocks as the function above, but in the opposite direction
+                if (contentBlocks[index].gluedBelow) {
+                    swapPosAndGlue(contentBlocks, index, index+1)
+                    println("DEBUG: swapped blocks with indices $index and ${index + 1} in model")
 
-                if (ConnectionManager.isConnected) {
-                    persistence.swapContentBlocks(article.id, index, index+1, board.id)
+                    if (ConnectionManager.isConnected) {
+                        var updateBlock = contentBlocks[index]
+                        persistence.updateGlueStatus(updateBlock, updateBlock.gluedAbove, updateBlock.gluedBelow, article, board.id)
+                        updateBlock = contentBlocks[index+1]
+                        persistence.updateGlueStatus(updateBlock, updateBlock.gluedAbove, updateBlock.gluedBelow, article, board.id)
+                        persistence.swapContentBlocks(article.id, index, index + 1, board.id)
+                    }
+
+                    notifySubscribers()
+                } else {
+                    val a = 4;
                 }
-
-                notifySubscribers()
             }
         }
     }
