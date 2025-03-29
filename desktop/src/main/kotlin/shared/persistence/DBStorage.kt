@@ -118,6 +118,27 @@ class DBStorage() :IPersistence {
     }
 
 
+    override fun updatePassword(oldPassword: String, newPassword: String): Boolean {
+        val userData: User?
+        runBlocking {
+            userData = usersCollection.find(Filters.eq(User::userName.name, loginModel.currentUser)).firstOrNull()
+        }
+        if (!BCrypt.checkpw(oldPassword, userData?.passwordHash)){
+            // Old password does not match!
+            return false
+        }
+        runBlocking {
+            usersCollection.updateOne(
+                Filters.eq(User::userName.name, loginModel.currentUser),
+                Updates.combine(
+                    Updates.set("passwordHash", BCrypt.hashpw(newPassword, BCrypt.gensalt()))
+                )
+            )
+        }
+        return true
+
+    }
+
     override fun addUser(user: User): Boolean {
         val userData: User?
         runBlocking {

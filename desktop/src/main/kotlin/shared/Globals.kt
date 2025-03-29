@@ -54,6 +54,8 @@ object LoginManager{
 
     fun logOut(){
         loggedIn = false
+        loginModel.currentUser = "dummy-user"
+        ScreenManager.reset()
     }
 }
 
@@ -84,6 +86,7 @@ object ConnectionManager{
             boardModel?.initialize()
             individualBoardModel?.initialize()
             articleModel?.initialize()
+            loginModel?.initialize()
 
             Operation.contentBlocksInserted.clear()
 

@@ -16,6 +16,7 @@ interface IPersistence {
     // Users
     fun addUser(user: User): Boolean
     fun authenticate(username: String, password: String): Boolean
+    fun updatePassword(oldPassword: String, newPassword: String): Boolean
 
     // Boards
     fun readBoards(): List<Board>
