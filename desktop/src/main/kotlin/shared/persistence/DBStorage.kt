@@ -118,18 +118,19 @@ class DBStorage() :IPersistence {
     }
 
 
-    override fun addUser(user: User) {
+    override fun addUser(user: User): Boolean {
         val userData: User?
         runBlocking {
             userData = usersCollection.find(Filters.eq(User::userName.name, user.userName)).firstOrNull()
         }
         if (userData != null || user.userName == "dummy-user") {
-            println("User exists!")
-            return
+            // I won't let the user take dummy-user because that's our placeholder name :D
+            return false
         }
         runBlocking {
             usersCollection.insertOne(user)
         }
+        return true
     }
 
     override fun authenticate(username: String, password: String): Boolean{
@@ -139,11 +140,11 @@ class DBStorage() :IPersistence {
         }
         if (userData==null){
             // user not in DB
-            println("here??")
             return false;
         }
-        println(BCrypt.checkpw(password, userData.passwordHash))
-        return (BCrypt.checkpw(password, userData.passwordHash))
+
+        // Return whether password matches record in DB
+        return BCrypt.checkpw(password, userData.passwordHash)
     }
 
 

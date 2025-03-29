@@ -26,10 +26,13 @@ class LoginModel(val persistence: IPersistence) {
         currentUser = newUser
     }
 
-    fun addUser(username: String, password: String){
+    fun addUser(username: String, password: String): Boolean{
         if (ConnectionManager.isConnected) {
             // Hash pwd and send to DB
-            persistence.addUser(User(ObjectId(), username, BCrypt.hashpw(password, BCrypt.gensalt())))
+            return persistence.addUser(User(ObjectId(), username, BCrypt.hashpw(password, BCrypt.gensalt())))
+        }
+        else{
+            return false
         }
     }
 

@@ -14,7 +14,7 @@ interface IPersistence {
     suspend fun pingDB(): Boolean
 
     // Users
-    fun addUser(user: User)
+    fun addUser(user: User): Boolean
     fun authenticate(username: String, password: String): Boolean
 
     // Boards

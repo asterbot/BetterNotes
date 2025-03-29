@@ -26,10 +26,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Face
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -55,6 +52,8 @@ fun LoginView(){
     var passwordVisible by remember { mutableStateOf(false) }
 
     val openSignUpDialog = remember { mutableStateOf(false) }
+    val openSignInWarning = remember { mutableStateOf(false) }
+    val openSignUpWarning = remember { mutableStateOf(false) }
 
     Row(
         modifier = Modifier.fillMaxWidth()
@@ -130,8 +129,7 @@ fun LoginView(){
                             navigator.push(BoardViewScreen())
                         }
                         else{
-                            println("Auth failed")
-                            // warning for wrong pwd
+                            openSignInWarning.value = true
                         }
                     },
                     modifier = Modifier.fillMaxWidth()
@@ -155,9 +153,31 @@ fun LoginView(){
                     },
                     onConfirmation = { username, password ->
                         // Add to DB here
-                        loginModel.addUser(username, password)
-                        openSignUpDialog.value = false
+                        val result = loginModel.addUser(username, password)
+                        if (!result){
+                            openSignUpDialog.value = false
+                            openSignUpWarning.value = true
+                        }
+                        else{
+                            openSignUpDialog.value = false
+                        }
                     }
+                )
+            }
+            openSignInWarning.value -> {
+                WarningDialog(
+                    onDismissRequest = { openSignInWarning.value = false },
+                    onConfirmation = { openSignInWarning.value = false },
+                    dialogTitle = "Warning",
+                    dialogText = "Unable to log you in. This could be due to either Incorrect credentials or bad connection.",
+                )
+            }
+            openSignUpWarning.value -> {
+                WarningDialog(
+                    onDismissRequest = { openSignUpWarning.value = false },
+                    onConfirmation = { openSignUpWarning.value = false },
+                    dialogTitle = "Warning",
+                    dialogText = "This username is already taken. Please choose a different username"
                 )
             }
         }
