@@ -9,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -201,6 +202,7 @@ fun userButton(modifier: Modifier = Modifier){
     val changePasswordDialog = remember { mutableStateOf(false) }
     val passwordConfirmError = remember { mutableStateOf(false) }
     val incorrectPasswordError = remember { mutableStateOf(false) }
+    val deleteAccountDialog = remember { mutableStateOf(false) }
 
     val navigator = LocalNavigator.currentOrThrow
 
@@ -256,6 +258,16 @@ fun userButton(modifier: Modifier = Modifier){
                     navigator.push(LoginViewScreen())
                 }
             )
+
+            HorizontalDivider(thickness = 2.dp)
+
+            DropdownMenuItem(
+                text = { Text("Delete Account", color = Color.Red) },
+                onClick = {
+                    deleteAccountDialog.value = true
+                    expanded = !expanded
+                }
+            )
         }
 
     }
@@ -290,8 +302,24 @@ fun userButton(modifier: Modifier = Modifier){
             WarningDialog(
                 onDismissRequest = { incorrectPasswordError.value = false },
                 onConfirmation = { incorrectPasswordError.value = false },
-                dialogTitle = "Old password does not match",
-                dialogText = "You must enter your old password correctly"
+                dialogTitle = "Incorrect Password",
+                dialogText = "You must enter your password correctly"
+            )
+        }
+        deleteAccountDialog.value ->{
+            DeleteAccountDialog(
+                onDismissRequest = { deleteAccountDialog.value = false },
+                onConfirmation = {
+                    currentPassword ->
+                        deleteAccountDialog.value = false
+                        if (dbStorage.deleteUser(currentPassword)){
+                            LoginManager.logOut()
+                            navigator.push(LoginViewScreen())
+                        }
+                        else{
+                            incorrectPasswordError.value = true
+                        }
+                 },
             )
         }
     }

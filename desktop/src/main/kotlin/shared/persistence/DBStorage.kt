@@ -179,6 +179,25 @@ class DBStorage() :IPersistence {
         return BCrypt.checkpw(password, userData.passwordHash)
     }
 
+    override fun deleteUser(password: String): Boolean {
+        val userData: User?
+        runBlocking {
+            userData = usersCollection.find(Filters.eq(User::userName.name, loginModel.currentUser)).firstOrNull()
+        }
+        if (!BCrypt.checkpw(password, userData?.passwordHash)){
+            // Old password does not match!
+            return false
+        }
+
+        runBlocking {
+            boardsCollection.deleteMany(Filters.eq(Board::userId.name, loginModel.currentUser))
+            notesCollection.deleteMany(Filters.eq(Note::userId.name, loginModel.currentUser))
+            contentBlockCollection.deleteMany(Filters.eq(Note::userId.name, loginModel.currentUser))
+            usersCollection.deleteOne(Filters.eq(User::userName.name, loginModel.currentUser))
+        }
+        return true
+    }
+
 
     override fun readBoards(): List<Board> {
         val boards = mutableListOf<Board>()
