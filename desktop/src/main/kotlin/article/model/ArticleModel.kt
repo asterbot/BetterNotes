@@ -7,10 +7,7 @@ import org.bson.types.ObjectId
 import shared.ConnectionManager
 import shared.IPublisher
 import shared.dbQueue
-import shared.persistence.Create
-import shared.persistence.Delete
-import shared.persistence.IPersistence
-import shared.persistence.Update
+import shared.persistence.*
 
 // TODO: NOTE: should pass in board probably
 class ArticleModel(val persistence: IPersistence) : IPublisher() {
@@ -53,11 +50,12 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
             }
             if (ConnectionManager.isConnected) {
                 var updateBlock = contentBlocks[index-1]
-                persistence.updateGlueStatus(updateBlock, updateBlock.gluedAbove, updateBlock.gluedBelow, article, board.id)
+                persistence.updateGlueStatus(updateBlock.id, updateBlock.gluedAbove, updateBlock.gluedBelow, article.id, board.id)
                 updateBlock = contentBlocks[index]
-                persistence.updateGlueStatus(updateBlock, updateBlock.gluedAbove, updateBlock.gluedBelow, article, board.id)
+                persistence.updateGlueStatus(updateBlock.id, updateBlock.gluedAbove, updateBlock.gluedBelow, article.id, board.id)
             } else {
-                val a = 4 // TODO: implement DBQueue
+                dbQueue.addToQueue(UpdateGlue(persistence, contentBlocks[index-1], board, article))
+                dbQueue.addToQueue(UpdateGlue(persistence, contentBlocks[index], board, article))
             }
             notifySubscribers()
         }
@@ -70,11 +68,12 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
             }
             if (ConnectionManager.isConnected) {
                 var updateBlock = contentBlocks[index]
-                persistence.updateGlueStatus(updateBlock, updateBlock.gluedAbove, updateBlock.gluedBelow, article, board.id)
+                persistence.updateGlueStatus(updateBlock.id, updateBlock.gluedAbove, updateBlock.gluedBelow, article.id, board.id)
                 updateBlock = contentBlocks[index+1]
-                persistence.updateGlueStatus(updateBlock, updateBlock.gluedAbove, updateBlock.gluedBelow, article, board.id)
+                persistence.updateGlueStatus(updateBlock.id, updateBlock.gluedAbove, updateBlock.gluedBelow, article.id, board.id)
             } else {
-                val a = 4 // TODO: implement DBQueue
+                dbQueue.addToQueue(UpdateGlue(persistence, contentBlocks[index], board, article))
+                dbQueue.addToQueue(UpdateGlue(persistence, contentBlocks[index+1], board, article))
             }
             notifySubscribers()
         }
@@ -136,15 +135,21 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
                 // update surrounding blocks' glue status (is possible)
                 if (index - 1 >= 0) {
                     val updateBlock = contentBlocks[index - 1]
-                    persistence.updateGlueStatus(updateBlock, updateBlock.gluedAbove, updateBlock.gluedBelow, article, board.id)
+                    persistence.updateGlueStatus(updateBlock.id, updateBlock.gluedAbove, updateBlock.gluedBelow, article.id, board.id)
                 }
                 if (index + 1 <= contentBlocks.size-1) {
                     val updateBlock = contentBlocks[index + 1]
-                    persistence.updateGlueStatus(updateBlock, updateBlock.gluedAbove, updateBlock.gluedBelow, article, board.id)
+                    persistence.updateGlueStatus(updateBlock.id, updateBlock.gluedAbove, updateBlock.gluedBelow, article.id, board.id)
                 }
                 persistence.insertContentBlock(article, blockToAdd, index, board.id)
             }
             else{
+                if (index - 1 >= 0) {
+                    dbQueue.addToQueue(UpdateGlue(persistence, contentBlocks[index-1], board, article))
+                }
+                if (index + 1 <= contentBlocks.size-1) {
+                    dbQueue.addToQueue(UpdateGlue(persistence, contentBlocks[index+1], board, article))
+                }
                 dbQueue.addToQueue(Create(persistence, blockToAdd,
                     boardDependency = board, noteDependency = article, indexDependency = index))
             }
@@ -176,12 +181,19 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
                 if (ConnectionManager.isConnected) {
                     // update glue for surrounding blocks
                     var updateBlock = contentBlocks[index]
-                    persistence.updateGlueStatus(updateBlock, updateBlock.gluedAbove, updateBlock.gluedBelow, article, board.id)
+                    persistence.updateGlueStatus(updateBlock.id, updateBlock.gluedAbove, updateBlock.gluedBelow, article.id, board.id)
                     if (index+2 <= contentBlocks.size-1) {
                         updateBlock = contentBlocks[index+2]
-                        persistence.updateGlueStatus(updateBlock, updateBlock.gluedAbove, updateBlock.gluedBelow, article, board.id)
+                        persistence.updateGlueStatus(updateBlock.id, updateBlock.gluedAbove, updateBlock.gluedBelow, article.id, board.id)
                     }
                     persistence.insertContentBlock(article, dupBlock, index+1, board.id)
+                } else {
+                    dbQueue.addToQueue(UpdateGlue(persistence, contentBlocks[index], board, article))
+                    if (index+2 <= contentBlocks.size-1) {
+                        dbQueue.addToQueue(UpdateGlue(persistence, contentBlocks[index+2], board, article))
+                    }
+                    dbQueue.addToQueue(Create(persistence, contentBlocks[index+1],
+                        boardDependency = board, noteDependency = article, indexDependency = index+1))
                 }
                 notifySubscribers()
             }
@@ -244,12 +256,19 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
 
                     if (ConnectionManager.isConnected) {
                         var updateBlock = contentBlocks[index]
-                        persistence.updateGlueStatus(updateBlock, updateBlock.gluedAbove, updateBlock.gluedBelow, article, board.id)
+                        persistence.updateGlueStatus(updateBlock.id, updateBlock.gluedAbove, updateBlock.gluedBelow, article.id, board.id)
                         updateBlock = contentBlocks[index-1]
-                        persistence.updateGlueStatus(updateBlock, updateBlock.gluedAbove, updateBlock.gluedBelow, article, board.id)
+                        persistence.updateGlueStatus(updateBlock.id, updateBlock.gluedAbove, updateBlock.gluedBelow, article.id, board.id)
                         persistence.swapContentBlocks(article.id, index-1, index-1, index, index, board.id)
                     } else {
-                        val a = 4 // TODO: implement DBQueue
+                        dbQueue.addToQueue(UpdateGlue(persistence, contentBlocks[index], board, article))
+                        dbQueue.addToQueue(UpdateGlue(persistence, contentBlocks[index-1], board, article))
+                        dbQueue.addToQueue(SwapBlocks(persistence, article, board, mutableMapOf(
+                            "upperBlockStart" to index-1,
+                            "upperBlockEnd" to index-1,
+                            "lowerBlockStart" to index,
+                            "lowerBlockEnd" to index,
+                        )))
                     }
                     notifySubscribers()
                     return index-1
@@ -264,7 +283,12 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
                     if (ConnectionManager.isConnected) {
                         persistence.swapContentBlocks(article.id, upperBlockStart, upperBlockEnd, lowerBlockStart, lowerBlockEnd, board.id)
                     } else {
-                        val a = 4 // TODO: implement DBQueue
+                        dbQueue.addToQueue(SwapBlocks(persistence, article, board, mutableMapOf(
+                            "upperBlockStart" to upperBlockStart,
+                            "upperBlockEnd" to upperBlockEnd,
+                            "lowerBlockStart" to lowerBlockStart,
+                            "lowerBlockEnd" to lowerBlockEnd,
+                        )))
                     }
                     notifySubscribers()
                     return upperBlockStart + (lowerBlockEnd - lowerBlockStart)
@@ -283,12 +307,19 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
 
                     if (ConnectionManager.isConnected) {
                         var updateBlock = contentBlocks[index]
-                        persistence.updateGlueStatus(updateBlock, updateBlock.gluedAbove, updateBlock.gluedBelow, article, board.id)
+                        persistence.updateGlueStatus(updateBlock.id, updateBlock.gluedAbove, updateBlock.gluedBelow, article.id, board.id)
                         updateBlock = contentBlocks[index+1]
-                        persistence.updateGlueStatus(updateBlock, updateBlock.gluedAbove, updateBlock.gluedBelow, article, board.id)
+                        persistence.updateGlueStatus(updateBlock.id, updateBlock.gluedAbove, updateBlock.gluedBelow, article.id, board.id)
                         persistence.swapContentBlocks(article.id, index, index, index + 1,index + 1, board.id)
                     } else {
-                        val a = 4 // TODO: implement DBQueue
+                        dbQueue.addToQueue(UpdateGlue(persistence, contentBlocks[index], board, article))
+                        dbQueue.addToQueue(UpdateGlue(persistence, contentBlocks[index+1], board, article))
+                        dbQueue.addToQueue(SwapBlocks(persistence, article, board, mutableMapOf(
+                            "upperBlockStart" to index,
+                            "upperBlockEnd" to index,
+                            "lowerBlockStart" to index + 1,
+                            "lowerBlockEnd" to index + 1,
+                        )))
                     }
                     notifySubscribers()
                     return index+1
@@ -301,7 +332,12 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
                     if (ConnectionManager.isConnected) {
                         persistence.swapContentBlocks(article.id, upperBlockStart, upperBlockEnd, lowerBlockStart, lowerBlockEnd, board.id)
                     } else {
-                        val a = 4 // TODO: implement DBQueue
+                        dbQueue.addToQueue(SwapBlocks(persistence, article, board, mutableMapOf(
+                            "upperBlockStart" to upperBlockStart,
+                            "upperBlockEnd" to upperBlockEnd,
+                            "lowerBlockStart" to lowerBlockStart,
+                            "lowerBlockEnd" to lowerBlockEnd,
+                        )))
                     }
                     notifySubscribers()
                     return upperBlockStart + (lowerBlockEnd - lowerBlockStart) + 1
@@ -344,18 +380,23 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
                     // update any glue that could have been changed
                     if (index-1 >= 0) {
                         val updateBlock = contentBlocks[index-1]
-                        persistence.updateGlueStatus(updateBlock, updateBlock.gluedAbove, updateBlock.gluedBelow, article, board.id)
+                        persistence.updateGlueStatus(updateBlock.id, updateBlock.gluedAbove, updateBlock.gluedBelow, article.id, board.id)
                     }
                     if (index+1 <= contentBlocks.size-1) {
                         val updateBlock = contentBlocks[index+1]
-                        persistence.updateGlueStatus(updateBlock, updateBlock.gluedAbove, updateBlock.gluedBelow, article, board.id)
+                        persistence.updateGlueStatus(updateBlock.id, updateBlock.gluedAbove, updateBlock.gluedBelow, article.id, board.id)
                     }
                     persistence.deleteContentBlock(article.id, toRemove.id, board.id)
                 }
                 else{
+                    if (index-1 >= 0) {
+                        dbQueue.addToQueue(UpdateGlue(persistence, contentBlocks[index-1], board, article))
+                    }
+                    if (index+1 <= contentBlocks.size-1) {
+                        dbQueue.addToQueue(UpdateGlue(persistence, contentBlocks[index+1], board, article))
+                    }
                     dbQueue.addToQueue(Delete(persistence, toRemove, boardDependency = board, noteDependency = article))
                 }
-
                 notifySubscribers()
             }
         }

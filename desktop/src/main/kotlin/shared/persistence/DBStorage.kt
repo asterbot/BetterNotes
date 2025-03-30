@@ -321,10 +321,10 @@ class DBStorage() :IPersistence {
     }
 
     override fun updateGlueStatus(
-        contentBlock: ContentBlock,
+        contentBlockId: ObjectId,
         gluedAbove: Boolean,
         gluedBelow: Boolean,
-        article: Note,
+        articleId: ObjectId,
         boardId: ObjectId,
         await: Boolean
     ) {
@@ -334,7 +334,7 @@ class DBStorage() :IPersistence {
 
             // Update the content block in the content block collection
             contentBlocksDocumentCollection.updateOne(
-                Filters.eq(contentBlock.id),
+                Filters.eq(contentBlockId),
                 Updates.combine(
                     Updates.set("gluedAbove", gluedAbove),
                     Updates.set("gluedBelow", gluedBelow)
@@ -343,7 +343,7 @@ class DBStorage() :IPersistence {
 
             // Update the note's datetime fields
             notesCollection.updateOne(
-                Filters.eq(article.id),
+                Filters.eq(articleId),
                 Updates.combine(
                     Updates.set("datetimeUpdated", now),
                     Updates.set("datetimeAccessed", now)

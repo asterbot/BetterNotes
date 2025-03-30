@@ -146,12 +146,45 @@ class Update(override val persistence: IPersistence, val objToUpdate: Any,
                     println("Not executed!")
                 }
             }
-
         }
-        }
-
-
     }
+}
+
+class UpdateGlue(override val persistence: IPersistence,
+                 val objToUpdate: ContentBlock,
+                 val boardDependency:Board? = null,
+                 val noteDependency:Note? = null
+) :Operation(){
+    override fun updateDB(){
+        assert(noteDependency != null)
+        assert(boardDependency != null)
+        persistence.updateGlueStatus(
+            objToUpdate.id, objToUpdate.gluedAbove, objToUpdate.gluedBelow,
+            noteDependency!!.id, boardDependency!!.id, await = true
+        )
+    }
+}
+
+class SwapBlocks(
+    override val persistence: IPersistence,
+    val noteDependency:Note? = null,
+    val boardDependency:Board? = null,
+    val fields: Map<String, Int> // maps field name to new values!
+) :Operation(){
+    override fun updateDB(){
+        assert(noteDependency != null)
+        assert(boardDependency != null)
+        assert(fields.containsKey("upperBlockStart"))
+        assert(fields.containsKey("upperBlockEnd"))
+        assert(fields.containsKey("lowerBlockStart"))
+        assert(fields.containsKey("lowerBlockEnd"))
+        persistence.swapContentBlocks(
+            noteDependency!!.id, fields["upperBlockStart"]!!, fields["upperBlockEnd"]!!,
+            fields["lowerBlockStart"]!!, fields["lowerBlockEnd"]!!,
+            boardDependency!!.id, await = true
+        )
+    }
+}
 
 class DBQueue {
     private var operationQueue: Queue<Operation> = LinkedList()
@@ -169,5 +202,4 @@ class DBQueue {
             operation.updateDB()
         }
     }
-
 }
