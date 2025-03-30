@@ -977,15 +977,14 @@ fun BlockFrameMenu(index: Int, buttonFuncs: Map<String, (Int) -> Unit>, numConte
                 // toggle glue with block above
                 MenuButton(
                     buttonFuncs["Toggle Glue Above"],
-                    Icons.Filled.ArrowUpward,
+                    Icons.Filled.ArrowDropUp,
                     "Toggle Glue Above",
                     disabledCond = (index == 0)
-
                 )
                 // toggle glue with block below
                 MenuButton(
                     buttonFuncs["Toggle Glue Below"],
-                    Icons.Filled.ArrowDownward,
+                    Icons.Filled.ArrowDropDown,
                     "Toggle Glue Below",
                     disabledCond = (index == numContentBlocks-1)
                 )

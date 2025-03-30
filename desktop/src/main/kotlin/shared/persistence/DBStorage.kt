@@ -274,6 +274,7 @@ class DBStorage() :IPersistence {
                 // just let the code go through each note regardless
                 val blocksInArticle = note.contentBlocks
                 val contentBlockList: MutableList<ContentBlock> = mutableListOf()
+                var prevBlockGlued = false
                 blocksInArticle.forEach { blockId ->
                     // convert each contentBlock of an article to the correct data subclass
                     contentBlocksDocumentCollection.find(Filters.eq(blockId)).firstOrNull()?.let { block ->
@@ -304,9 +305,12 @@ class DBStorage() :IPersistence {
                                 id = ObjectId(),
                                 text = "BAD!!!!!! THIS SHOULD NOT HAPPEN!!!!!!!",
                             )
-                        } // TODO: provide some glue safety
-                        blockCasted.gluedAbove = block.getBoolean("gluedAbove")
+                        }
+                        // provide some glue safety (i.e. neighbouring blocks are either both glued or both not glued
+                        blockCasted.gluedAbove = prevBlockGlued
                         blockCasted.gluedBelow = block.getBoolean("gluedBelow")
+                        prevBlockGlued = blockCasted.gluedBelow
+
                         contentBlockList.add(blockCasted)
                     }
                 }

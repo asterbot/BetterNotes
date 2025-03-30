@@ -41,15 +41,15 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
     }
 
     // helper function for toggling glue states
-    fun toggleGlueBlocks(upperBlock: ContentBlock, lowerBlock: ContentBlock) {
-        upperBlock.gluedBelow = !upperBlock.gluedBelow
-        lowerBlock.gluedAbove = !lowerBlock.gluedAbove
+    fun toggleGlueBlocks(upperBlock: ContentBlock, lowerBlock: ContentBlock, value: Boolean) {
+        upperBlock.gluedBelow = value
+        lowerBlock.gluedAbove = value
     }
 
     fun toggleGlueUpwards(index: Int, article: Note, board: Board) {
         contentBlockDict[article.id]?.let { contentBlocks ->
             if (index in 1..(contentBlocks.size - 1)) {
-                toggleGlueBlocks(contentBlocks[index-1], contentBlocks[index])
+                toggleGlueBlocks(contentBlocks[index-1], contentBlocks[index], !contentBlocks[index].gluedAbove)
             }
             if (ConnectionManager.isConnected) {
                 var updateBlock = contentBlocks[index-1]
@@ -66,7 +66,7 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
     fun toggleGlueDownwards(index: Int, article: Note, board: Board) {
         contentBlockDict[article.id]?.let { contentBlocks ->
             if (index in 0..(contentBlocks.size - 2)) {
-                toggleGlueBlocks(contentBlocks[index], contentBlocks[index+1])
+                toggleGlueBlocks(contentBlocks[index], contentBlocks[index+1], !contentBlocks[index].gluedBelow)
             }
             if (ConnectionManager.isConnected) {
                 var updateBlock = contentBlocks[index]
@@ -383,6 +383,7 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
                     (block as MediaBlock).bList = bListContent
                 }
                 // TODO: might need to fix for canvas? idk if it can handle it yet
+
                 block.gluedAbove = gluedAbove
                 block.gluedBelow = gluedBelow
 
