@@ -523,7 +523,7 @@ fun SignUpDialog(
                     trailingIcon = {
                         androidx.compose.material.IconButton(onClick = { passwordVisible = !passwordVisible }) {
                             androidx.compose.material.Icon(
-                                imageVector = if (passwordVisible) Icons.Filled.Lock else Icons.Filled.Lock,
+                                imageVector = if (passwordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
                                 contentDescription = if (passwordVisible) "Hide password" else "Show password"
                             )
                         }
@@ -632,7 +632,7 @@ fun ChangePasswordDialog(
                     trailingIcon = {
                         androidx.compose.material.IconButton(onClick = { passwordVisible1 = !passwordVisible1 }) {
                             androidx.compose.material.Icon(
-                                imageVector = if (passwordVisible1) Icons.Filled.Lock else Icons.Filled.Lock,
+                                imageVector = if (passwordVisible1) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
                                 contentDescription = if (passwordVisible1) "Hide password" else "Show password"
                             )
                         }
@@ -653,7 +653,7 @@ fun ChangePasswordDialog(
                     trailingIcon = {
                         androidx.compose.material.IconButton(onClick = { passwordVisible2 = !passwordVisible2 }) {
                             androidx.compose.material.Icon(
-                                imageVector = if (passwordVisible2) Icons.Filled.Lock else Icons.Filled.Lock,
+                                imageVector = if (passwordVisible2) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
                                 contentDescription = if (passwordVisible2) "Hide password" else "Show password"
                             )
                         }
@@ -674,7 +674,7 @@ fun ChangePasswordDialog(
                     trailingIcon = {
                         androidx.compose.material.IconButton(onClick = { passwordVisible3 = !passwordVisible3 }) {
                             androidx.compose.material.Icon(
-                                imageVector = if (passwordVisible3) Icons.Filled.Lock else Icons.Filled.Lock,
+                                imageVector = if (passwordVisible3) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
                                 contentDescription = if (passwordVisible3) "Hide password" else "Show password"
                             )
                         }

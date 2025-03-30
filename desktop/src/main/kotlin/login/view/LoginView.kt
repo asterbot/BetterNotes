@@ -109,7 +109,7 @@ fun LoginView(){
                     trailingIcon = {
                         IconButton(onClick = { passwordVisible = !passwordVisible }) {
                             Icon(
-                                imageVector = if (passwordVisible) Icons.Filled.Lock else Icons.Filled.Lock,
+                                imageVector = if (passwordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
                                 contentDescription = if (passwordVisible) "Hide password" else "Show password"
                             )
                         }

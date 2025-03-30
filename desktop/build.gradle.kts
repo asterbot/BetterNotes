@@ -68,6 +68,9 @@ dependencies {
 //    implementation("io.github.vinceglb:filekit-coil:$version")
     implementation("org.mindrot:jbcrypt:0.4")
 
+    // Additional icons
+    implementation("org.jetbrains.compose.material:material-icons-extended:1.7.3")
+
     testImplementation(kotlin("test"))
 }
 
