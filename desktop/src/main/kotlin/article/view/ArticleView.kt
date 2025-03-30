@@ -604,9 +604,7 @@ fun EditableCanvas(
 
 
     val paths = remember { mutableStateListOf<Path>().apply { addAll(startPaths) } }
-    println("HERE 1")
     var currentPath by remember { mutableStateOf(Path()) }
-    println("HERE 1.5")
     var isDrawing by remember { mutableStateOf(false) }
     var isOutsideBox by remember { mutableStateOf(false) }
     var isErasing by remember { mutableStateOf(false) }
@@ -614,8 +612,6 @@ fun EditableCanvas(
     var canvasHeight by remember { mutableStateOf((block as CanvasBlock).canvasHeight) }
     val resizeThreshold = LocalDensity.current.run { 30 }
     var isResizing by remember {mutableStateOf(false)}
-
-    println("HERE 2")
 
     Box(
         modifier = Modifier
@@ -698,8 +694,6 @@ fun EditableCanvas(
             onClick = { isErasing = !isErasing },
         ) { Text(if (!isErasing) "Erase" else "Draw") }
 
-        println("HERE 3")
-
         // drawing the existing path
         Canvas(
             modifier = Modifier.fillMaxSize()
@@ -721,8 +715,6 @@ fun EditableCanvas(
                 )
             }
         }
-
-        println("HERE 4")
 
         Box(
             modifier = Modifier
@@ -911,7 +903,7 @@ fun EditableTextBox(
                 .focusRequester(focusRequester) // Attach focus requester to manage focus
                 .onKeyEvent { true }, // prevents weird visual glitch from happening
             textStyle = textStyle,
-            cursorBrush = SolidColor(if (block.blockType == BlockType.CODE) Colors.white else Colors.black)
+            cursorBrush = SolidColor(if (block.blockType == BlockType.CODE) Color.Green else Colors.black)
         )
     }
 }
