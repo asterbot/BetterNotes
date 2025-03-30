@@ -730,7 +730,7 @@ fun DeleteAccountDialog(
 
     AlertDialog(
         icon = { Icons.Default.Add },
-        title = { Text(text = "Change Password") },
+        title = { Text(text = "Delete Account") },
         text = {
             Column(modifier = Modifier.padding(16.dp)) {
                 // Input field for title
