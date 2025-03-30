@@ -27,7 +27,8 @@ import kotlin.jvm.internal.Ref.ObjectRef
 import org.mindrot.jbcrypt.BCrypt
 import shared.loginModel
 import kotlin.math.log
-
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.consumeEach
 
 class DBStorage() :IPersistence {
     // Call connect() before using DB
@@ -56,6 +57,16 @@ class DBStorage() :IPersistence {
 
     // To make everything run in a coroutine!
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
+
+    // This ensures mutual exclusion
+    //     i.e. a thread will finish running before starting a new one (BUT IN THE BACKGROUND)
+    //     this is different from thread.join() which will force the foreground to wait for completion
+    private val channel = Channel<Job>(capacity = Channel.UNLIMITED).apply {
+        coroutineScope.launch {
+            consumeEach { it.join() }
+        }
+    }
+
 
 
     override fun connect(): Boolean {
@@ -183,13 +194,14 @@ class DBStorage() :IPersistence {
 
     override fun addBoard(board: Board) {
         board.userId = loginModel.currentUser
-        coroutineScope.launch {
+        val job = coroutineScope.launch {
             boardsCollection.insertOne(board)
         }
+        channel.trySend(job)
     }
 
     override fun deleteBoard(boardId: ObjectId, noteIds: List<ObjectId>) {
-        coroutineScope.launch {
+        val job = coroutineScope.launch {
             // Delete all the notes associated with the board
             noteIds.forEach {
                 deleteNote(it, boardId)
@@ -197,10 +209,11 @@ class DBStorage() :IPersistence {
 
             boardsCollection.deleteOne(Filters.eq(boardId))
         }
+        channel.trySend(job)
     }
 
     override fun updateBoard(boardId: ObjectId, name: String, desc: String, notes: List<ObjectId>) {
-        coroutineScope.launch {
+        val job = coroutineScope.launch {
             boardsCollection.updateOne(
                 Filters.eq(boardId),
                 Updates.combine(
@@ -211,16 +224,18 @@ class DBStorage() :IPersistence {
                 )
             )
         }
+        channel.trySend(job)
     }
 
     // This is specifically for updating the datetimeAccessed field
     override fun updateBoardAccessed(boardId: ObjectId,) {
-        coroutineScope.launch {
+        val job = coroutineScope.launch {
             boardsCollection.updateOne(
                 Filters.eq(boardId),
                 Updates.set("datetimeAccessed", Instant.now().toString())
             )
         }
+        channel.trySend(job)
     }
 
 
@@ -261,6 +276,7 @@ class DBStorage() :IPersistence {
             )
 
         }
+        channel.trySend(job)
         if (await) runBlocking { job.join() }
     }
 
@@ -287,6 +303,7 @@ class DBStorage() :IPersistence {
                 )
             )
         }
+        channel.trySend(job)
         if (await) runBlocking { job.join() }
     }
 
@@ -313,6 +330,7 @@ class DBStorage() :IPersistence {
                 )
             }
         }
+        channel.trySend(job)
         if (await) runBlocking { job.join() }
     }
 
@@ -331,6 +349,7 @@ class DBStorage() :IPersistence {
                 )
             )
         }
+        channel.trySend(job)
         if (await) runBlocking { job.join() }
     }
 
@@ -420,6 +439,7 @@ class DBStorage() :IPersistence {
             )
             println("Insert complete")
         }
+        channel.trySend(job)
         if (await) runBlocking {job.join()}
     }
 
@@ -449,6 +469,7 @@ class DBStorage() :IPersistence {
 
             println("Add complete!")
         }
+        channel.trySend(job)
         if (await) runBlocking{ job.join() }
     }
 
@@ -479,6 +500,7 @@ class DBStorage() :IPersistence {
                 )
             )
         }
+        channel.trySend(job)
         if (await) runBlocking{ job.join() }
     }
 
@@ -504,6 +526,7 @@ class DBStorage() :IPersistence {
                 )
             )
         }
+        channel.trySend(job)
         if (await) runBlocking{ job.join() }
     }
 
@@ -548,6 +571,8 @@ class DBStorage() :IPersistence {
                 )
             )
         }
+
+        channel.trySend(job)
         if (await) runBlocking{ job.join() }
     }
 }
