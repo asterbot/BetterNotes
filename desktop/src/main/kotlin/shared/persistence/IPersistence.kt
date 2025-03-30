@@ -35,8 +35,8 @@ interface IPersistence {
                           lowerBlockStart: Int, lowerBlockEnd: Int, boardId: ObjectId, await: Boolean = false)
     fun deleteContentBlock(articleId: ObjectId, contentBlockId: ObjectId, boardId: ObjectId, await: Boolean = false)
     fun updateContentBlock(
-        block: ContentBlock, text: String, pathsContent: MutableList<Path>, language: String, gluedAbove: Boolean, gluedBelow: Boolean,
-        article: Note, boardId: ObjectId, await: Boolean = false
+        block: ContentBlock, text: String, pathsContent: MutableList<Path>, language: String,
+        gluedAbove: Boolean, gluedBelow: Boolean, article: Note, boardId: ObjectId, await: Boolean = false
     )
 
 }

@@ -166,7 +166,6 @@ class DBStorage() :IPersistence {
         runBlocking {
             boardsCollection.find().collect { board ->
                 val notesInBoard = board.notes
-                println("DBSTORAGE DEBUG: All notes: $notesInBoard")
                 val noteList = mutableListOf<Note>()
                 notesInBoard.forEach { noteId ->
                     notesCollection.find(Filters.eq(noteId)).firstOrNull()?.let { note ->
@@ -176,8 +175,6 @@ class DBStorage() :IPersistence {
                 toRet[board.id] = noteList
             }
         }
-
-        println("DBSTORAGE DEBUG: toRet: $toRet")
         return toRet
     }
 
@@ -276,13 +273,11 @@ class DBStorage() :IPersistence {
                 // NOTE: i think it's ok to not check if the note is an article or not
                 // just let the code go through each note regardless
                 val blocksInArticle = note.contentBlocks
-                println("DBSTORAGE DEBUG: All Content Blocks: $blocksInArticle")
                 val contentBlockList: MutableList<ContentBlock> = mutableListOf()
                 blocksInArticle.forEach { blockId ->
                     // convert each contentBlock of an article to the correct data subclass
                     contentBlocksDocumentCollection.find(Filters.eq(blockId)).firstOrNull()?.let { block ->
                         val typeStr = block.getString("blockType")
-                        println("DBSTORAGE DEBUG: Content Block Type: $typeStr")
                         val blockCasted = when (typeStr) {
                             "PLAINTEXT" -> TextBlock(
                                 id = block.getObjectId("_id"),
@@ -309,19 +304,15 @@ class DBStorage() :IPersistence {
                                 id = ObjectId(),
                                 text = "BAD!!!!!! THIS SHOULD NOT HAPPEN!!!!!!!",
                             )
-                        }
+                        } // TODO: provide some glue safety
                         blockCasted.gluedAbove = block.getBoolean("gluedAbove")
                         blockCasted.gluedBelow = block.getBoolean("gluedBelow")
                         contentBlockList.add(blockCasted)
                     }
-
-
                 }
                 toRet[note.id] = contentBlockList
             }
         }
-
-        println("DBSTORAGE DEBUG: [ARTICLEID, CONTENTBLOCKS] MAP: $toRet")
         return toRet
     }
 
@@ -387,7 +378,6 @@ class DBStorage() :IPersistence {
                     )
                 )
             }
-
             boardsCollection.updateOne(
                 Filters.eq(boardId),
                 Updates.combine(
@@ -395,7 +385,6 @@ class DBStorage() :IPersistence {
                     Updates.set("datetimeAccessed", Instant.now().toString())
                 )
             )
-            println("Insert complete")
         }
         if (await) runBlocking {job.join()}
     }
@@ -414,7 +403,6 @@ class DBStorage() :IPersistence {
                     Updates.set("datetimeAccessed", Instant.now().toString())
                 )
             )
-
             boardsCollection.updateOne(
                 Filters.eq(boardId),
                 Updates.combine(
@@ -422,8 +410,6 @@ class DBStorage() :IPersistence {
                     Updates.set("datetimeAccessed", Instant.now().toString())
                 )
             )
-
-            println("Add complete!")
         }
         if (await) runBlocking{ job.join() }
     }
@@ -452,7 +438,6 @@ class DBStorage() :IPersistence {
                     )
                 )
             }
-
             boardsCollection.updateOne(
                 Filters.eq(boardId),
                 Updates.combine(
@@ -477,7 +462,6 @@ class DBStorage() :IPersistence {
                     Updates.set("datetimeAccessed", Instant.now().toString())
                 )
             )
-
             boardsCollection.updateOne(
                 Filters.eq(boardId),
                 Updates.combine(
@@ -512,7 +496,7 @@ class DBStorage() :IPersistence {
                     Updates.set("language", language),
                     Updates.set("gluedAbove", gluedAbove),
                     Updates.set("gluedBelow", gluedBelow),
-                    // Updates.set("paths", pathsContent) // Uncomment if needed
+                    // Updates.set("paths", pathsContent) // TODO: Uncomment if needed
                 )
             )
 

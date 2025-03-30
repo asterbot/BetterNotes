@@ -47,53 +47,46 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
     }
 
     fun toggleGlueUpwards(index: Int, article: Note, board: Board) {
-        println("DEBUG: toggling glue between blocks with indices $index and ${index - 1} (attempt)")
         contentBlockDict[article.id]?.let { contentBlocks ->
             if (index in 1..(contentBlocks.size - 1)) {
                 toggleGlueBlocks(contentBlocks[index-1], contentBlocks[index])
-                println("DEBUG: toggled glue between blocks with indices $index and ${index - 1} in model")
             }
-
             if (ConnectionManager.isConnected) {
                 var updateBlock = contentBlocks[index-1]
                 persistence.updateGlueStatus(updateBlock, updateBlock.gluedAbove, updateBlock.gluedBelow, article, board.id)
                 updateBlock = contentBlocks[index]
                 persistence.updateGlueStatus(updateBlock, updateBlock.gluedAbove, updateBlock.gluedBelow, article, board.id)
+            } else {
+                val a = 4 // TODO: implement DBQueue
             }
-
             notifySubscribers()
         }
     }
 
     fun toggleGlueDownwards(index: Int, article: Note, board: Board) {
-        println("DEBUG: toggling glue between blocks with indices $index and ${index + 1} (attempt)")
         contentBlockDict[article.id]?.let { contentBlocks ->
             if (index in 0..(contentBlocks.size - 2)) {
                 toggleGlueBlocks(contentBlocks[index], contentBlocks[index+1])
-                println("DEBUG: toggled glue between blocks with indices $index and ${index + 1} in model")
             }
-
             if (ConnectionManager.isConnected) {
                 var updateBlock = contentBlocks[index]
                 persistence.updateGlueStatus(updateBlock, updateBlock.gluedAbove, updateBlock.gluedBelow, article, board.id)
                 updateBlock = contentBlocks[index+1]
                 persistence.updateGlueStatus(updateBlock, updateBlock.gluedAbove, updateBlock.gluedBelow, article, board.id)
+            } else {
+                val a = 4 // TODO: implement DBQueue
             }
-
             notifySubscribers()
         }
     }
 
     fun addBlock(index: Int, direction: String?, type: BlockType, article: Note, board: Board) {
         // direction can be either "UP" or "DOWN"
-        println("DEBUG: inserting empty block at index $index (attempt)")
-
         contentBlockDict[article.id]?.let { contentBlocks ->
             val blockToAdd = type.createDefaultBlock()
             // index is a valid value, insert as expected
             if (index in 0..contentBlocks.size) {
                 contentBlocks.add(index, blockToAdd)
-                println("DEBUG: inserted block at index $index into model")
             }
 
             /*
@@ -160,12 +153,10 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
     }
 
     fun duplicateBlock(index: Int, article: Note, board: Board) {
-        println("DEBUG: duplicating block at index $index (attempt)")
         contentBlockDict[article.id]?.let { contentBlocks ->
             if (index in 0..(contentBlocks.size - 1)) {
                 val dupBlock: ContentBlock = contentBlocks[index].copyBlock()
                 contentBlocks.add(index + 1, dupBlock)
-                println("DEBUG: duplicated block at index $index into model")
 
                 /*
                 when duplicating, there are two cases:
@@ -210,8 +201,7 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
         contentBlocks[index2].gluedBelow = tempGluedBelow
     }
 
-    // helper function for moving blocks that are glued together
-    fun moveGluedBlocks(contentBlocks: MutableList<ContentBlock>, upperBlockEnd: Int, lowerBlockStart: Int): List<Int> {
+    fun getBlockBounds(contentBlocks: MutableList<ContentBlock>, upperBlockEnd: Int, lowerBlockStart: Int): Pair<Int, Int> {
         // traverse the gluedAbove/gluedBelow states of the content blocks until we find the bounds of each block to swap
         var upperBlockStart = upperBlockEnd
         var lowerBlockEnd = lowerBlockStart
@@ -221,7 +211,12 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
         while (lowerBlockEnd <= contentBlocks.size && contentBlocks[lowerBlockEnd].gluedBelow) {
             lowerBlockEnd++
         }
+        return Pair(upperBlockStart, lowerBlockEnd)
+    }
 
+    // helper function for moving blocks that are glued together
+    fun moveGluedBlocks(contentBlocks: MutableList<ContentBlock>, upperBlockStart: Int, upperBlockEnd: Int,
+                        lowerBlockStart: Int, lowerBlockEnd: Int) {
         // one by one, insert the contents from the lower block in front of the upper block
         for (offset in 0..lowerBlockEnd-lowerBlockStart) {
             val toMoveIndex = lowerBlockStart + offset
@@ -230,11 +225,9 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
             contentBlocks.removeAt(toMoveIndex)
             contentBlocks.add(toInsertIndex, blockToMove)
         }
-        return listOf(upperBlockStart, lowerBlockEnd)
     }
 
-    fun moveBlockUp(index: Int, article: Note, board: Board): Int {
-        println("DEBUG: moving up block at index $index (attempt)")
+    fun moveBlockUp(index: Int, article: Note, board: Board): Int? {
         contentBlockDict[article.id]?.let { contentBlocks ->
             if (index in 1..(contentBlocks.size - 1)) {
                 /*
@@ -248,7 +241,6 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
                 if (contentBlocks[index].gluedAbove) {
                     // case 1): swap individual content blocks and their glue states
                     swapPosAndGlue(contentBlocks, index, index-1)
-                    println("DEBUG: swapped blocks with indices $index and ${index - 1} in model")
 
                     if (ConnectionManager.isConnected) {
                         var updateBlock = contentBlocks[index]
@@ -256,6 +248,8 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
                         updateBlock = contentBlocks[index-1]
                         persistence.updateGlueStatus(updateBlock, updateBlock.gluedAbove, updateBlock.gluedBelow, article, board.id)
                         persistence.swapContentBlocks(article.id, index-1, index-1, index, index, board.id)
+                    } else {
+                        val a = 4 // TODO: implement DBQueue
                     }
                     notifySubscribers()
                     return index-1
@@ -264,29 +258,28 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
                 else {
                     val upperBlockEnd = index-1
                     val lowerBlockStart = index
-                    val otherIndices = moveGluedBlocks(contentBlocks, upperBlockEnd, lowerBlockStart)
-                    val upperBlockStart = otherIndices[0]
-                    val lowerBlockEnd = otherIndices[1]
+                    val (upperBlockStart, lowerBlockEnd) = getBlockBounds(contentBlocks, upperBlockEnd, lowerBlockStart)
+                    moveGluedBlocks(contentBlocks, upperBlockStart, upperBlockEnd, lowerBlockStart, lowerBlockEnd)
 
                     if (ConnectionManager.isConnected) {
                         persistence.swapContentBlocks(article.id, upperBlockStart, upperBlockEnd, lowerBlockStart, lowerBlockEnd, board.id)
+                    } else {
+                        val a = 4 // TODO: implement DBQueue
                     }
                     notifySubscribers()
                     return upperBlockStart + (lowerBlockEnd - lowerBlockStart)
                 }
             }
         }
-        return -1
+        return null
     }
 
-    fun moveBlockDown(index: Int, article: Note, board: Board): Int {
-        println("DEBUG: moving down block at index $index (attempt)")
+    fun moveBlockDown(index: Int, article: Note, board: Board): Int? {
         contentBlockDict[article.id]?.let { contentBlocks ->
             if (index in 0..(contentBlocks.size - 2)) {
                 // we consider the same cases for glued blocks as the function above, but in the opposite direction
                 if (contentBlocks[index].gluedBelow) {
                     swapPosAndGlue(contentBlocks, index, index+1)
-                    println("DEBUG: swapped blocks with indices $index and ${index + 1} in model")
 
                     if (ConnectionManager.isConnected) {
                         var updateBlock = contentBlocks[index]
@@ -294,29 +287,31 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
                         updateBlock = contentBlocks[index+1]
                         persistence.updateGlueStatus(updateBlock, updateBlock.gluedAbove, updateBlock.gluedBelow, article, board.id)
                         persistence.swapContentBlocks(article.id, index, index, index + 1,index + 1, board.id)
+                    } else {
+                        val a = 4 // TODO: implement DBQueue
                     }
                     notifySubscribers()
                     return index+1
                 } else {
                     val upperBlockEnd = index
                     val lowerBlockStart = index+1
-                    val otherIndices = moveGluedBlocks(contentBlocks, upperBlockEnd, lowerBlockStart)
-                    val upperBlockStart = otherIndices[0]
-                    val lowerBlockEnd = otherIndices[1]
+                    val (upperBlockStart, lowerBlockEnd) = getBlockBounds(contentBlocks, upperBlockEnd, lowerBlockStart)
+                    moveGluedBlocks(contentBlocks, upperBlockStart, upperBlockEnd, lowerBlockStart, lowerBlockEnd)
 
                     if (ConnectionManager.isConnected) {
                         persistence.swapContentBlocks(article.id, upperBlockStart, upperBlockEnd, lowerBlockStart, lowerBlockEnd, board.id)
+                    } else {
+                        val a = 4 // TODO: implement DBQueue
                     }
                     notifySubscribers()
                     return upperBlockStart + (lowerBlockEnd - lowerBlockStart) + 1
                 }
             }
         }
-        return -1
+        return null
     }
 
     fun deleteBlock(index: Int, article: Note, board: Board) {
-        println("DEBUG: deleting block at index $index (attempt)")
         contentBlockDict[article.id]?.let { contentBlocks ->
             if (index in 0..(contentBlocks.size - 1)) {
                 val toRemove: ContentBlock = contentBlocks[index]
@@ -344,7 +339,6 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
 
                 // once glue has been updated, delete the block
                 contentBlocks.removeAt(index)
-                println("DEBUG: deleted block at index $index in model")
 
                 if (ConnectionManager.isConnected) {
                     // update any glue that could have been changed

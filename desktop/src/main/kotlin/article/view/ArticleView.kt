@@ -91,11 +91,11 @@ fun ArticleCompose(board: Board, article: Note) {
         },
         "Move Block Up" to { index ->
             val newIndex = articleModel.moveBlockUp(index, article, board)
-            selectedBlock = (if (newIndex == -1) selectedBlock else newIndex)
+            selectedBlock = (if (newIndex == null) selectedBlock else newIndex)
         },
         "Move Block Down" to { index ->
             val newIndex = articleModel.moveBlockDown(index, article, board)
-            selectedBlock = (if (newIndex == -1) selectedBlock else newIndex)
+            selectedBlock = (if (newIndex == null) selectedBlock else newIndex)
         },
         "Delete Block" to { index ->
             articleModel.deleteBlock(index, article, board)
@@ -201,11 +201,11 @@ fun ArticleCompose(board: Board, article: Note) {
                             println("DEBUG: Selecting block at index $index")
                         },
                         selectAtIndex = ::selectAtIndex,
-                        debugState = debugState,
                         board = board,
                         gluedAbove = block.gluedAbove,
                         gluedBelow = block.gluedBelow,
-                        numContentBlocks = contentBlocksList.contentBlocksList.size
+                        numContentBlocks = contentBlocksList.contentBlocksList.size,
+                        debugState = debugState
                     )
 
                     // visually disconnect blocks if not glued
@@ -230,19 +230,19 @@ fun BlockFrame(
     isSelected: Boolean,
     onBlockClick: () -> Unit,
     selectAtIndex: (Int) -> Unit,
-    debugState: Boolean,
     board: Board,
     gluedAbove: Boolean,
     gluedBelow: Boolean,
-    numContentBlocks: Int
-) {
+    numContentBlocks: Int,
+    debugState: Boolean,
+    ) {
     var block by remember { mutableStateOf(articleViewModel.contentBlocksList[blockIndex]) }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .clickable { onBlockClick() }
-            .clip(RoundedCornerShape(8.dp))
+            .clip(RoundedCornerShape(6.dp))
     ) {
         Column(
             modifier = Modifier.fillMaxWidth()
@@ -283,7 +283,6 @@ fun BlockFrame(
                     .padding(horizontal=5.dp)
                     .clip(RoundedCornerShape(5.dp)),
             ) {
-
 
                 if (isSelected) {
                     BlockFrameMenu(blockIndex, menuButtonFuncs, numContentBlocks, gluedAbove, gluedBelow)
@@ -360,8 +359,6 @@ fun BlockFrame(
                         LatexRenderer(latex)
                     }
 
-
-
                     if (block.blockType == BlockType.CANVAS) {
                         EditableCanvas(
                             block = block,
@@ -378,6 +375,7 @@ fun BlockFrame(
                             }
                         )
                     }
+
 
                     if (block.blockType == BlockType.MEDIA) {
                         addMedia(isSelected)
@@ -604,8 +602,11 @@ fun EditableCanvas(
         else -> mutableListOf()
     }
 
+
     val paths = remember { mutableStateListOf<Path>().apply { addAll(startPaths) } }
+    println("HERE 1")
     var currentPath by remember { mutableStateOf(Path()) }
+    println("HERE 1.5")
     var isDrawing by remember { mutableStateOf(false) }
     var isOutsideBox by remember { mutableStateOf(false) }
     var isErasing by remember { mutableStateOf(false) }
@@ -614,6 +615,7 @@ fun EditableCanvas(
     val resizeThreshold = LocalDensity.current.run { 30 }
     var isResizing by remember {mutableStateOf(false)}
 
+    println("HERE 2")
 
     Box(
         modifier = Modifier
@@ -696,6 +698,8 @@ fun EditableCanvas(
             onClick = { isErasing = !isErasing },
         ) { Text(if (!isErasing) "Erase" else "Draw") }
 
+        println("HERE 3")
+
         // drawing the existing path
         Canvas(
             modifier = Modifier.fillMaxSize()
@@ -717,6 +721,9 @@ fun EditableCanvas(
                 )
             }
         }
+
+        println("HERE 4")
+
         Box(
             modifier = Modifier
                 .fillMaxWidth()
