@@ -977,7 +977,7 @@ fun BlockFrameMenu(index: Int, buttonFuncs: Map<String, (Int) -> Unit>, numConte
                 // toggle glue with block above
                 MenuButton(
                     buttonFuncs["Toggle Glue Above"],
-                    Icons.Filled.ArrowUpward,
+                    Icons.Default.KeyboardArrowUp,
                     "Toggle Glue Above",
                     disabledCond = (index == 0)
 
@@ -985,7 +985,7 @@ fun BlockFrameMenu(index: Int, buttonFuncs: Map<String, (Int) -> Unit>, numConte
                 // toggle glue with block below
                 MenuButton(
                     buttonFuncs["Toggle Glue Below"],
-                    Icons.Filled.ArrowDownward,
+                    Icons.Default.KeyboardArrowDown,
                     "Toggle Glue Below",
                     disabledCond = (index == numContentBlocks-1)
                 )
@@ -1017,20 +1017,20 @@ fun BlockFrameMenu(index: Int, buttonFuncs: Map<String, (Int) -> Unit>, numConte
                 // duplicate current block
                 MenuButton(
                     buttonFuncs["Duplicate Block"],
-                    Icons.Default.CopyAll,
+                    Icons.Default.AddCircle,
                     "Duplicate Block"
                 )
                 // move current block up
                 MenuButton(
                     buttonFuncs["Move Block Up"],
-                    if (gluedAbove) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardDoubleArrowUp,
+                    if (gluedAbove) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowUp,
                     if (gluedAbove) "Move Block Up" else "Move Glued Block Up",
                     disabledCond = (index == 0)
                 )
                 // move current block down
                 MenuButton(
                     buttonFuncs["Move Block Down"],
-                    if (gluedBelow) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardDoubleArrowDown,
+                    if (gluedBelow) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowDown,
                     if (gluedBelow) "Move Block Down" else "Move Glued Block Down",
                     disabledCond = (index == numContentBlocks-1)
                 )

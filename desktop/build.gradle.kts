@@ -57,7 +57,7 @@ dependencies {
     implementation("org.scilab.forge:jlatexmath:1.0.7")
 
     // additional icons
-    implementation("androidx.compose.material:material-icons-extended:1.6.0")
+    // implementation("androidx.compose.material:material-icons-extended:1.6.0")
 
     // File Picker
     implementation(platform("androidx.compose:compose-bom:2025.02.00"))
