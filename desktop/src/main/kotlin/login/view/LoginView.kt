@@ -23,12 +23,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.Button
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import boards.view.BoardViewScreen
 import cafe.adriel.voyager.core.screen.Screen
@@ -132,15 +133,17 @@ fun LoginView(){
                             openSignInWarning.value = true
                         }
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = textButtonColours()
                 ) {
-                    Text(text = "Log in")
+                    Text(text = "Log in", color = Color.White)
                 }
                 Button(
                     onClick = { openSignUpDialog.value = true },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = textButtonColours()
                 ) {
-                    Text(text = "New here? Sign up!")
+                    Text(text = "New here? Sign up!", color = Color.White)
                 }
             }
         }
