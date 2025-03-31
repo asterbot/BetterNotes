@@ -73,33 +73,93 @@ fun ArticleCompose(board: Board, article: Note) {
 
     var contentBlocksList by remember { mutableStateOf(articleViewModel) }
 
+    var prevSelectedBlock by remember { mutableStateOf<Int?>(null) }
     var selectedBlock by remember { mutableStateOf<Int?>(null) }
+    var currEditedText = remember {mutableStateOf<String?>(null) } // keep track of the text currently being changed
     var debugState by remember { mutableStateOf(false) }
+
+
+    fun changeSelectedBlock(selectedBlock: Int?) {
+        println("In LaunchedEffect (switching block focus)")
+        println("I moved from block $prevSelectedBlock to block $selectedBlock")
+        if (prevSelectedBlock != selectedBlock) {
+            if (prevSelectedBlock != null && currEditedText.value != null) {
+                val currBlock = contentBlocksList.contentBlocksList[prevSelectedBlock!!]
+                if (currBlock.blockType == BlockType.CODE) {
+                    articleModel.saveBlock(
+                        prevSelectedBlock!!, stringContent = currEditedText.value!!, article = article,
+                        language = (currBlock as CodeBlock).language,
+                        gluedAbove = currBlock.gluedAbove, gluedBelow = currBlock.gluedBelow, board = board
+                    )
+                } else {
+                    articleModel.saveBlock(
+                        prevSelectedBlock!!,
+                        stringContent = currEditedText.value!!,
+                        gluedAbove = currBlock.gluedAbove,
+                        gluedBelow = currBlock.gluedBelow,
+                        article = article,
+                        board = board
+                    )
+                }
+                currEditedText.value = null // reset to keep track of changes of the CURRENT block
+            }
+        }
+        prevSelectedBlock = selectedBlock
+    }
+
+    // detect when we change blocks (i.e, change focus)
+    // we will only push to the db when focus shifts, so that we don't spam the db with each character change
+    LaunchedEffect(selectedBlock) {
+        changeSelectedBlock(selectedBlock)
+    }
 
     fun selectAtIndex(index: Int) { selectedBlock = index } // used with inserting blocks
 
     val menuButtonFuncs: Map<String, (Int) -> Unit> = mapOf(
+        "Toggle Glue Above" to { index ->
+            articleModel.toggleGlueUpwards(index, article, board)
+        },
+        "Toggle Glue Below" to { index ->
+            articleModel.toggleGlueDownwards(index, article, board)
+        },
         "Duplicate Block" to { index ->
-            articleModel.duplicateBlock(index, article, board)
-            // articleModel.duplicateBlock(index, article)
             selectedBlock = index + 1
+            changeSelectedBlock(selectedBlock)
+            articleModel.duplicateBlock(index, article, board)
         },
         "Move Block Up" to { index ->
+            val blocks: MutableList<ContentBlock> = contentBlocksList.contentBlocksList
+            val (upperBlockStart, lowerBlockEnd) = articleModel.getBlockBounds(blocks, index-1, index)
+            if (blocks[index].gluedAbove) {
+                selectedBlock = index - 1
+            }
+            else {
+                selectedBlock = upperBlockStart
+            }
+            changeSelectedBlock(selectedBlock)
             articleModel.moveBlockUp(index, article, board)
-            selectedBlock = index - 1
         },
         "Move Block Down" to { index ->
+            val blocks: MutableList<ContentBlock> = contentBlocksList.contentBlocksList
+            val (upperBlockStart, lowerBlockEnd) = articleModel.getBlockBounds(blocks, index, index+1)
+            if (blocks[index].gluedBelow) {
+                selectedBlock = index + 1
+            }
+            else {
+                selectedBlock = lowerBlockEnd
+            }
+            changeSelectedBlock(selectedBlock)
             articleModel.moveBlockDown(index, article, board)
-            selectedBlock = index + 1
         },
         "Delete Block" to { index ->
+            changeSelectedBlock(selectedBlock)
             articleModel.deleteBlock(index, article, board)
-            selectedBlock = null
         }
     )
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .padding(5.dp)
             .clickable(
                 // passing in empty MutableInteractionSource means no ripple effect (i.e. box not grayed out when hovered over)
                 interactionSource = remember { MutableInteractionSource() },
@@ -121,36 +181,46 @@ fun ArticleCompose(board: Board, article: Note) {
             )
 
             // row containing any useful functionality (as buttons)
+            // so far, "return to previous course" and "DEBUG" buttons
             Row(
-                // TODO: buttons for main navigation (e.g. back to course, other articles, ...)
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                // insert TextBlock at beginning
                 TextButton(
                     colors = textButtonColours(),
-                    onClick = { ScreenManager.push(navigator, IndividualBoardScreen(board)) }
+                    onClick = {
+                        selectedBlock = null
+                        changeSelectedBlock(selectedBlock)
+                        ScreenManager.push(navigator, IndividualBoardScreen(board))
+                    }
                 ) { Text("Back to current course") }
                 Button(
                     colors = textButtonColours(),
                     onClick = {
                         println("DEBUG (THE BLOCKS):")
-                        println("FROM MODEL: ${articleModel.contentBlockDict}")
+                        // println("FROM MODEL: ${articleModel.contentBlockDict}")
+                        println("FROM MODEL:")
                         articleModel.contentBlockDict[article.id]?.let {articleContentBlocks ->
                             for (contentBlock in articleContentBlocks) {
+                                println("-----------------------------------------------")
+                                println("Glued Above? ${contentBlock.gluedAbove}")
                                 if (contentBlock.blockType == BlockType.CANVAS) {
                                     println("\tCANVAS HAS ${(contentBlock as CanvasBlock).paths.size} PATHS")
                                 } else {
                                     println("\t$contentBlock")
                                 }
+                                println("Glued Below? ${contentBlock.gluedBelow}")
                             }
                         }
-                        println("FROM VIEWMODEL: ${contentBlocksList.contentBlocksList}")
+                        // println("FROM VIEWMODEL: ${contentBlocksList.contentBlocksList}")
+                        println("FROM VIEWMODEL:")
                         for (contentBlock in contentBlocksList.contentBlocksList) {
+                            println("Glued Above? ${contentBlock.gluedAbove}")
                             if (contentBlock.blockType == BlockType.CANVAS) {
                                 println("\tCANVAS HAS ${(contentBlock as CanvasBlock).paths.size} PATHS")
                             } else {
                                 println("\t$contentBlock")
                             }
+                            println("Glued Below? ${contentBlock.gluedBelow}")
                         }
                         debugState = !debugState
                     }
@@ -166,9 +236,11 @@ fun ArticleCompose(board: Board, article: Note) {
             }
 
             LazyColumn( // lazy column stores all blocks
-                modifier = Modifier.fillMaxSize().padding(25.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(20.dp)
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal=25.dp)
+                    .padding(top=5.dp, bottom=20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 itemsIndexed(
                     contentBlocksList.contentBlocksList, // itemsIndexed iterates over this collection
@@ -187,9 +259,18 @@ fun ArticleCompose(board: Board, article: Note) {
                             println("DEBUG: Selecting block at index $index")
                         },
                         selectAtIndex = ::selectAtIndex,
-                        debugState = debugState,
-                        board = board
+                        board = board,
+                        gluedAbove = block.gluedAbove,
+                        gluedBelow = block.gluedBelow,
+                        numContentBlocks = contentBlocksList.contentBlocksList.size,
+                        currEditedText = currEditedText,
+                        debugState = debugState
                     )
+
+                    // visually disconnect blocks if not glued
+                    if (!block.gluedBelow) {
+                        Spacer(modifier = Modifier.size(25.dp))
+                    }
                 }
             }
             // if no blocks, set select index to null
@@ -208,8 +289,12 @@ fun BlockFrame(
     isSelected: Boolean,
     onBlockClick: () -> Unit,
     selectAtIndex: (Int) -> Unit,
+    board: Board,
+    gluedAbove: Boolean,
+    gluedBelow: Boolean,
+    numContentBlocks: Int,
+    currEditedText: MutableState<String?>,
     debugState: Boolean,
-    board: Board
 ) {
     var block by remember { mutableStateOf(articleViewModel.contentBlocksList[blockIndex]) }
 
@@ -217,99 +302,156 @@ fun BlockFrame(
         modifier = Modifier
             .fillMaxSize()
             .clickable { onBlockClick() }
-            .clip(RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(6.dp))
     ) {
-        Box(
-            modifier = Modifier
-                .background(Colors.lightTeal)
-                .padding(horizontal = 15.dp, vertical = 10.dp)
-                .clip(RoundedCornerShape(10.dp)),
+        Column(
+            modifier = Modifier.fillMaxWidth()
         ) {
-
-            if (isSelected) {
-                BlockFrameMenu(blockIndex, menuButtonFuncs)
+            @Composable
+            fun GluedBlockBorder(glueParam: Boolean, dir: String) {
+                // dir can only be "Above" or "Below"
+                if (dir == "Above") {
+                    Spacer(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(4.dp)
+                            .background(if (glueParam) Colors.lightTeal else Colors.medTeal)
+                    )
+                }
+                Spacer(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height((if (glueParam) 0 else 25).dp)
+                        .background(Colors.lightTeal)
+                )
+                if (dir == "Below") {
+                    Spacer(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(4.dp)
+                            .background(if (glueParam) Colors.lightTeal else Colors.medTeal)
+                    )
+                }
             }
 
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(5.dp)
+
+            GluedBlockBorder(gluedAbove, "Above")
+
+            Box(
+                modifier = Modifier
+                    .background(Colors.lightTeal)
+                    .padding(horizontal=5.dp)
+                    .clip(RoundedCornerShape(5.dp)),
             ) {
 
                 if (isSelected) {
-                    Text(
-                        text = "${block.blockType.name} Block",
-                        fontWeight = FontWeight.Bold
-                    )
-                    AddBlockFrameButton(article, blockIndex, "UP", selectAtIndex, board)
+                    BlockFrameMenu(blockIndex, menuButtonFuncs, numContentBlocks, gluedAbove, gluedBelow)
                 }
 
-                // TODO: replace this with generalizable code for all ContentBlocks
-                if (block.blockType in
-                    listOf(
-                        BlockType.PLAINTEXT,
-                        BlockType.MARKDOWN,
-                        BlockType.CODE,
-                        BlockType.MATH
-                    )) {
-                    if (!((block.blockType == BlockType.MARKDOWN || block.blockType == BlockType.MATH) && !isSelected)) {
-                        EditableTextBox(
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 25.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+
+                    if (isSelected) {
+                        Text(
+                            text = "${block.blockType.name} Block",
+                            fontWeight = FontWeight.Bold
+                        )
+                        AddBlockFrameButton(article, blockIndex, "UP", selectAtIndex, board)
+                    }
+
+                    // TODO: replace this with generalizable code for all ContentBlocks
+                    if (block.blockType in
+                        listOf(
+                            BlockType.PLAINTEXT,
+                            BlockType.MARKDOWN,
+                            BlockType.CODE,
+                            BlockType.MATH
+                        )
+                    ) {
+                        if (isSelected) {
+                            EditableTextBox(
+                                block = block,
+                                onTextChange = { currEditedText.value = it }
+                            )
+                        }
+                    }
+
+                    if (block.blockType == BlockType.PLAINTEXT && !isSelected) {
+                        Box(
+                            modifier = Modifier.background(Color.White).fillMaxWidth()
+                        ) {
+                            Text(text=(block as TextBlock).text)
+                        }
+                    }
+
+                    if (block.blockType == BlockType.CODE && !isSelected) {
+                        Box(
+                            modifier = Modifier.background(Colors.black).fillMaxWidth()
+                        ) {
+                            Text(
+                                text=(block as CodeBlock).text,
+                                color = Color.Green,
+                                fontFamily = FontFamily.Monospace,
+                                fontWeight = FontWeight.W200
+                            )
+                        }
+                    }
+
+
+                    if (block.blockType == BlockType.MARKDOWN && !isSelected) {
+                        val markdownHandler = MarkdownHandler((block as MarkdownBlock).text)
+                        markdownHandler.renderMarkdown()
+                    }
+
+                    if (block.blockType == BlockType.MATH && !isSelected) {
+                        // Render math here
+                        var latex = ""
+                        try {
+                            // Try to parse the "flaky" math
+                            val rawMath = ((block as MathBlock).text).parseMath()
+                            val syntax = FeaturedMathRendererWithPostProcess.Default.render(rawMath)
+                            latex = LatexSyntaxRenderer.renderWithStringBuilder(syntax)
+                        } catch (e: Exception) {
+                            // Parsing error, render latex as is
+                            latex = (block as MathBlock).text
+                        }
+                        LatexRenderer(latex)
+                    }
+
+                    if (block.blockType == BlockType.CANVAS) {
+                        EditableCanvas(
                             block = block,
-                            onTextChange = {
-                                if (block.blockType == BlockType.CODE){
-                                    articleModel.saveBlock(blockIndex, stringContent = it, article = article,
-                                        language = (block as CodeBlock).language, board = board)
-                                }
-                                else {
-                                    articleModel.saveBlock(blockIndex, stringContent = it, article = article, board = board)
-                                }
+                            onCanvasUpdate = { paths, height ->
+                                articleModel.saveBlock(
+                                    blockIndex,
+                                    pathsContent = paths,
+                                    canvasHeight = height,
+                                    gluedAbove = gluedAbove,
+                                    gluedBelow = gluedBelow,
+                                    article = article,
+                                    board = board
+                                )
                             }
                         )
                     }
-                }
 
 
-                if (block.blockType == BlockType.MARKDOWN && !isSelected) {
-                    val markdownHandler = MarkdownHandler((block as MarkdownBlock).text)
-                    markdownHandler.renderMarkdown()
-                }
-
-                if (block.blockType == BlockType.MATH && !isSelected) {
-                    // Render math here
-                    var latex = ""
-                    try{
-                        // Try to parse the "flaky" math
-                        val rawMath = ((block as MathBlock).text).parseMath()
-                        val syntax = FeaturedMathRendererWithPostProcess.Default.render(rawMath)
-                        latex = LatexSyntaxRenderer.renderWithStringBuilder(syntax)
+                    if (block.blockType == BlockType.MEDIA) {
+                        addMedia(isSelected)
                     }
-                    catch(e: Exception){
-                        // Parsing error, render latex as is
-                        latex = (block as MathBlock).text
+
+                    if (isSelected) {
+                        AddBlockFrameButton(article, blockIndex, "DOWN", selectAtIndex, board)
                     }
-                    LatexRenderer(latex)
+
                 }
-
-
-
-                if (block.blockType == BlockType.CANVAS) {
-                    EditableCanvas(
-                        block = block,
-                        onCanvasUpdate = {paths, height ->
-                            articleModel.saveBlock(blockIndex, pathsContent=paths, canvasHeight=height, article=article, board = board)
-                        }
-                    )
-                }
-
-                if (block.blockType == BlockType.MEDIA) {
-                    addMedia(isSelected)
-                }
-
-                if (isSelected) {
-                    AddBlockFrameButton(article, blockIndex, "DOWN", selectAtIndex, board)
-                }
-
             }
+            GluedBlockBorder(gluedBelow, "Below")
         }
     }
 }
@@ -524,6 +666,7 @@ fun EditableCanvas(
         else -> mutableListOf()
     }
 
+
     val paths = remember { mutableStateListOf<Path>().apply { addAll(startPaths) } }
     var currentPath by remember { mutableStateOf(Path()) }
     var isDrawing by remember { mutableStateOf(false) }
@@ -533,7 +676,6 @@ fun EditableCanvas(
     var canvasHeight by remember { mutableStateOf((block as CanvasBlock).canvasHeight) }
     val resizeThreshold = LocalDensity.current.run { 30 }
     var isResizing by remember {mutableStateOf(false)}
-
 
     Box(
         modifier = Modifier
@@ -637,6 +779,7 @@ fun EditableCanvas(
                 )
             }
         }
+
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -810,9 +953,7 @@ fun EditableTextBox(
     }
 
     Column(
-        modifier = Modifier
-            .padding(16.dp)
-            .clickable { focusRequester.requestFocus() } // Ensure click brings focus
+        modifier = Modifier.clickable { focusRequester.requestFocus() } // Ensure click brings focus
     ) {
         BasicTextField(
             value = textFieldValue,
@@ -826,69 +967,85 @@ fun EditableTextBox(
                 .focusRequester(focusRequester) // Attach focus requester to manage focus
                 .onKeyEvent { true }, // prevents weird visual glitch from happening
             textStyle = textStyle,
-            cursorBrush = SolidColor(if (block.blockType == BlockType.CODE) Color.White else Color.Black)
+            cursorBrush = SolidColor(if (block.blockType == BlockType.CODE) Color.Green else Colors.black)
         )
     }
 }
 
 @Composable
-fun BlockFrameMenu(index: Int, buttonFuncs: Map<String, (Int) -> Unit>) {
+fun BlockFrameMenu(index: Int, buttonFuncs: Map<String, (Int) -> Unit>, numContentBlocks: Int,
+                   gluedAbove: Boolean, gluedBelow: Boolean) {
     // BlockFrameMenu consists of the buttons that do actions for all blocks (i.e. all types of ContentBlocks)
 
-    var hoveredButton by remember { mutableStateOf<String?>(null) }
+    var hoveredGlueButton by remember { mutableStateOf<String?>(null) }
+    var hoveredOtherButton by remember { mutableStateOf<String?>(null) }
 
     Box(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize()
     ) {
+
+        @Composable
+        fun MenuButton(onClick: ((Int) -> Unit)?, icon: ImageVector, desc: String, disabledCond: Boolean = false) {
+            val interactionSource = remember { MutableInteractionSource() }
+            val isHovered by interactionSource.collectIsHoveredAsState()
+
+            // toggle hoveredButton state given the button we are hovering over
+            // need to consider two cases for glue/other buttons (mutable states)
+            if (desc.startsWith("Toggle Glue")) {
+                if (isHovered && hoveredGlueButton != desc) {
+                    hoveredGlueButton = desc
+                }
+                else if (!isHovered && hoveredGlueButton == desc) {
+                    hoveredGlueButton = null
+                }
+            } else {
+                if (isHovered && hoveredOtherButton != desc) {
+                    hoveredOtherButton = desc
+                }
+                else if (!isHovered && hoveredOtherButton == desc) {
+                    hoveredOtherButton = null
+                }
+            }
+
+            IconButton(
+                onClick = { onClick?.invoke(index) },
+                colors = iconButtonColours(),
+                modifier = Modifier.hoverable(interactionSource = interactionSource).size(40.dp),
+                enabled = !disabledCond
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = desc,
+                    modifier = Modifier.size(25.dp)
+                )
+            }
+        }
+
+
+        // buttons for glue toggling
         Box (
-            modifier = Modifier.align(Alignment.TopEnd)
+            modifier = Modifier.align(Alignment.TopStart)
         ) {
             Row(
-                modifier = Modifier.align(Alignment.TopEnd)
+                modifier = Modifier.align(Alignment.TopStart),
+                horizontalArrangement = Arrangement.spacedBy(5.dp)
             ) {
-                @Composable
-                fun MenuButton(onClick: ((Int) -> Unit)?, icon: ImageVector, desc: String) {
-                    val interactionSource = remember { MutableInteractionSource() }
-                    val isHovered by interactionSource.collectIsHoveredAsState()
-
-                    // toggle hoveredButton state given the button we are hovering over
-                    if (isHovered) {
-                        hoveredButton = desc
-                    } else if (hoveredButton == desc) {
-                        hoveredButton = null
-                    }
-
-                    IconButton(
-                        onClick = { onClick?.invoke(index) },
-                        colors = iconButtonColours(),
-                        modifier = Modifier.hoverable(interactionSource = interactionSource)
-                    ) {
-                        Icon(
-                            imageVector = icon,
-                            contentDescription = desc,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
-
+                // toggle glue with block above
                 MenuButton(
-                    buttonFuncs["Duplicate Block"],
-                    Icons.Default.AddCircle,
-                    "Duplicate"
-                ) // duplicate current block
+                    buttonFuncs["Toggle Glue Above"],
+                    Icons.Filled.ArrowDropUp,
+                    "Toggle Glue Above",
+                    disabledCond = (index == 0)
+                )
+                // toggle glue with block below
                 MenuButton(
-                    buttonFuncs["Move Block Up"],
-                    Icons.Default.KeyboardArrowUp,
-                    "Move Up"
-                ) // move current block up
-                MenuButton(
-                    buttonFuncs["Move Block Down"],
-                    Icons.Default.KeyboardArrowDown,
-                    "Move Down"
-                ) // move current block down
-                MenuButton(buttonFuncs["Delete Block"], Icons.Default.Delete, "Delete") // delete current block
+                    buttonFuncs["Toggle Glue Below"],
+                    Icons.Filled.ArrowDropDown,
+                    "Toggle Glue Below",
+                    disabledCond = (index == numContentBlocks-1)
+                )
             }
-            if (hoveredButton != null) {
+            if (hoveredGlueButton != null) {
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
@@ -896,7 +1053,58 @@ fun BlockFrameMenu(index: Int, buttonFuncs: Map<String, (Int) -> Unit>) {
                         .padding(horizontal = 4.dp, vertical = 4.dp)
                 ) {
                     Text(
-                        text = hoveredButton.toString(),
+                        text = hoveredGlueButton.toString(),
+                        fontSize = 12.sp,
+                        color = Colors.white.copy(alpha = 0.9f)
+                    )
+                }
+            }
+        }
+
+        // buttons for block manipulating (i.e. not glue)
+        Box (
+            modifier = Modifier.align(Alignment.TopEnd)
+        ) {
+            Row(
+                modifier = Modifier.align(Alignment.TopEnd),
+                horizontalArrangement = Arrangement.spacedBy(5.dp)
+            ) {
+                // duplicate current block
+                MenuButton(
+                    buttonFuncs["Duplicate Block"],
+                    Icons.Default.CopyAll,
+                    "Duplicate Block"
+                )
+                // move current block up
+                MenuButton(
+                    buttonFuncs["Move Block Up"],
+                    if (gluedAbove) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardDoubleArrowUp,
+                    if (gluedAbove) "Move Block Up" else "Move Glued Block Up",
+                    disabledCond = (index == 0)
+                )
+                // move current block down
+                MenuButton(
+                    buttonFuncs["Move Block Down"],
+                    if (gluedBelow) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardDoubleArrowDown,
+                    if (gluedBelow) "Move Block Down" else "Move Glued Block Down",
+                    disabledCond = (index == numContentBlocks-1)
+                )
+                // delete current block
+                MenuButton(
+                    buttonFuncs["Delete Block"],
+                    Icons.Default.Delete,
+                    "Delete"
+                )
+            }
+            if (hoveredOtherButton != null) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .background(Colors.darkGrey.copy(alpha = 0.9f))
+                        .padding(horizontal = 4.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = hoveredOtherButton.toString(),
                         fontSize = 12.sp,
                         color = Colors.white.copy(alpha = 0.9f)
                     )
@@ -925,7 +1133,7 @@ fun AddBlockFrameButton(article: Note, index: Int, direction: String, selectAtIn
         IconButton(
             onClick = { showBlockTypes = !showBlockTypes },
             colors = iconButtonColours(),
-            modifier = Modifier.hoverable(interactionSource = interactionSource)
+            modifier = Modifier.hoverable(interactionSource = interactionSource).size(40.dp)
         ) {
             Icon(
                 imageVector = Icons.Default.Add,
@@ -970,7 +1178,7 @@ fun InsertBlockTypesMenu(article: Note, index: Int, direction: String, selectAtI
             TextButton(
                 colors = textButtonColours(),
                 onClick = {
-                    articleModel.addBlock(atAddIndex, type, article, board)
+                    articleModel.addBlock(atAddIndex, direction, type, article, board)
                     selectAtIndex(atAddIndex)
                 }
             ) { Text(type.name) }

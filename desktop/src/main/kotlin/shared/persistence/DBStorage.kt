@@ -264,7 +264,6 @@ class DBStorage() :IPersistence {
         runBlocking {
             boardsCollection.find(Filters.eq(Board::userId.name, loginModel.currentUser)).collect { board ->
                 val notesInBoard = board.notes
-                println("DBSTORAGE DEBUG: All notes: $notesInBoard")
                 val noteList = mutableListOf<Note>()
                 notesInBoard.forEach { noteId ->
                     notesCollection.find(Filters.eq(noteId)).firstOrNull()?.let { note ->
@@ -274,8 +273,6 @@ class DBStorage() :IPersistence {
                 toRet[board.id] = noteList
             }
         }
-
-        println("DBSTORAGE DEBUG: toRet: $toRet")
         return toRet
     }
 
@@ -379,13 +376,12 @@ class DBStorage() :IPersistence {
                 // NOTE: i think it's ok to not check if the note is an article or not
                 // just let the code go through each note regardless
                 val blocksInArticle = note.contentBlocks
-                println("DBSTORAGE DEBUG: All Content Blocks: $blocksInArticle")
                 val contentBlockList: MutableList<ContentBlock> = mutableListOf()
+                var prevBlockGlued = false
                 blocksInArticle.forEach { blockId ->
                     // convert each contentBlock of an article to the correct data subclass
                     contentBlocksDocumentCollection.find(Filters.eq(blockId)).firstOrNull()?.let { block ->
                         val typeStr = block.getString("blockType")
-                        println("DBSTORAGE DEBUG: Content Block Type: $typeStr")
                         val blockCasted = when (typeStr) {
                             "PLAINTEXT" -> TextBlock(
                                 id = block.getObjectId("_id"),
@@ -413,19 +409,61 @@ class DBStorage() :IPersistence {
                                 text = "BAD!!!!!! THIS SHOULD NOT HAPPEN!!!!!!!",
                             )
                         }
+                        // provide some glue safety (i.e. neighbouring blocks are either both glued or both not glued)
+                        blockCasted.gluedAbove = prevBlockGlued
+                        blockCasted.gluedBelow = block.getBoolean("gluedBelow")
+                        prevBlockGlued = blockCasted.gluedBelow
+
                         contentBlockList.add(blockCasted)
                     }
-
-
                 }
                 toRet[note.id] = contentBlockList
             }
         }
-
-        println("DBSTORAGE DEBUG: [ARTICLEID, CONTENTBLOCKS] MAP: $toRet")
         return toRet
     }
 
+    override fun updateGlueStatus(
+        contentBlockId: ObjectId,
+        gluedAbove: Boolean,
+        gluedBelow: Boolean,
+        articleId: ObjectId,
+        boardId: ObjectId,
+        await: Boolean
+    ) {
+        val now = Instant.now().toString()
+
+        val job = coroutineScope.launch {
+
+            // Update the content block in the content block collection
+            contentBlocksDocumentCollection.updateOne(
+                Filters.eq(contentBlockId),
+                Updates.combine(
+                    Updates.set("gluedAbove", gluedAbove),
+                    Updates.set("gluedBelow", gluedBelow)
+                )
+            )
+
+            // Update the note's datetime fields
+            notesCollection.updateOne(
+                Filters.eq(articleId),
+                Updates.combine(
+                    Updates.set("datetimeUpdated", now),
+                    Updates.set("datetimeAccessed", now)
+                )
+            )
+
+            // Update the board's datetime fields
+            boardsCollection.updateOne(
+                Filters.eq(boardId),
+                Updates.combine(
+                    Updates.set("datetimeUpdated", now),
+                    Updates.set("datetimeAccessed", now)
+                )
+            )
+        }
+        if (await) runBlocking{ job.join() }
+    }
 
     override fun insertContentBlock(article: Note, contentBlock: ContentBlock, index: Int, boardId: ObjectId,
                                     await: Boolean) {
@@ -448,7 +486,6 @@ class DBStorage() :IPersistence {
                     )
                 )
             }
-
             boardsCollection.updateOne(
                 Filters.eq(boardId),
                 Updates.combine(
@@ -456,7 +493,6 @@ class DBStorage() :IPersistence {
                     Updates.set("datetimeAccessed", Instant.now().toString())
                 )
             )
-            println("Insert complete")
         }
         channel.trySend(job)
         if (await) runBlocking {job.join()}
@@ -477,7 +513,6 @@ class DBStorage() :IPersistence {
                     Updates.set("datetimeAccessed", Instant.now().toString())
                 )
             )
-
             boardsCollection.updateOne(
                 Filters.eq(boardId),
                 Updates.combine(
@@ -485,21 +520,25 @@ class DBStorage() :IPersistence {
                     Updates.set("datetimeAccessed", Instant.now().toString())
                 )
             )
-
-            println("Add complete!")
         }
         channel.trySend(job)
         if (await) runBlocking{ job.join() }
     }
 
-    override fun swapContentBlocks(articleId: ObjectId, index1: Int, index2: Int, boardId: ObjectId, await: Boolean) {
+    override fun swapContentBlocks(articleId: ObjectId, upperBlockStart: Int, upperBlockEnd: Int,
+                                   lowerBlockStart: Int, lowerBlockEnd: Int, boardId: ObjectId, await: Boolean) {
         val job = coroutineScope.launch {
             notesCollection.find(Filters.eq(articleId)).firstOrNull()?.let {articleDocument ->
                 var blockIds = articleDocument.contentBlocks.toMutableList()
-                // swap indices of content blocks in article field
-                val temp: ObjectId = blockIds[index1]
-                blockIds[index1] = blockIds[index2]
-                blockIds[index2] = temp
+
+                // swap ids between upper and lower blocks
+                for (offset in 0..lowerBlockEnd-lowerBlockStart) {
+                    val toMoveIndex = lowerBlockStart + offset
+                    val toInsertIndex = upperBlockStart + offset
+                    val idToMove = blockIds[toMoveIndex]
+                    blockIds.removeAt(toMoveIndex)
+                    blockIds.add(toInsertIndex, idToMove)
+                }
                 // then, add back to the document (i.e. update)
                 notesCollection.updateOne(
                     Filters.eq(articleId),
@@ -510,7 +549,6 @@ class DBStorage() :IPersistence {
                     )
                 )
             }
-
             boardsCollection.updateOne(
                 Filters.eq(boardId),
                 Updates.combine(
@@ -536,7 +574,6 @@ class DBStorage() :IPersistence {
                     Updates.set("datetimeAccessed", Instant.now().toString())
                 )
             )
-
             boardsCollection.updateOne(
                 Filters.eq(boardId),
                 Updates.combine(
@@ -552,8 +589,10 @@ class DBStorage() :IPersistence {
     override fun updateContentBlock (
         block: ContentBlock,
         text: String,
-        pathsContent: MutableList< Path>,
+        pathsContent: MutableList<Path>,
         language: String,
+        gluedAbove: Boolean,
+        gluedBelow: Boolean,
         article: Note,
         boardId: ObjectId,
         await: Boolean
@@ -568,7 +607,9 @@ class DBStorage() :IPersistence {
                 Updates.combine(
                     Updates.set("text", text),
                     Updates.set("language", language),
-                    // Updates.set("paths", pathsContent) // Uncomment if needed
+                    Updates.set("gluedAbove", gluedAbove),
+                    Updates.set("gluedBelow", gluedBelow),
+                    // Updates.set("paths", pathsContent) // TODO: Uncomment if needed
                 )
             )
 
