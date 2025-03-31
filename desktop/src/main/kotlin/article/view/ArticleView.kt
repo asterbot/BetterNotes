@@ -75,14 +75,37 @@ fun ArticleCompose(board: Board, article: Note) {
 
     var prevSelectedBlock by remember { mutableStateOf<Int?>(null) }
     var selectedBlock by remember { mutableStateOf<Int?>(null) }
-    var currEditedText by remember {mutableStateOf<String?>(null) } // keep track of the text currently being changed
+    var currEditedText = remember {mutableStateOf<String?>(null) } // keep track of the text currently being changed
     var debugState by remember { mutableStateOf(false) }
 
     // detect when we change blocks (i.e, change focus)
     // we will only push to the db when focus shifts, so that we don't spam the db with each character change
     LaunchedEffect(selectedBlock) {
+        println("In LaunchedEffect")
         if (prevSelectedBlock != selectedBlock) {
-            println("I moved from block $prevSelectedBlock to block $selectedBlock")
+            if (prevSelectedBlock != null && currEditedText.value != null) {
+                println("I moved from block $prevSelectedBlock to block $selectedBlock")
+                println("The text [${currEditedText.value}] gets pushed to block $prevSelectedBlock")
+                val currBlock = contentBlocksList.contentBlocksList[prevSelectedBlock!!]
+                println("The block is ${currBlock}")
+                if (currBlock.blockType == BlockType.CODE) {
+                    articleModel.saveBlock(
+                        prevSelectedBlock!!, stringContent = currEditedText.value!!, article = article,
+                        language = (currBlock as CodeBlock).language,
+                        gluedAbove = currBlock.gluedAbove, gluedBelow = currBlock.gluedBelow, board = board
+                    )
+                } else {
+                    articleModel.saveBlock(
+                        prevSelectedBlock!!,
+                        stringContent = currEditedText.value!!,
+                        gluedAbove = currBlock.gluedAbove,
+                        gluedBelow = currBlock.gluedBelow,
+                        article = article,
+                        board = board
+                    )
+                }
+                currEditedText.value = null // reset to keep track of changes of the CURRENT block
+            }
         }
         prevSelectedBlock = selectedBlock
     }
@@ -216,6 +239,7 @@ fun ArticleCompose(board: Board, article: Note) {
                         gluedAbove = block.gluedAbove,
                         gluedBelow = block.gluedBelow,
                         numContentBlocks = contentBlocksList.contentBlocksList.size,
+                        currEditedText = currEditedText,
                         debugState = debugState
                     )
 
@@ -245,6 +269,7 @@ fun BlockFrame(
     gluedAbove: Boolean,
     gluedBelow: Boolean,
     numContentBlocks: Int,
+    currEditedText: MutableState<String?>,
     debugState: Boolean,
 ) {
     var block by remember { mutableStateOf(articleViewModel.contentBlocksList[blockIndex]) }
@@ -327,24 +352,7 @@ fun BlockFrame(
                         if (isSelected) {
                             EditableTextBox(
                                 block = block,
-                                onTextChange = {
-                                    if (block.blockType == BlockType.CODE) {
-                                        articleModel.saveBlock(
-                                            blockIndex, stringContent = it, article = article,
-                                            language = (block as CodeBlock).language,
-                                            gluedAbove = gluedAbove, gluedBelow = gluedBelow, board = board
-                                        )
-                                    } else {
-                                        articleModel.saveBlock(
-                                            blockIndex,
-                                            stringContent = it,
-                                            gluedAbove = gluedAbove,
-                                            gluedBelow = gluedBelow,
-                                            article = article,
-                                            board = board
-                                        )
-                                    }
-                                }
+                                onTextChange = { currEditedText.value = it }
                             )
                         }
                     }
