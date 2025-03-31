@@ -20,7 +20,8 @@ data class Board @OptIn(ExperimentalSerializationApi::class) constructor(
     @Contextual var notes: List<@Serializable(with = ObjectIdSerializer::class) ObjectId> = mutableListOf(),
     var datetimeCreated: String = Instant.now().toString(),
     var datetimeUpdated: String = Instant.now().toString(),
-    var datetimeAccessed: String = Instant.now().toString()
+    var datetimeAccessed: String = Instant.now().toString(),
+    var userId: String = "dummy-user"
 )
 
 fun MutableList<Board>.addBoard(element: Board): Boolean {

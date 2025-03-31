@@ -28,14 +28,14 @@ class IndvBoardModel(val persistence: IPersistence) : IPublisher() {
 
     init {
         persistence.connect()
-        if (ConnectionManager.isConnected) {
-            noteDict = persistence.readNotes()
-            notifySubscribers()
-        }
+//        if (ConnectionManager.isConnected) {
+//            noteDict = persistence.readNotes()
+//            notifySubscribers()
+//        }
     }
 
     fun initialize() {
-        // Called when there is a reconnection
+        // Called when there is a reconnection and/or login
         persistence.connect()
         if (ConnectionManager.isConnected) {
             noteDict = persistence.readNotes()
