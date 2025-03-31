@@ -78,14 +78,12 @@ fun ArticleCompose(board: Board, article: Note) {
     var currEditedText = remember {mutableStateOf<String?>(null) } // keep track of the text currently being changed
     var debugState by remember { mutableStateOf(false) }
 
-    // detect when we change blocks (i.e, change focus)
-    // we will only push to the db when focus shifts, so that we don't spam the db with each character change
-    LaunchedEffect(selectedBlock) {
+
+    fun changeSelectedBlock(selectedBlock: Int?) {
         println("In LaunchedEffect (switching block focus)")
+        println("I moved from block $prevSelectedBlock to block $selectedBlock")
         if (prevSelectedBlock != selectedBlock) {
             if (prevSelectedBlock != null && currEditedText.value != null) {
-                println("I moved from block $prevSelectedBlock to block $selectedBlock")
-                println("The text [${currEditedText.value}] gets pushed to block $prevSelectedBlock")
                 val currBlock = contentBlocksList.contentBlocksList[prevSelectedBlock!!]
                 if (currBlock.blockType == BlockType.CODE) {
                     articleModel.saveBlock(
@@ -109,6 +107,12 @@ fun ArticleCompose(board: Board, article: Note) {
         prevSelectedBlock = selectedBlock
     }
 
+    // detect when we change blocks (i.e, change focus)
+    // we will only push to the db when focus shifts, so that we don't spam the db with each character change
+    LaunchedEffect(selectedBlock) {
+        changeSelectedBlock(selectedBlock)
+    }
+
     fun selectAtIndex(index: Int) { selectedBlock = index } // used with inserting blocks
 
     val menuButtonFuncs: Map<String, (Int) -> Unit> = mapOf(
@@ -119,20 +123,37 @@ fun ArticleCompose(board: Board, article: Note) {
             articleModel.toggleGlueDownwards(index, article, board)
         },
         "Duplicate Block" to { index ->
-            articleModel.duplicateBlock(index, article, board)
             selectedBlock = index + 1
+            changeSelectedBlock(selectedBlock)
+            articleModel.duplicateBlock(index, article, board)
         },
         "Move Block Up" to { index ->
-            val newIndex = articleModel.moveBlockUp(index, article, board)
-            selectedBlock = (if (newIndex == null) selectedBlock else newIndex)
+            val blocks: MutableList<ContentBlock> = contentBlocksList.contentBlocksList
+            val (upperBlockStart, lowerBlockEnd) = articleModel.getBlockBounds(blocks, index-1, index)
+            if (blocks[index].gluedAbove) {
+                selectedBlock = index - 1
+            }
+            else {
+                selectedBlock = upperBlockStart
+            }
+            changeSelectedBlock(selectedBlock)
+            articleModel.moveBlockUp(index, article, board)
         },
         "Move Block Down" to { index ->
-            val newIndex = articleModel.moveBlockDown(index, article, board)
-            selectedBlock = (if (newIndex == null) selectedBlock else newIndex)
+            val blocks: MutableList<ContentBlock> = contentBlocksList.contentBlocksList
+            val (upperBlockStart, lowerBlockEnd) = articleModel.getBlockBounds(blocks, index, index+1)
+            if (blocks[index].gluedBelow) {
+                selectedBlock = index + 1
+            }
+            else {
+                selectedBlock = lowerBlockEnd
+            }
+            changeSelectedBlock(selectedBlock)
+            articleModel.moveBlockDown(index, article, board)
         },
         "Delete Block" to { index ->
+            changeSelectedBlock(selectedBlock)
             articleModel.deleteBlock(index, article, board)
-            selectedBlock = null
         }
     )
     Box(
@@ -166,7 +187,11 @@ fun ArticleCompose(board: Board, article: Note) {
             ) {
                 TextButton(
                     colors = textButtonColours(),
-                    onClick = { ScreenManager.push(navigator, IndividualBoardScreen(board)) }
+                    onClick = {
+                        selectedBlock = null
+                        changeSelectedBlock(selectedBlock)
+                        ScreenManager.push(navigator, IndividualBoardScreen(board))
+                    }
                 ) { Text("Back to current course") }
                 Button(
                     colors = textButtonColours(),

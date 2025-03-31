@@ -11,6 +11,7 @@ import shared.persistence.*
 
 // TODO: NOTE: should pass in board probably
 class ArticleModel(val persistence: IPersistence) : IPublisher() {
+
     // maps Article ID to list of content blocks in the Article
     var contentBlockDict = mutableMapOf<ObjectId, MutableList<ContentBlock>>()
 
