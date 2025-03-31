@@ -41,6 +41,7 @@ sealed class ContentBlock {
     @SerialName("_id")
     @Contextual abstract var id: ObjectId
     abstract fun copyBlock(): ContentBlock
+    var userId: String = "dummy-user"
 }
 
 @Serializable

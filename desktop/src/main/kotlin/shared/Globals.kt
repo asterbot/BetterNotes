@@ -16,6 +16,8 @@ import graph_ui.GraphModel
 import graph_ui.GraphViewModel
 import shared.persistence.DBQueue
 import shared.persistence.DBStorage
+import graph_ui.*
+import login.model.LoginModel
 import shared.persistence.Operation
 import individual_board.model.IndvBoardModel as IndividualBoardModel
 import individual_board.view.IndvBoardViewModel as IndividualBoardViewModel
@@ -32,9 +34,30 @@ lateinit var individualBoardViewModel: IndividualBoardViewModel
 val articleModel = ArticleModel(dbStorage)
 lateinit var articleViewModel: ArticleViewModel
 
+val loginModel = LoginModel(dbStorage)
+
 val graphModel = GraphModel()
 val graphViewModel = GraphViewModel(graphModel)
 
+fun initializeModels(){
+    boardModel.initialize()
+    individualBoardModel.initialize()
+    articleModel.initialize()
+}
+
+object LoginManager{
+    var loggedIn by mutableStateOf(false)
+
+    fun logIn(){
+        loggedIn = true
+    }
+
+    fun logOut(){
+        loggedIn = false
+        loginModel.currentUser = "dummy-user"
+        ScreenManager.reset()
+    }
+}
 
 // Managing connection status
 
@@ -63,6 +86,7 @@ object ConnectionManager{
             boardModel?.initialize()
             individualBoardModel?.initialize()
             articleModel?.initialize()
+            loginModel?.initialize()
 
             Operation.contentBlocksInserted.clear()
 
@@ -76,6 +100,12 @@ object ScreenManager {
     var currScreenIndex by mutableStateOf(0)
 
     init {
+        visitedScreens.add(BoardViewScreen())
+        currScreenIndex = visitedScreens.size - 1
+    }
+
+    fun reset(){
+        visitedScreens.clear()
         visitedScreens.add(BoardViewScreen())
         currScreenIndex = visitedScreens.size - 1
     }
