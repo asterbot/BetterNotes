@@ -439,6 +439,8 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
                         "pathsContent" to pathsContent,
                         "bListContent" to bListContent,
                         "language" to language,
+                        "gluedAbove" to gluedAbove,
+                        "gluedBelow" to gluedBelow,
                         "article" to article,
                         "boardId" to board.id
                     ))

@@ -127,8 +127,8 @@ class Update(override val persistence: IPersistence, val objToUpdate: Any,
                 assert(fields.containsKey("language"))
                 assert(fields.containsKey("article"))
                 assert(fields.containsKey("boardId"))
-                assert(fields.containsKey("gluedAbove"))
-                assert(fields.containsKey("gluedBelow"))
+                assert(fields["gluedAbove"]!=null)
+                assert(fields["gluedBelow"]!=null)
                 if (objToUpdate.id !in contentBlocksInserted){
                     // If it is newly inserted, do not update here too!
                     persistence.updateContentBlock(objToUpdate,
