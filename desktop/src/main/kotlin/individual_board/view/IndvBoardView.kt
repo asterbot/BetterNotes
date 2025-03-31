@@ -258,7 +258,9 @@ fun IndividualBoardView(
                         drawerState.open()
                     }
                 },
-                modifier = Modifier.align(Alignment.TopStart).padding(8.dp)
+                modifier = Modifier.align(Alignment.TopStart)
+                    .padding(start = 8.dp, top = 55.dp, end = 5.dp, bottom = 5.dp)
+
             ) {
                 Icon(Icons.Default.Menu, contentDescription = "Open drawer")
             }
