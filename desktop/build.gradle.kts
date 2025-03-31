@@ -56,19 +56,12 @@ dependencies {
 
     implementation("org.scilab.forge:jlatexmath:1.0.7")
 
-    // additional icons
-    implementation("org.jetbrains.compose.material:material-icons-extended:1.7.3")
-
     // File Picker
     implementation(platform("androidx.compose:compose-bom:2025.02.00"))
     implementation("io.github.vinceglb:filekit-core:0.10.0-beta01")
     implementation("io.github.vinceglb:filekit-coil:0.10.0-beta01")
     implementation("io.github.vinceglb:filekit-dialogs:0.10.0-beta01")
     implementation("io.github.vinceglb:filekit-dialogs-compose:0.10.0-beta01")
-//    implementation("io.github.vinceglb:filekit-core:$version")
-//    implementation("io.github.vinceglb:filekit-dialogs:$version")
-//    implementation("io.github.vinceglb:filekit-dialogs-compose:$version")
-//    implementation("io.github.vinceglb:filekit-coil:$version")
     implementation("org.mindrot:jbcrypt:0.4")
 
     // Additional icons
