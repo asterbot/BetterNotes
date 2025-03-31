@@ -3,15 +3,14 @@ package shared
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.input.*
 import androidx.compose.ui.unit.dp
 import individual_board.entities.Note
 
@@ -480,3 +479,311 @@ fun EditNoteDialog(
         }
     )
 }
+
+
+@Composable
+fun SignUpDialog(
+    onDismissRequest: () -> Unit,
+    onConfirmation: (userName: String, password: String) -> Unit
+) {
+    var username by remember { mutableStateOf(TextFieldValue("")) }
+    var password by remember { mutableStateOf(TextFieldValue("")) }
+
+    var isError by remember { mutableStateOf(false) }
+
+    var passwordVisible by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        icon = { Icons.Default.Add },
+        title = { Text(text = "Sign up!") },
+        text = {
+            Column(modifier = Modifier.padding(16.dp)) {
+                // Input field for title
+                OutlinedTextField(
+                    value = username,
+                    onValueChange = { username = it },
+                    label = { Text("Username") },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Email,
+                        imeAction = ImeAction.Next
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                // Input field for description
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { androidx.compose.material.Text("Password") },
+                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Done
+                    ),
+                    trailingIcon = {
+                        androidx.compose.material.IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                            androidx.compose.material.Icon(
+                                imageVector = if (passwordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                contentDescription = if (passwordVisible) "Hide password" else "Show password"
+                            )
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        onDismissRequest = {
+            onDismissRequest()
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    if (username.text.isBlank()) {
+                        isError = true
+                    }
+                    else {
+                        onConfirmation(
+                            username.text,
+                            password.text
+                        )
+                        username = TextFieldValue("")
+                        password = TextFieldValue("")
+                    }
+                }
+            ) {
+                Text("Create Account!")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = {
+                    onDismissRequest()
+                    username = TextFieldValue("")
+                    password = TextFieldValue("")
+                }
+            ) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+@Composable
+fun WarningDialog(
+    onDismissRequest: () -> Unit,
+    onConfirmation: () -> Unit,
+    dialogTitle: String,
+    dialogText: String,
+){
+    AlertDialog(
+        icon = { Icons.Default.Warning },
+        title = {
+            Text(text = dialogTitle)
+        },
+        text = {
+            Text(text = dialogText)
+        },
+        onDismissRequest = {
+            onDismissRequest()
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onConfirmation()
+                }
+            ) {
+                Text("OK")
+            }
+        }
+    )
+}
+
+@Composable
+fun ChangePasswordDialog(
+    onDismissRequest: () -> Unit,
+    onConfirmation: (oldPassword: String, newPassword: String, confirmPassword: String) -> Unit,
+){
+
+    var oldPassword by remember { mutableStateOf(TextFieldValue(""))}
+    var newPassword by remember { mutableStateOf(TextFieldValue("")) }
+    var confirmPassword by remember { mutableStateOf(TextFieldValue(""))}
+
+    var isError by remember { mutableStateOf(false) }
+
+    var passwordVisible1 by remember { mutableStateOf(false) }
+    var passwordVisible2 by remember { mutableStateOf(false) }
+    var passwordVisible3 by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        icon = { Icons.Default.Add },
+        title = { Text(text = "Change Password") },
+        text = {
+            Column(modifier = Modifier.padding(16.dp)) {
+                // Input field for title
+                OutlinedTextField(
+                    value = oldPassword,
+                    onValueChange = { oldPassword = it },
+                    label = { androidx.compose.material.Text("Old Password") },
+                    visualTransformation = if (passwordVisible1) VisualTransformation.None else PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Done
+                    ),
+                    trailingIcon = {
+                        androidx.compose.material.IconButton(onClick = { passwordVisible1 = !passwordVisible1 }) {
+                            androidx.compose.material.Icon(
+                                imageVector = if (passwordVisible1) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                contentDescription = if (passwordVisible1) "Hide password" else "Show password"
+                            )
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                // Input field for description
+                OutlinedTextField(
+                    value = newPassword,
+                    onValueChange = { newPassword = it },
+                    label = { androidx.compose.material.Text("New Password") },
+                    visualTransformation = if (passwordVisible2) VisualTransformation.None else PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Done
+                    ),
+                    trailingIcon = {
+                        androidx.compose.material.IconButton(onClick = { passwordVisible2 = !passwordVisible2 }) {
+                            androidx.compose.material.Icon(
+                                imageVector = if (passwordVisible2) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                contentDescription = if (passwordVisible2) "Hide password" else "Show password"
+                            )
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                // Input field for description
+                OutlinedTextField(
+                    value = confirmPassword,
+                    onValueChange = { confirmPassword = it },
+                    label = { androidx.compose.material.Text("Confirm New Password") },
+                    visualTransformation = if (passwordVisible3) VisualTransformation.None else PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Done
+                    ),
+                    trailingIcon = {
+                        androidx.compose.material.IconButton(onClick = { passwordVisible3 = !passwordVisible3 }) {
+                            androidx.compose.material.Icon(
+                                imageVector = if (passwordVisible3) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                contentDescription = if (passwordVisible3) "Hide password" else "Show password"
+                            )
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        onDismissRequest = {
+            onDismissRequest()
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    if (oldPassword.text.isBlank()) {
+                        isError = true
+                    }
+                    else {
+                        onConfirmation(oldPassword.text, newPassword.text, confirmPassword.text)
+                        oldPassword = TextFieldValue("")
+                        newPassword = TextFieldValue("")
+                        confirmPassword = TextFieldValue("")
+                    }
+                }
+            ) {
+                Text("Change Password!")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = {
+                    onDismissRequest()
+                    oldPassword = TextFieldValue("")
+                    newPassword = TextFieldValue("")
+                    confirmPassword = TextFieldValue("")
+                }
+            ) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+@Composable
+fun DeleteAccountDialog(
+    onDismissRequest: () -> Unit,
+    onConfirmation: (currentPassword: String) -> Unit,
+
+){
+    var currentPassword by remember { mutableStateOf(TextFieldValue(""))}
+    var passwordVisible1 by remember { mutableStateOf(false) }
+    var isError by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        icon = { Icons.Default.Add },
+        title = { Text(text = "Delete Account") },
+        text = {
+            Column(modifier = Modifier.padding(16.dp)) {
+                // Input field for title
+                Text("This will delete EVERYTHING you own. Are you sure?", color = Color.Red)
+                OutlinedTextField(
+                    value = currentPassword,
+                    onValueChange = { currentPassword = it },
+                    label = { androidx.compose.material.Text("Confirm Password") },
+                    visualTransformation = if (passwordVisible1) VisualTransformation.None else PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Done
+                    ),
+                    trailingIcon = {
+                        androidx.compose.material.IconButton(onClick = { passwordVisible1 = !passwordVisible1 }) {
+                            androidx.compose.material.Icon(
+                                imageVector = if (passwordVisible1) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                contentDescription = if (passwordVisible1) "Hide password" else "Show password"
+                            )
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        onDismissRequest = {
+            onDismissRequest()
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    if (currentPassword.text.isBlank()) {
+                        isError = true
+                    }
+                    else {
+                        onConfirmation(currentPassword.text)
+                        currentPassword = TextFieldValue("")
+                    }
+                }
+            ) {
+                Text("Goodbye, World!")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = {
+                    onDismissRequest()
+                    currentPassword = TextFieldValue("")
+                }
+            ) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+

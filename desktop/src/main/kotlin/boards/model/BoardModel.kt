@@ -15,11 +15,6 @@ class BoardModel(val persistence: IPersistence) : IPublisher(){
 
     init {
         persistence.connect()
-        if (ConnectionManager.isConnected) {
-            boardList = persistence.readBoards().toMutableList()
-            notifySubscribers()
-        }
-        println(boardList)
     }
 
     fun initialize(){

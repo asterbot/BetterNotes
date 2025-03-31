@@ -73,8 +73,19 @@ fun ArticleCompose(board: Board, article: Note) {
 
     var contentBlocksList by remember { mutableStateOf(articleViewModel) }
 
+    var prevSelectedBlock by remember { mutableStateOf<Int?>(null) }
     var selectedBlock by remember { mutableStateOf<Int?>(null) }
+    var currEditedText by remember {mutableStateOf<String?>(null) } // keep track of the text currently being changed
     var debugState by remember { mutableStateOf(false) }
+
+    // detect when we change blocks (i.e, change focus)
+    // we will only push to the db when focus shifts, so that we don't spam the db with each character change
+    LaunchedEffect(selectedBlock) {
+        if (prevSelectedBlock != selectedBlock) {
+            println("I moved from block $prevSelectedBlock to block $selectedBlock")
+        }
+        prevSelectedBlock = selectedBlock
+    }
 
     fun selectAtIndex(index: Int) { selectedBlock = index } // used with inserting blocks
 
@@ -313,7 +324,7 @@ fun BlockFrame(
                             BlockType.MATH
                         )
                     ) {
-                        if (!((block.blockType == BlockType.MARKDOWN || block.blockType == BlockType.MATH) && !isSelected)) {
+                        if (isSelected) {
                             EditableTextBox(
                                 block = block,
                                 onTextChange = {
@@ -334,6 +345,27 @@ fun BlockFrame(
                                         )
                                     }
                                 }
+                            )
+                        }
+                    }
+
+                    if (block.blockType == BlockType.PLAINTEXT && !isSelected) {
+                        Box(
+                            modifier = Modifier.background(Color.White).fillMaxWidth()
+                        ) {
+                            Text(text=(block as TextBlock).text)
+                        }
+                    }
+
+                    if (block.blockType == BlockType.CODE && !isSelected) {
+                        Box(
+                            modifier = Modifier.background(Colors.black).fillMaxWidth()
+                        ) {
+                            Text(
+                                text=(block as CodeBlock).text,
+                                color = Color.Green,
+                                fontFamily = FontFamily.Monospace,
+                                fontWeight = FontWeight.W200
                             )
                         }
                     }

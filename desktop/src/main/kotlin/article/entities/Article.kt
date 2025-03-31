@@ -43,6 +43,7 @@ sealed class ContentBlock {
     var gluedAbove: Boolean = false
     var gluedBelow: Boolean = false
     abstract fun copyBlock(): ContentBlock
+    var userId: String = "dummy-user"
 }
 
 @Serializable

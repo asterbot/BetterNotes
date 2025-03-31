@@ -16,11 +16,11 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
 
     init {
         persistence.connect()
-        if (ConnectionManager.isConnected){
-            contentBlockDict = persistence.readContentBlocks()
-            notifySubscribers()
-        }
-        println("DEBUG: initialized ArticleModel")
+//        if (ConnectionManager.isConnected){
+//            contentBlockDict = persistence.readContentBlocks()
+//            notifySubscribers()
+//        }
+//        println("DEBUG: initialized ArticleModel")
     }
 
     fun initialize() {
@@ -405,6 +405,7 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
     // TODO: later (expand to other ContentBlock types)
     fun saveBlock(index: Int, stringContent: String = "", pathsContent: MutableList<Path> = mutableListOf(), canvasHeight: Int = 0, bListContent: MutableList<Byte> = mutableListOf(),
                   language: String = "kotlin", gluedAbove: Boolean, gluedBelow: Boolean, article: Note, board: Board) {
+        println("I'M IN HERE")
         contentBlockDict[article.id]?.let { contentBlocks ->
             if (index in 0..(contentBlocks.size - 1)) {
                 var block = contentBlocks[index]
