@@ -40,7 +40,7 @@ fun AppScaffold() {
             // CurrentScreen will render the current screen from the navigator
             CurrentScreen()
 
-            if (loggedIn){
+            if (loggedIn) {
                 userButton(
                     modifier = Modifier.align(Alignment.TopStart)
                         .padding(8.dp)

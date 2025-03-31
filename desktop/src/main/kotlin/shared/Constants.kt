@@ -29,6 +29,6 @@ fun iconButtonColours(): IconButtonColors {
     return IconButtonDefaults.iconButtonColors(
         containerColor = Colors.medTeal,
         contentColor = Colors.white,
-        disabledContainerColor = Colors.medTeal.copy(alpha = .25f)
+        disabledContainerColor = Colors.medTeal.copy(alpha = .4f)
     )
 }
