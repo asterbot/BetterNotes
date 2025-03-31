@@ -81,13 +81,12 @@ fun ArticleCompose(board: Board, article: Note) {
     // detect when we change blocks (i.e, change focus)
     // we will only push to the db when focus shifts, so that we don't spam the db with each character change
     LaunchedEffect(selectedBlock) {
-        println("In LaunchedEffect")
+        println("In LaunchedEffect (switching block focus)")
         if (prevSelectedBlock != selectedBlock) {
             if (prevSelectedBlock != null && currEditedText.value != null) {
                 println("I moved from block $prevSelectedBlock to block $selectedBlock")
                 println("The text [${currEditedText.value}] gets pushed to block $prevSelectedBlock")
                 val currBlock = contentBlocksList.contentBlocksList[prevSelectedBlock!!]
-                println("The block is ${currBlock}")
                 if (currBlock.blockType == BlockType.CODE) {
                     articleModel.saveBlock(
                         prevSelectedBlock!!, stringContent = currEditedText.value!!, article = article,
