@@ -306,7 +306,7 @@ class DBStorage() :IPersistence {
                                 text = "BAD!!!!!! THIS SHOULD NOT HAPPEN!!!!!!!",
                             )
                         }
-                        // provide some glue safety (i.e. neighbouring blocks are either both glued or both not glued
+                        // provide some glue safety (i.e. neighbouring blocks are either both glued or both not glued)
                         blockCasted.gluedAbove = prevBlockGlued
                         blockCasted.gluedBelow = block.getBoolean("gluedBelow")
                         prevBlockGlued = blockCasted.gluedBelow
