@@ -315,13 +315,12 @@ fun BlockFrame(
 
 
                 if (block.blockType == BlockType.CANVAS) {
-//                    EditableCanvas(
-//                        block = block,
-//                        onCanvasUpdate = {bList, height ->
-//                            articleModel.saveBlock(blockIndex, bList=bList, canvasHeight=height, article=article, board = board)
-//                        }
-//                    )
-                    DrawingApp()
+                    EditableCanvas(
+                        block = block,
+                        onCanvasUpdate = {bList, height ->
+                            articleModel.saveBlock(blockIndex, bList=bList, canvasHeight=height, article=article, board = board)
+                        }
+                    )
                 }
 
                 if (block.blockType == BlockType.MEDIA) {
@@ -777,7 +776,7 @@ fun addMedia(block: ContentBlock, isSelected: Boolean = true, onMediaUpdate: (Mu
 
 data class PathData(val points: List<Offset>, val color: Color, val strokeWidth: Float)
 @Composable
-fun DrawingApp() {
+fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int) -> Unit) {
 //    val drawingRepository = remember { DrawingRepository() }
 //    val scope = rememberCoroutineScope()
 
