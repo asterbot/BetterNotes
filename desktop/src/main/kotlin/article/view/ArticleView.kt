@@ -341,6 +341,10 @@ fun BlockFrame(
     }
 }
 
+@Composable
+fun addGraph() {
+
+}
 
 fun cropImage() {
 
