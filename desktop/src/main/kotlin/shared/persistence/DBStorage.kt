@@ -297,10 +297,17 @@ class DBStorage() :IPersistence {
                                 text = block.getString("text"),
                                 language = block.getString("language"),
                             )
-                            "CANVAS" -> CanvasBlock(
-                                id = block.getObjectId("_id"),
-                                // TODO: paths = block.getList("paths"),
-                            )
+                            "CANVAS" ->{
+                                val bList = block["bList"] as? List<*>
+                                println(bList!!::class)
+                                val byteList = bList.mapNotNull {
+                                    (it as? Number)?.toByte()
+                                }.toMutableList()
+                                CanvasBlock(
+                                    id = block.getObjectId("_id"),
+                                    bList = byteList
+                                )
+                            }
                             "MATH" -> MathBlock(
                                 id = block.getObjectId("_id"),
                                 text = block.getString("text"),
