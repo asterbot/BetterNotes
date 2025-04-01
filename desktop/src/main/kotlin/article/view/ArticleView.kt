@@ -927,26 +927,26 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int)
 
                     onCanvasUpdate(canvasToBytes(paths).toMutableList(), canvasHeight)
                 }
-//                Box(
-//                    modifier = Modifier
-//                    .fillMaxWidth()
-//                    .background(Color.LightGray)
-//                    .align(Alignment.BottomCenter)
-//                    .height((resizeThreshold / LocalDensity.current.density).dp)
-//                ) {
-//                    Column(
-//                        modifier = Modifier.fillMaxSize(),
-//                        horizontalAlignment = Alignment.CenterHorizontally,
-//                        verticalArrangement = Arrangement.Center
-//                    ) {
-//                        Icon(
-//                            imageVector = Icons.Default.Menu,
-//                            contentDescription = "Canvas Height Slider",
-//                            modifier = Modifier.size(resizeThreshold.dp - 5.dp),
-//                            tint = Color.DarkGray
-//                        )
-//                    }
-//                }
+                Box(
+                    modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.LightGray)
+                    .align(Alignment.BottomCenter)
+                    .height((resizeThreshold / LocalDensity.current.density).dp)
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Menu,
+                            contentDescription = "Canvas Height Slider",
+                            modifier = Modifier.size(resizeThreshold.dp - 5.dp),
+                            tint = Color.DarkGray
+                        )
+                    }
+                }
             }
 
             // Bottom action buttons
