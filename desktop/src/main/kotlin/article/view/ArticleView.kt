@@ -783,7 +783,6 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int)
     var canvasHeight by remember { mutableStateOf((block as CanvasBlock).canvasHeight) }
     var selectedColor by remember { mutableStateOf(Color.Black) }
     var strokeWidth by remember { mutableStateOf(5f) }
-    var paths by remember { mutableStateOf(mutableListOf<PathData>()) }
     var currentPath by remember { mutableStateOf<List<Offset>>(emptyList()) }
     var isDrawing by remember { mutableStateOf(true) }
     var isErasing by remember { mutableStateOf(false) }
@@ -795,7 +794,7 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int)
         BlockType.CANVAS -> (block as CanvasBlock).bList
         else -> mutableListOf()
     }
-    var iBytes by remember { mutableStateOf(initialBytes) }
+    var paths by remember { mutableStateOf(bytesToPaths(initialBytes.toByteArray())) }
 
     MaterialTheme {
         Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
@@ -871,11 +870,15 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int)
 //                                        val newHeight = max(50, (canvasHeight + 0.5 * change.positionChange().y).toInt())
 //                                        canvasHeight = newHeight
 //                                        } else {
-//                                            val boxWidth = size.width
-//                                            val boxHeight = size.height
-//
-//                                            val isInside = change.position.x in 0f..boxWidth.toFloat() &&
-//                                                    change.position.y in 0f..boxHeight.toFloat()
+                                            val boxWidth = size.width
+                                            val boxHeight = size.height
+                                            val isInside = change.position.x in 0f..boxWidth.toFloat() &&
+                                                    change.position.y in 0f..boxHeight.toFloat()
+                                            if (isInside) {
+                                                currentPath = currentPath + change.position
+                                                // println("is inside")
+                                                println("$change.position")
+                                            }
 //
 //                                            if (isInside) {
 //                                                if (isErasing) {
@@ -887,7 +890,6 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int)
 //                                                // do nothing
 //                                            }
 //                                        }
-                                        currentPath = currentPath + change.position
                                     },
                                     onDragEnd = {
 //                                        isDrawing = false
@@ -904,24 +906,26 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int)
                     // Draw all saved paths
                     paths.forEach { path ->
                         for (i in 0 until path.points.size - 1) {
-                            drawLine(
-                                color = path.color,
-                                start = path.points[i],
-                                end = path.points[i + 1],
-                                strokeWidth = path.strokeWidth
-                            )
+                                drawLine(
+                                    color = path.color,
+                                    start = path.points[i],
+                                    end = path.points[i + 1],
+                                    strokeWidth = path.strokeWidth
+                                )
                         }
                     }
 
                     // Draw current path
                     for (i in 0 until currentPath.size - 1) {
-                        drawLine(
+                            drawLine(
                             color = selectedColor,
                             start = currentPath[i],
                             end = currentPath[i + 1],
                             strokeWidth = strokeWidth
-                        )
+                            )
                     }
+
+                    onCanvasUpdate(canvasToBytes(paths).toMutableList(), canvasHeight)
                 }
 //                Box(
 //                    modifier = Modifier
@@ -1005,7 +1009,7 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int)
 }
 
 // Convert canvas paths to bytes for storage
-fun canvasToBytes(paths: List<PathData>, width: Int, height: Int): ByteArray {
+fun canvasToBytes(paths: List<PathData>): ByteArray {
     // Instead of direct pixel manipulation, we'll serialize the path data
     val pathData = ByteArrayOutputStream()
     val numPaths = paths.size
@@ -1036,7 +1040,7 @@ fun canvasToBytes(paths: List<PathData>, width: Int, height: Int): ByteArray {
 }
 
 // Convert stored bytes back to paths for rendering
-fun bytesToPaths(bytes: ByteArray, width: Int, height: Int): MutableList<PathData> {
+fun bytesToPaths(bytes: ByteArray): MutableList<PathData> {
     val paths = mutableListOf<PathData>()
     val buffer = ByteBuffer.wrap(bytes)
 
