@@ -1,6 +1,7 @@
 package article.view
 
 import LatexRenderer
+import androidx.compose.animation.core.animateOffsetAsState
 import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -50,7 +51,9 @@ import io.github.vinceglb.filekit.absolutePath
 import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.exists
 import shared.*
+import space.kscience.kmath.UnstableKMathAPI
 import space.kscience.kmath.asm.compile
+import space.kscience.kmath.asm.compileToExpression
 import space.kscience.kmath.ast.parseMath
 import space.kscience.kmath.ast.rendering.FeaturedMathRendererWithPostProcess
 import space.kscience.kmath.ast.rendering.LatexSyntaxRenderer
@@ -66,6 +69,10 @@ import java.nio.ByteBuffer
 import javax.imageio.ImageIO
 import space.kscience.kmath.ast.*
 import space.kscience.kmath.expressions.*
+import space.kscience.kmath.expressions.Symbol.Companion.x
+import space.kscience.kmath.operations.Int32Ring
+import space.kscience.kmath.operations.*
+
 
 data class ArticleScreen(
     val board: Board,
@@ -483,112 +490,116 @@ fun BlockFrame(
     }
 }
 
-@Composable
-fun FunctionPlotter(
-    mst: MST,
-    xMin: Double = -10.0,
-    xMax: Double = 10.0,
-    yMin: Double = -10.0,
-    yMax: Double = 10.0
-) {
-    // Create a KMath expression from the MST
-    val context = MstContext(DoubleField)
-    val expression = mst.compile(context)
+//@Composable
+//fun addGraph(expr: String) {
+//    val points = remember(mst, xMin, xMax) {
+//        try {
+//            val result = mutableListOf<Pair<Double, Double>>()
+//            val steps = 1000
+//            val step = (xMax - xMin) / steps
+//
+//            for (i in 0..steps) {
+//                val x = xMin + i * step
+//                try {
+//                    val y = expression.invoke(mapOf("x" to x))
+//                    if (y is Double && y.isFinite()) {
+//                        result.add(Pair(x, y))
+//                    }
+//                } catch (e: Exception) {
+//                    // Skip points where evaluation fails
+//                }
+//            }
+//            result
+//        } catch (e: Exception) {
+//            emptyList<Pair<Double, Double>>()
+//        }
+//    }
+//}
 
-    // Generate points for plotting
-    val points = remember(mst, xMin, xMax) {
-        try {
-            val result = mutableListOf<Pair<Double, Double>>()
-            val steps = 1000
-            val step = (xMax - xMin) / steps
-
-            for (i in 0..steps) {
-                val x = xMin + i * step
-                try {
-                    val y = expression.invoke(mapOf("x" to x))
-                    if (y is Double && y.isFinite()) {
-                        result.add(Pair(x, y))
-                    }
-                } catch (e: Exception) {
-                    // Skip points where evaluation fails
-                }
-            }
-            result
-        } catch (e: Exception) {
-            emptyList<Pair<Double, Double>>()
-        }
-    }
-
-    Canvas(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        // Draw axes
-        val xAxisY = size.height * (yMax / (yMax - yMin))
-        val yAxisX = size.width * (-xMin / (xMax - xMin))
-
-        drawLine(
-            Color.Gray,
-            Offset(0f, size.height - xAxisY.toFloat()),
-            Offset(size.width, size.height - xAxisY.toFloat()),
-            strokeWidth = 2f
-        )
-
-        drawLine(
-            Color.Gray,
-            Offset(yAxisX.toFloat(), 0f),
-            Offset(yAxisX.toFloat(), size.height),
-            strokeWidth = 2f
-        )
-
-        // Draw function
-        if (points.size >= 2) {
-            val path = androidx.compose.ui.graphics.Path()
-            var firstPoint = true
-
-            for ((x, y) in points) {
-                val screenX = ((x - xMin) / (xMax - xMin) * size.width).toFloat()
-                val screenY = (size.height - ((y - yMin) / (yMax - yMin) * size.height)).toFloat()
-
-                if (firstPoint) {
-                    path.moveTo(screenX, screenY)
-                    firstPoint = false
-                } else {
-                    path.lineTo(screenX, screenY)
-                }
-            }
-
-            drawPath(path, Color.Blue, style = Stroke(width = 3f))
-        }
-
-        // Draw grid lines
-        val gridColor = Color.LightGray.copy(alpha = 0.5f)
-        val gridStep = 1.0
-
-        // Vertical grid lines
-        var x = Math.ceil(xMin / gridStep) * gridStep
-        while (x <= xMax) {
-            val screenX = ((x - xMin) / (xMax - xMin) * size.width).toFloat()
-            drawLine(
-                gridColor,
-                Offset(screenX, 0f),
-                Offset(screenX, size.height),
-                strokeWidth = 1f
-            )
-            x += gridStep
-        }
-
-        // Horizontal grid lines
-        var y = Math.ceil(yMin / gridStep) * gridStep
-        while (y <= yMax) {
-            val screenY = (size.height - ((y - yMin) / (yMax - yMin) * size.height)).toFloat()
-            drawLine(
-                gridColor,
-                Offset(0f, screenY),
-                Offset(size.width, screenY),
-                strokeWidth = 1f
-            )
-            y += gridStep
-        }
-    }
-}
+//@OptIn(UnstableKMathAPI::class)
+//@Composable
+//fun FunctionPlotter(
+//    mst: MST,
+//    xMin: Double = -10.0,
+//    xMax: Double = 10.0,
+//    yMin: Double = -10.0,
+//    yMax: Double = 10.0
+//) {
+//    // Create a KMath expression from the MST
+//    val context = mst.compileToExpression(Float64Field)
+//    val expression = mst.compile(context, Map("x" to x))
+//
+//
+//    Canvas(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+//        // Draw axes
+//        val xAxisY = size.height * (yMax / (yMax - yMin))
+//        val yAxisX = size.width * (-xMin / (xMax - xMin))
+//
+//        drawLine(
+//            Color.Gray,
+//            Offset(0f, size.height - xAxisY.toFloat()),
+//            Offset(size.width, size.height - xAxisY.toFloat()),
+//            strokeWidth = 2f
+//        )
+//
+//        drawLine(
+//            Color.Gray,
+//            Offset(yAxisX.toFloat(), 0f),
+//            Offset(yAxisX.toFloat(), size.height),
+//            strokeWidth = 2f
+//        )
+//
+//        // Draw function
+//        if (points.size >= 2) {
+//            val path = androidx.compose.ui.graphics.Path()
+//            var firstPoint = true
+//
+//            for ((x, y) in points) {
+//                val screenX = ((x - xMin) / (xMax - xMin) * size.width).toFloat()
+//                val screenY = (size.height - ((y - yMin) / (yMax - yMin) * size.height)).toFloat()
+//
+//                if (firstPoint) {
+//                    path.moveTo(screenX, screenY)
+//                    firstPoint = false
+//                } else {
+//                    path.lineTo(screenX, screenY)
+//                }
+//            }
+//
+//            drawPath(path, Color.Blue, style = Stroke(width = 3f))
+//        }
+//
+//        // Draw grid lines
+//        val gridColor = Color.LightGray.copy(alpha = 0.5f)
+//        val gridStep = 1.0
+//
+//        // Vertical grid lines
+//        var x = Math.ceil(xMin / gridStep) * gridStep
+//        while (x <= xMax) {
+//            val screenX = ((x - xMin) / (xMax - xMin) * size.width).toFloat()
+//            drawLine(
+//                gridColor,
+//                Offset(screenX, 0f),
+//                Offset(screenX, size.height),
+//                strokeWidth = 1f
+//            )
+//            x += gridStep
+//        }
+//
+//        // Horizontal grid lines
+//        var y = Math.ceil(yMin / gridStep) * gridStep
+//        while (y <= yMax) {
+//            val screenY = (size.height - ((y - yMin) / (yMax - yMin) * size.height)).toFloat()
+//            drawLine(
+//                gridColor,
+//                Offset(0f, screenY),
+//                Offset(size.width, screenY),
+//                strokeWidth = 1f
+//            )
+//            y += gridStep
+//        }
+//    }
+//}
 
 fun cropImage() {
 
@@ -1037,6 +1048,7 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int)
     var isOutsideBox by remember { mutableStateOf(false) }
     var isResizing by remember { mutableStateOf(false) }
     val resizeThreshold = LocalDensity.current.run { 30 }
+    var isGrid by remember { mutableStateOf(false) }
 
     val initialBytes = when (block.blockType) {
         BlockType.CANVAS -> (block as CanvasBlock).bList
@@ -1048,9 +1060,9 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int)
         Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
             // Top control bar
             Row(
-                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp).background(Color.Black),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 // Stroke width slider
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1066,7 +1078,7 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int)
 
                 val controller = rememberColorPickerController()
                 Box(
-                    modifier = Modifier.fillMaxWidth().height(150.dp)
+                    modifier = Modifier.width(150.dp).height(150.dp).background(Color.Green)
                 ) {
                     HsvColorPicker(
                         modifier = Modifier
@@ -1082,6 +1094,11 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int)
                         }
 
                     )
+                }
+                Box(modifier = Modifier.width(200.dp)) {
+                    TextButton(modifier = Modifier.align(Alignment.Center), colors = textButtonColours(), onClick = {isGrid = !isGrid}) {
+                        Text(if (!isGrid) "open Grid" else "close Grid")
+                    }
                 }
             }
 
@@ -1160,6 +1177,25 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int)
                                     end = path.points[i + 1],
                                     strokeWidth = path.strokeWidth
                                 )
+                        }
+                    }
+
+                    if (isGrid) {
+                        for (i in 0..size.width.toInt() step 20) {
+                            drawLine(
+                                color = Color.LightGray,
+                                start = Offset(i.toFloat(),0f),
+                                end = Offset(i.toFloat(),size.height),
+                                strokeWidth = 1f
+                            )
+                        }
+                        for (j in 0..size.height.toInt() step 20) {
+                            drawLine(
+                                color = Color.LightGray,
+                                start = Offset(0f, j.toFloat()),
+                                end = Offset(size.width, j.toFloat()),
+                                strokeWidth = 1f
+                            )
                         }
                     }
 
