@@ -27,6 +27,7 @@ import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -36,6 +37,7 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import shared.*
+import java.io.File
 
 class LoginViewScreen: Screen{
     @Composable
@@ -55,6 +57,10 @@ fun LoginView(){
     val openSignUpDialog = remember { mutableStateOf(false) }
     val openSignInWarning = remember { mutableStateOf(false) }
     val openSignUpWarning = remember { mutableStateOf(false) }
+    val emptyUsernameWarning = remember { mutableStateOf(false) }
+    val openUnsafePasswordWarning = remember { mutableStateOf(false) }
+
+    val keepSignedIn = remember { mutableStateOf(false) }
 
     Row(
         modifier = Modifier.fillMaxWidth()
@@ -119,7 +125,16 @@ fun LoginView(){
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Spacer(modifier = Modifier.height(32.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                ){
+                    Checkbox(
+                        checked = keepSignedIn.value,
+                        onCheckedChange = { keepSignedIn.value = it }
+                    )
+                    Text("Stay logged in")
+                }
+
 
                 Button(
                     onClick = {
@@ -128,6 +143,9 @@ fun LoginView(){
                             loginModel.changeCurrentUser(username)
                             initializeModels()
                             navigator.push(BoardViewScreen())
+                            if (keepSignedIn.value) {
+                                loginModel.saveUser(username, password)
+                            }
                         }
                         else{
                             openSignInWarning.value = true
@@ -156,13 +174,23 @@ fun LoginView(){
                     },
                     onConfirmation = { username, password ->
                         // Add to DB here
-                        val result = loginModel.addUser(username, password)
-                        if (!result){
+                        if (false in loginModel.passwordCriteriaMet(password)){
                             openSignUpDialog.value = false
-                            openSignUpWarning.value = true
+                            openUnsafePasswordWarning.value = true
+                        }
+                        else if (username==""){
+                            openSignUpDialog.value = false
+                            emptyUsernameWarning.value = true
                         }
                         else{
-                            openSignUpDialog.value = false
+                            val result = loginModel.addUser(username, password)
+                            if (!result){
+                                openSignUpDialog.value = false
+                                openSignUpWarning.value = true
+                            }
+                            else{
+                                openSignUpDialog.value = false
+                            }
                         }
                     }
                 )
@@ -183,6 +211,23 @@ fun LoginView(){
                     dialogText = "This username is already taken. Please choose a different username"
                 )
             }
+            openUnsafePasswordWarning.value -> {
+                WarningDialog(
+                    onDismissRequest = { openUnsafePasswordWarning.value = false },
+                    onConfirmation = { openUnsafePasswordWarning.value = false },
+                    dialogTitle = "Warning",
+                    dialogText = "Please ensure the password matches the criteria given"
+                )
+            }
+            emptyUsernameWarning.value -> {
+                WarningDialog(
+                    onDismissRequest = { emptyUsernameWarning.value=false },
+                    onConfirmation =  { emptyUsernameWarning.value = false },
+                    dialogTitle = "Warning",
+                    dialogText = "Username must not be empty"
+                )
+            }
+
         }
     }
 }
