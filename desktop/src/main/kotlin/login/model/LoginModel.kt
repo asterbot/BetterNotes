@@ -8,12 +8,13 @@ import org.bson.types.ObjectId
 import org.mindrot.jbcrypt.BCrypt
 import shared.ConnectionManager
 import shared.persistence.IPersistence
+import java.io.File
 
 class LoginModel(val persistence: IPersistence) {
 
     var currentUser by mutableStateOf("dummy-user")
 
-
+    // For password verification
     val uwRegex = """.*U.*W""".toRegex()
     val passwordCriteria = listOf(
         Pair("At least 8 characters",
@@ -33,6 +34,11 @@ class LoginModel(val persistence: IPersistence) {
         )
 
     )
+
+    // For the directory to store credentials
+    val homeDir = System.getProperty("user.home")
+    val credentialsFilePath = "$homeDir/.note_taking_credentials"
+    val credentialsFile = File(credentialsFilePath)
 
     init {
         persistence.connect()
@@ -54,6 +60,27 @@ class LoginModel(val persistence: IPersistence) {
         }
         else{
             return false
+        }
+    }
+
+    fun saveUser(username:String, password: String){
+        val content = "$username\n$password"
+        try{
+            credentialsFile.writeText(content)
+        }
+        catch (e: Exception){
+            println("Error writing to file: $e")
+        }
+    }
+
+    fun getUser(): Pair<String,String>?{
+        if (!credentialsFile.exists()){
+            return null
+        }
+        else{
+            val content = credentialsFile.readText().split("\n")
+            println(content)
+            return Pair(content[0],content[1])
         }
     }
 

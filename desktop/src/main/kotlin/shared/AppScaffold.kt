@@ -14,10 +14,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import boards.view.BoardViewScreen
+import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.CurrentScreen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import login.model.LoginModel
 import login.view.LoginViewScreen
 
 
@@ -35,8 +37,25 @@ fun AppScaffold() {
 
     // Create the navigator with the starting screen
     Box(modifier = Modifier.fillMaxSize()) {
-        // The navigator goes in the background
-        Navigator(LoginViewScreen()) { _ ->
+        // The navigator goes in the background'
+        var startScreen : Screen = LoginViewScreen()
+
+        val result = loginModel.getUser()
+        if (result!=null){
+            val username = result.first
+            val password = result.second
+            if (dbStorage.authenticate(username, password)) {
+                startScreen = BoardViewScreen()
+                LoginManager.logIn()
+                loginModel.changeCurrentUser(username)
+                initializeModels()
+            }
+        }
+
+
+
+
+        Navigator(startScreen) { _ ->
             // CurrentScreen will render the current screen from the navigator
             CurrentScreen()
 
@@ -257,6 +276,7 @@ fun userButton(modifier: Modifier = Modifier){
                     expanded = !expanded
                     LoginManager.logOut()
                     navigator.push(LoginViewScreen())
+                    loginModel.credentialsFile.delete()
                 }
             )
 
