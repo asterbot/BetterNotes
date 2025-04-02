@@ -19,6 +19,7 @@ import cafe.adriel.voyager.navigator.CurrentScreen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import individual_board.view.IndividualBoardScreen
 import login.model.LoginModel
 import login.view.LoginViewScreen
 
@@ -165,6 +166,17 @@ fun NavButtons(
     val currScreenIndex by derivedStateOf { ScreenManager.currScreenIndex }
     val visitedScreens by derivedStateOf { ScreenManager.visitedScreens }
     val navigator = LocalNavigator.currentOrThrow
+    val currentScreen = visitedScreens.getOrNull(currScreenIndex)
+
+    LaunchedEffect(currentScreen) {
+        if (currentScreen is IndividualBoardScreen) {
+            fdgLayoutModel.togglePhysics(true)
+        }
+        else {
+            fdgLayoutModel.togglePhysics(false)
+        }
+    }
+
 
     Row(
         modifier = modifier,
@@ -298,23 +310,16 @@ fun userButton(modifier: Modifier = Modifier){
                 onDismissRequest = { changePasswordDialog.value = false },
                 onConfirmation = {
                         oldPassword, newPassword, confirmPassword ->
-                    if (false in loginModel.passwordCriteriaMet(newPassword)){
-                        // Does not meet password criteria
-                        changePasswordDialog.value = false
-                        openUnsafePasswordWarning.value = true
-                    }
-                    else if (newPassword != confirmPassword){
-                        // New password and confirmed password do not match
+                    if (newPassword != confirmPassword){
                         changePasswordDialog.value = false
                         passwordConfirmError.value = true
+                        return@ChangePasswordDialog
                     }
-                    else{
-                        val result = dbStorage.updatePassword(oldPassword, newPassword)
-                        if (!result) {
-                            incorrectPasswordError.value = true
-                        }
-                        changePasswordDialog.value = false
+                    val result = dbStorage.updatePassword(oldPassword, newPassword)
+                    if (!result) {
+                        incorrectPasswordError.value = true
                     }
+                    changePasswordDialog.value = false
                 }
             )
         }
