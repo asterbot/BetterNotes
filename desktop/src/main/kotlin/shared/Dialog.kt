@@ -482,6 +482,23 @@ fun EditNoteDialog(
     )
 }
 
+@Composable
+fun PasswordCriteriaDisplay(password: String){
+    Text("Password must contain:")
+    val result = loginModel.passwordCriteriaMet(password)
+    loginModel.passwordCriteria.forEachIndexed { i, criteria ->
+        val color = if (result[i]) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+        Row{
+            Icon(imageVector = if (result[i]) Icons.Default.Done else Icons.Default.Close,
+                contentDescription = criteria.first,
+                tint = color,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(criteria.first, color=color, fontSize=12.sp)
+        }
+    }
+}
 
 @Composable
 fun SignUpDialog(
@@ -490,8 +507,6 @@ fun SignUpDialog(
 ) {
     var username by remember { mutableStateOf(TextFieldValue("")) }
     var password by remember { mutableStateOf(TextFieldValue("")) }
-
-    var isError by remember { mutableStateOf(false) }
 
     var passwordVisible by remember { mutableStateOf(false) }
 
@@ -534,22 +549,8 @@ fun SignUpDialog(
                         },
                         modifier = Modifier.fillMaxWidth()
                     )
-                Spacer(modifier = Modifier.height(8.dp))
-                // Password verifier
-                Text("Password must contain:")
-                val result = loginModel.passwordCriteriaMet(password.text)
-                loginModel.passwordCriteria.forEachIndexed { i, criteria ->
-                    val color = if (result[i]) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
-                    Row{
-                        Icon(imageVector = if (result[i]) Icons.Default.Done else Icons.Default.Close,
-                            contentDescription = criteria.first,
-                            tint = color,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(criteria.first, color=color, fontSize=12.sp)
-                    }
-                }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    PasswordCriteriaDisplay(password.text)
                 }
             },
             onDismissRequest = {
@@ -558,16 +559,12 @@ fun SignUpDialog(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        if (username.text.isBlank()) {
-                            isError = true
-                        } else {
-                            onConfirmation(
-                                username.text,
-                                password.text,
-                            )
-                            username = TextFieldValue("")
-                            password = TextFieldValue("")
-                        }
+                        onConfirmation(
+                            username.text,
+                            password.text,
+                        )
+                        username = TextFieldValue("")
+                        password = TextFieldValue("")
                     }
                 ) {
                     Text("Create Account!")
@@ -700,7 +697,11 @@ fun ChangePasswordDialog(
                     },
                     modifier = Modifier.fillMaxWidth()
                 )
+                Spacer(modifier = Modifier.height(8.dp))
+                // Password verifier
+                PasswordCriteriaDisplay(newPassword.text)
             }
+
         },
         onDismissRequest = {
             onDismissRequest()

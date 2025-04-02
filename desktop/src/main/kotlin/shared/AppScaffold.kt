@@ -203,6 +203,7 @@ fun userButton(modifier: Modifier = Modifier){
     val passwordConfirmError = remember { mutableStateOf(false) }
     val incorrectPasswordError = remember { mutableStateOf(false) }
     val deleteAccountDialog = remember { mutableStateOf(false) }
+    val openUnsafePasswordWarning = remember { mutableStateOf(false) }
 
     val navigator = LocalNavigator.currentOrThrow
 
@@ -277,16 +278,23 @@ fun userButton(modifier: Modifier = Modifier){
                 onDismissRequest = { changePasswordDialog.value = false },
                 onConfirmation = {
                         oldPassword, newPassword, confirmPassword ->
-                    if (newPassword != confirmPassword){
+                    if (false in loginModel.passwordCriteriaMet(newPassword)){
+                        // Does not meet password criteria
+                        changePasswordDialog.value = false
+                        openUnsafePasswordWarning.value = true
+                    }
+                    else if (newPassword != confirmPassword){
+                        // New password and confirmed password do not match
                         changePasswordDialog.value = false
                         passwordConfirmError.value = true
-                        return@ChangePasswordDialog
                     }
-                    val result = dbStorage.updatePassword(oldPassword, newPassword)
-                    if (!result) {
-                        incorrectPasswordError.value = true
+                    else{
+                        val result = dbStorage.updatePassword(oldPassword, newPassword)
+                        if (!result) {
+                            incorrectPasswordError.value = true
+                        }
+                        changePasswordDialog.value = false
                     }
-                    changePasswordDialog.value = false
                 }
             )
         }
@@ -320,6 +328,14 @@ fun userButton(modifier: Modifier = Modifier){
                             incorrectPasswordError.value = true
                         }
                  },
+            )
+        }
+        openUnsafePasswordWarning.value -> {
+            WarningDialog(
+                onDismissRequest = { openUnsafePasswordWarning.value = false },
+                onConfirmation = { openUnsafePasswordWarning.value = false },
+                dialogTitle = "Warning",
+                dialogText = "Please ensure the password matches the criteria given"
             )
         }
     }

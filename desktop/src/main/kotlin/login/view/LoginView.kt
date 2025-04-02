@@ -55,6 +55,7 @@ fun LoginView(){
     val openSignUpDialog = remember { mutableStateOf(false) }
     val openSignInWarning = remember { mutableStateOf(false) }
     val openSignUpWarning = remember { mutableStateOf(false) }
+    val emptyUsernameWarning = remember { mutableStateOf(false) }
     val openUnsafePasswordWarning = remember { mutableStateOf(false) }
 
     Row(
@@ -161,6 +162,10 @@ fun LoginView(){
                             openSignUpDialog.value = false
                             openUnsafePasswordWarning.value = true
                         }
+                        else if (username==""){
+                            openSignUpDialog.value = false
+                            emptyUsernameWarning.value = true
+                        }
                         else{
                             val result = loginModel.addUser(username, password)
                             if (!result){
@@ -198,6 +203,15 @@ fun LoginView(){
                     dialogText = "Please ensure the password matches the criteria given"
                 )
             }
+            emptyUsernameWarning.value -> {
+                WarningDialog(
+                    onDismissRequest = { emptyUsernameWarning.value=false },
+                    onConfirmation =  { emptyUsernameWarning.value = false },
+                    dialogTitle = "Warning",
+                    dialogText = "Username must not be empty"
+                )
+            }
+
         }
     }
 }
