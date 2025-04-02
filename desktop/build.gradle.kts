@@ -30,6 +30,9 @@ dependencies {
     implementation("org.jetbrains:markdown-jvm:0.7.3")
     implementation(compose.material3)
 
+    // FDG layout
+    implementation(project(":fdg_layout"))
+
     // Kotlin coroutine dependency
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
     // MongoDB Kotlin driver dependency
