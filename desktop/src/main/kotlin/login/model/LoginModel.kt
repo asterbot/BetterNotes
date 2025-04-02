@@ -79,7 +79,6 @@ class LoginModel(val persistence: IPersistence) {
         }
         else{
             val content = credentialsFile.readText().split("\n")
-            println(content)
             return Pair(content[0],content[1])
         }
     }
