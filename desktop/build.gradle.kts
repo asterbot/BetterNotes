@@ -62,10 +62,10 @@ dependencies {
     implementation("io.github.vinceglb:filekit-coil:0.10.0-beta01")
     implementation("io.github.vinceglb:filekit-dialogs:0.10.0-beta01")
     implementation("io.github.vinceglb:filekit-dialogs-compose:0.10.0-beta01")
-//    implementation("io.github.vinceglb:filekit-core:$version")
-//    implementation("io.github.vinceglb:filekit-dialogs:$version")
-//    implementation("io.github.vinceglb:filekit-dialogs-compose:$version")
-//    implementation("io.github.vinceglb:filekit-coil:$version")
+    implementation("org.mindrot:jbcrypt:0.4")
+
+    // Additional icons
+    implementation("org.jetbrains.compose.material:material-icons-extended:1.7.3")
 
     // color picker
     implementation("com.github.skydoves:colorpicker-compose:1.1.2")

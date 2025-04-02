@@ -22,7 +22,8 @@ data class Note @OptIn(ExperimentalSerializationApi::class) constructor(
     @Contextual var relatedNotes: List<@Serializable(with = ObjectIdSerializer::class) ObjectId> = mutableListOf(),
     var datetimeCreated: String = Instant.now().toString(),
     var datetimeUpdated: String = Instant.now().toString(),
-    var datetimeAccessed: String = Instant.now().toString()
+    var datetimeAccessed: String = Instant.now().toString(),
+    var userId: String = "dummy-user"
 )
 
 

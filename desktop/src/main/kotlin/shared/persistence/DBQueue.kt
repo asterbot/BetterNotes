@@ -127,6 +127,8 @@ class Update(override val persistence: IPersistence, val objToUpdate: Any,
                 assert(fields.containsKey("language"))
                 assert(fields.containsKey("article"))
                 assert(fields.containsKey("boardId"))
+                assert(fields["gluedAbove"]!=null)
+                assert(fields["gluedBelow"]!=null)
                 if (objToUpdate.id !in contentBlocksInserted){
                     // If it is newly inserted, do not update here too!
                     persistence.updateContentBlock(objToUpdate,
@@ -134,6 +136,8 @@ class Update(override val persistence: IPersistence, val objToUpdate: Any,
                         fields["pathsContent"] as MutableList<Path>,
                         fields["bList"] as MutableList<Byte>,
                         fields["language"] as String,
+                        fields["gluedAbove"] as Boolean,
+                        fields["gluedBelow"] as Boolean,
                         fields["article"] as Note,
                         fields["boardId"] as ObjectId,
                         await = true)
@@ -143,12 +147,45 @@ class Update(override val persistence: IPersistence, val objToUpdate: Any,
                     println("Not executed!")
                 }
             }
-
         }
-        }
-
-
     }
+}
+
+class UpdateGlue(override val persistence: IPersistence,
+                 val objToUpdate: ContentBlock,
+                 val boardDependency:Board? = null,
+                 val noteDependency:Note? = null
+) :Operation(){
+    override fun updateDB(){
+        assert(noteDependency != null)
+        assert(boardDependency != null)
+        persistence.updateGlueStatus(
+            objToUpdate.id, objToUpdate.gluedAbove, objToUpdate.gluedBelow,
+            noteDependency!!.id, boardDependency!!.id, await = true
+        )
+    }
+}
+
+class SwapBlocks(
+    override val persistence: IPersistence,
+    val noteDependency:Note? = null,
+    val boardDependency:Board? = null,
+    val fields: Map<String, Int> // maps field name to new values!
+) :Operation(){
+    override fun updateDB(){
+        assert(noteDependency != null)
+        assert(boardDependency != null)
+        assert(fields.containsKey("upperBlockStart"))
+        assert(fields.containsKey("upperBlockEnd"))
+        assert(fields.containsKey("lowerBlockStart"))
+        assert(fields.containsKey("lowerBlockEnd"))
+        persistence.swapContentBlocks(
+            noteDependency!!.id, fields["upperBlockStart"]!!, fields["upperBlockEnd"]!!,
+            fields["lowerBlockStart"]!!, fields["lowerBlockEnd"]!!,
+            boardDependency!!.id, await = true
+        )
+    }
+}
 
 class DBQueue {
     private var operationQueue: Queue<Operation> = LinkedList()
@@ -166,5 +203,4 @@ class DBQueue {
             operation.updateDB()
         }
     }
-
 }

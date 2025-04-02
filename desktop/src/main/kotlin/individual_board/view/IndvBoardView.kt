@@ -1,21 +1,22 @@
 package individual_board.view
+
+//import individual_board.entities.Section
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import article.view.ArticleScreen
@@ -24,19 +25,9 @@ import boards.view.BoardViewScreen
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.Dp
-import cafe.adriel.voyager.navigator.Navigator
 import graph_ui.GraphView
-import graph_ui.GraphViewModel
-
 import individual_board.entities.Note
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-//import individual_board.entities.Section
 import org.bson.types.ObjectId
 import shared.*
 
@@ -88,7 +79,7 @@ fun NoteButton(
                 println("DEBUG: Clicked ${note.title}")
                 if (note.type=="article") {
                     individualBoardModel.updateNoteAccessed(note, board)
-                    navigator.push(ArticleScreen(board, note))
+                    ScreenManager.push(navigator, ArticleScreen(board, note))
                 }
             },
             shape = RoundedCornerShape(10.dp),
@@ -195,7 +186,7 @@ fun IndividualBoardView(
                         )
 
                         Button(
-                            onClick = { navigator.push(BoardViewScreen()) },
+                            onClick = { ScreenManager.push(navigator, BoardViewScreen()) },
                             modifier = Modifier.padding(2.dp)
                         ) {
                             Text("Back to All Boards")
@@ -257,7 +248,7 @@ fun IndividualBoardView(
                 onClick = { note ->
                     if (note.type=="article") {
                         individualBoardModel.updateNoteAccessed(note, board)
-                        navigator.push(ArticleScreen(board, note))
+                        ScreenManager.push(navigator, ArticleScreen(board, note))
                     }
                 }
             )
@@ -267,7 +258,9 @@ fun IndividualBoardView(
                         drawerState.open()
                     }
                 },
-                modifier = Modifier.align(Alignment.TopStart).padding(8.dp)
+                modifier = Modifier.align(Alignment.TopStart)
+                    .padding(start = 8.dp, top = 55.dp, end = 5.dp, bottom = 5.dp)
+
             ) {
                 Icon(Icons.Default.Menu, contentDescription = "Open drawer")
             }

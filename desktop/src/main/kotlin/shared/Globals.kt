@@ -2,18 +2,24 @@ package shared
 
 
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import article.model.ArticleModel
 import article.view.ArticleViewModel
-import individual_board.view.IndvBoardViewModel as IndividualBoardViewModel
+import boards.model.BoardModel
 import boards.view.BoardViewModel
+import boards.view.BoardViewScreen
+import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.navigator.Navigator
+import graph_ui.GraphModel
+import graph_ui.GraphViewModel
+import login.model.LoginModel
 import shared.persistence.DBQueue
 import shared.persistence.DBStorage
-import individual_board.model.IndvBoardModel as IndividualBoardModel
-import boards.model.BoardModel
-import graph_ui.*
 import shared.persistence.Operation
+import individual_board.model.IndvBoardModel as IndividualBoardModel
+import individual_board.view.IndvBoardViewModel as IndividualBoardViewModel
 
 val dbStorage: DBStorage = DBStorage()
 val dbQueue: DBQueue = DBQueue()
@@ -27,9 +33,30 @@ lateinit var individualBoardViewModel: IndividualBoardViewModel
 val articleModel = ArticleModel(dbStorage)
 lateinit var articleViewModel: ArticleViewModel
 
+val loginModel = LoginModel(dbStorage)
+
 val graphModel = GraphModel()
 val graphViewModel = GraphViewModel(graphModel)
 
+fun initializeModels(){
+    boardModel.initialize()
+    individualBoardModel.initialize()
+    articleModel.initialize()
+}
+
+object LoginManager{
+    var loggedIn by mutableStateOf(false)
+
+    fun logIn(){
+        loggedIn = true
+    }
+
+    fun logOut(){
+        loggedIn = false
+        loginModel.currentUser = "dummy-user"
+        ScreenManager.reset()
+    }
+}
 
 // Managing connection status
 
@@ -58,12 +85,49 @@ object ConnectionManager{
             boardModel?.initialize()
             individualBoardModel?.initialize()
             articleModel?.initialize()
+            loginModel?.initialize()
 
             Operation.contentBlocksInserted.clear()
 
-
         }
+    }
+}
 
+
+object ScreenManager {
+    var visitedScreens = mutableStateListOf<Screen>()
+    var currScreenIndex by mutableStateOf(0)
+
+    init {
+        visitedScreens.add(BoardViewScreen())
+        currScreenIndex = visitedScreens.size - 1
     }
 
+    fun reset(){
+        visitedScreens.clear()
+        visitedScreens.add(BoardViewScreen())
+        currScreenIndex = visitedScreens.size - 1
+    }
+
+    fun push(navigator: Navigator, screen: Screen) {
+        visitedScreens.subList(currScreenIndex + 1, visitedScreens.size).clear()
+        visitedScreens.add(screen)
+        navigator.push(screen)
+        currScreenIndex = visitedScreens.size - 1
+    }
+
+    fun moveBack(navigator: Navigator) {
+        currScreenIndex -= 1
+        val prevScreen = visitedScreens[currScreenIndex]
+        navigator.push(prevScreen)
+    }
+
+    fun moveForward(navigator: Navigator) {
+        currScreenIndex += 1
+        val nextScreen = visitedScreens[currScreenIndex]
+        navigator.push(nextScreen)
+    }
 }
+
+
+
