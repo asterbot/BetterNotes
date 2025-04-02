@@ -384,7 +384,6 @@ fun BlockFrame(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-
                     if (isSelected) {
                         Text(
                             text = "${block.blockType.name} Block",
@@ -437,8 +436,8 @@ fun BlockFrame(
                         markdownHandler.renderMarkdown()
                     }
 
+                    var isGraph by remember { mutableStateOf(false)}
                     if (block.blockType == BlockType.MATH && !isSelected) {
-                        var isGraph by remember { mutableStateOf(false)}
                         var isLatex by remember {mutableStateOf(false)}
                         Box(modifier = Modifier.fillMaxWidth()) {
                             TextButton(modifier = Modifier.align(Alignment.Center), colors = textButtonColours(), onClick = {isGraph = !isGraph}) {
