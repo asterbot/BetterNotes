@@ -1,46 +1,39 @@
-package graph_ui
+package fdg_layout
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.*
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.*
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.layout.layout
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.style.LineHeightStyle
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntSize
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import individual_board.entities.Note
-import shared.Colors
-import shared.graphViewModel
 
-// NOTE: I figured out there was some dumb thing where Canvas objects take px offsets
-//      and Button objects take dp offsets. All the px/dp stuff is the result of hours of
-//      head smashing
 @Composable
 internal fun Float.pxToDp(): Dp {
     return (this / LocalDensity.current.density).dp
 }
 
 @Composable
-fun GraphView(
-    onClick: (Note) -> Unit
+fun <NodeDataType> FdgLayoutView(
+    graphViewModel: FdgLayoutViewModel<NodeDataType>,
+    onNodeClick: (NodeDataType) -> Unit,
+    getLabel: (NodeDataType) -> String,
+    getColor: (NodeDataType) -> Color
 ) {
     var graph by remember { mutableStateOf(graphViewModel) }
 
@@ -48,21 +41,19 @@ fun GraphView(
         modifier = Modifier
             .fillMaxSize()
             .pointerInput(Unit) {
-                detectTapGestures(
-                    onPress = {
-                        graph.onPress()
-                        tryAwaitRelease()
-                        graph.onRelease()
-                    }
-                )
-            }
-            .pointerInput(Unit) {
                 awaitPointerEventScope {
                     while (true) {
                         val event = awaitPointerEvent()
                         val pos = event.changes.firstOrNull()?.position
                         if (pos != null) {
                             graph.onMouseMove(pos.x, pos.y)
+                        }
+
+                        val down = event.changes.firstOrNull()?.pressed == true
+                        if (down) {
+                            graph.onPress()
+                        } else {
+                            graph.onRelease()
                         }
                     }
                 }
@@ -100,11 +91,11 @@ fun GraphView(
                 var buttonSize by remember { mutableStateOf(IntSize.Zero) }
                 Button(
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+                        containerColor = getColor(node.data).copy(alpha = 0.8f),
                     ),
                     contentPadding = PaddingValues(8.dp),
                     onClick = {
-                        onClick(node.note)
+                        onNodeClick(node.data)
                     },
                     shape = RoundedCornerShape(10.dp),
                     // don't even question it
@@ -118,7 +109,7 @@ fun GraphView(
                     )
                 ) {
                     Text(
-                        text = node.note.title,
+                        text = getLabel(node.data),
                         fontSize = 10.sp,
                         lineHeight = 10.sp,
                         color = Color.White,
@@ -133,4 +124,5 @@ fun GraphView(
             }
         }
     }
+
 }

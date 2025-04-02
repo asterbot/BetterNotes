@@ -3,9 +3,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import boards.entities.Board
-import graph_ui.Edge
-import graph_ui.Node
-import graph_ui.Vec
 import individual_board.entities.Note
 import individual_board.entities.removeNote
 import kotlinx.coroutines.delay
