@@ -37,8 +37,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Window
-import androidx.compose.ui.window.application
 import article.entities.*
 import boards.entities.Board
 import cafe.adriel.voyager.core.screen.Screen
@@ -54,14 +52,12 @@ import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.exists
 import shared.*
 import space.kscience.kmath.UnstableKMathAPI
-import space.kscience.kmath.asm.compile
 import space.kscience.kmath.asm.compileToExpression
 import space.kscience.kmath.ast.parseMath
 import space.kscience.kmath.ast.rendering.FeaturedMathRendererWithPostProcess
 import space.kscience.kmath.ast.rendering.LatexSyntaxRenderer
 import space.kscience.kmath.ast.rendering.renderWithStringBuilder
 import space.kscience.kmath.expressions.MST
-import space.kscience.kmath.operations.DoubleField
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
@@ -69,10 +65,7 @@ import java.io.File
 import java.io.IOException
 import java.nio.ByteBuffer
 import javax.imageio.ImageIO
-import space.kscience.kmath.ast.*
 import space.kscience.kmath.expressions.*
-import space.kscience.kmath.expressions.Symbol.Companion.x
-import space.kscience.kmath.operations.Int32Ring
 import space.kscience.kmath.operations.*
 
 
@@ -511,7 +504,7 @@ fun addGraph(
     yMin: Double = -10.0,
     yMax: Double = 10.0
 ) {
-    // Create a KMath expression from the MST
+    // Create a general expression from the MST
     val expression = mst.compileToExpression(Float64Field)
 
     val points = remember(mst, xMin, xMax) {
@@ -537,17 +530,15 @@ fun addGraph(
     }
     Box(modifier = Modifier.fillMaxWidth().height(200.dp).background(Color.White)) {
         Canvas(modifier = Modifier.fillMaxSize()) {
-            // Draw axes
+            // Axis
             val xAxisY = size.height * (yMax / (yMax - yMin))
             val yAxisX = size.width * (-xMin / (xMax - xMin))
-
             drawLine(
                 Color.Gray,
                 Offset(0f, size.height - xAxisY.toFloat()),
                 Offset(size.width, size.height - xAxisY.toFloat()),
                 strokeWidth = 2f
             )
-
             drawLine(
                 Color.Gray,
                 Offset(yAxisX.toFloat(), 0f),
@@ -555,7 +546,7 @@ fun addGraph(
                 strokeWidth = 2f
             )
 
-            // Draw function
+            // Function
             if (points.size >= 2) {
                 val path = androidx.compose.ui.graphics.Path()
                 var firstPoint = true
@@ -571,15 +562,13 @@ fun addGraph(
                         path.lineTo(screenX, screenY)
                     }
                 }
-
                 drawPath(path, Color.Blue, style = Stroke(width = 3f))
             }
 
-            // Draw grid lines
+            // Grid
             val gridColor = Color.LightGray.copy(alpha = 0.5f)
             val gridStep = 1.0
 
-            // Vertical grid lines
             var x = Math.ceil(xMin / gridStep) * gridStep
             while (x <= xMax) {
                 val screenX = ((x - xMin) / (xMax - xMin) * size.width).toFloat()
@@ -592,7 +581,6 @@ fun addGraph(
                 x += gridStep
             }
 
-            // Horizontal grid lines
             var y = Math.ceil(yMin / gridStep) * gridStep
             while (y <= yMax) {
                 val screenY = (size.height - ((y - yMin) / (yMax - yMin) * size.height)).toFloat()
