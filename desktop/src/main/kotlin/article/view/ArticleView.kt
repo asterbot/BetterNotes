@@ -71,24 +71,17 @@ fun ArticleCompose(board: Board, article: Note) {
     val navigator = LocalNavigator.currentOrThrow
     articleViewModel = ArticleViewModel(articleModel, article.id)
 
-    var contentBlocksList by remember { mutableStateOf(articleViewModel) }
-
     var prevSelectedBlock by remember { mutableStateOf<Int?>(null) }
     var selectedBlock by remember { mutableStateOf<Int?>(null) }
     var currEditedText = remember {mutableStateOf<String?>(null) } // keep track of the text currently being changed
     var debugState by remember { mutableStateOf(false) }
-
-
-    println(article)
-    println(contentBlocksList.contentBlocksList)
-
 
     fun changeSelectedBlock(selectedBlock: Int?) {
         println("In LaunchedEffect (switching block focus)")
         println("I moved from block $prevSelectedBlock to block $selectedBlock")
         if (prevSelectedBlock != selectedBlock) {
             if (prevSelectedBlock != null && currEditedText.value != null) {
-                val currBlock = contentBlocksList.contentBlocksList[prevSelectedBlock!!]
+                val currBlock = articleViewModel.contentBlocksList[prevSelectedBlock!!]
                 if (currBlock.blockType == BlockType.CODE) {
                     articleModel.saveBlock(
                         prevSelectedBlock!!, stringContent = currEditedText.value!!, article = article,
@@ -132,7 +125,7 @@ fun ArticleCompose(board: Board, article: Note) {
             articleModel.duplicateBlock(index, article, board)
         },
         "Move Block Up" to { index ->
-            val blocks: MutableList<ContentBlock> = contentBlocksList.contentBlocksList
+            val blocks: MutableList<ContentBlock> = articleViewModel.contentBlocksList
             val (upperBlockStart, lowerBlockEnd) = articleModel.getBlockBounds(blocks, index-1, index)
             if (blocks[index].gluedAbove) {
                 selectedBlock = index - 1
@@ -144,7 +137,7 @@ fun ArticleCompose(board: Board, article: Note) {
             articleModel.moveBlockUp(index, article, board)
         },
         "Move Block Down" to { index ->
-            val blocks: MutableList<ContentBlock> = contentBlocksList.contentBlocksList
+            val blocks: MutableList<ContentBlock> = articleViewModel.contentBlocksList
             val (upperBlockStart, lowerBlockEnd) = articleModel.getBlockBounds(blocks, index, index+1)
             if (blocks[index].gluedBelow) {
                 selectedBlock = index + 1
@@ -218,7 +211,7 @@ fun ArticleCompose(board: Board, article: Note) {
                         }
                         // println("FROM VIEWMODEL: ${contentBlocksList.contentBlocksList}")
                         println("FROM VIEWMODEL:")
-                        for (contentBlock in contentBlocksList.contentBlocksList) {
+                        for (contentBlock in articleViewModel.contentBlocksList) {
                             println("Glued Above? ${contentBlock.gluedAbove}")
                             if (contentBlock.blockType == BlockType.CANVAS) {
                                 println("\tCANVAS HAS ${(contentBlock as CanvasBlock).paths.size} PATHS")
@@ -259,6 +252,7 @@ fun ArticleCompose(board: Board, article: Note) {
                                     changeSelectedBlock(selectedBlock)
                                     relatedNotesExpanded = false
                                     ScreenManager.push(navigator, ArticleScreen(board, currNote))
+                                    println("We pushed $currNote which has id ${currNote.id}")
                                 }
                             )
                         }
@@ -268,7 +262,7 @@ fun ArticleCompose(board: Board, article: Note) {
 
             RelatedNotesDropDownMenu()
 
-            if (contentBlocksList.contentBlocksList.isEmpty()) {
+            if (articleViewModel.contentBlocksList.isEmpty()) {
                 Text(
                     text="\nNo content blocks: try adding one!",
                     fontSize = 25.sp
@@ -284,7 +278,7 @@ fun ArticleCompose(board: Board, article: Note) {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 itemsIndexed(
-                    contentBlocksList.contentBlocksList, // itemsIndexed iterates over this collection
+                    articleViewModel.contentBlocksList, // itemsIndexed iterates over this collection
                     key = { index: Int, block: ContentBlock -> block.id } // Jetpack Compose uses keys to track recompositions
                 ) { index: Int, block: ContentBlock ->
                     {} // honestly I'm not sure what this does, but it's needed
@@ -303,7 +297,7 @@ fun ArticleCompose(board: Board, article: Note) {
                         board = board,
                         gluedAbove = block.gluedAbove,
                         gluedBelow = block.gluedBelow,
-                        numContentBlocks = contentBlocksList.contentBlocksList.size,
+                        numContentBlocks = articleViewModel.contentBlocksList.size,
                         currEditedText = currEditedText,
                         debugState = debugState
                     )
@@ -315,7 +309,7 @@ fun ArticleCompose(board: Board, article: Note) {
                 }
             }
             // if no blocks, set select index to null
-            if (contentBlocksList.contentBlocksList.size == 0) {
+            if (articleViewModel.contentBlocksList.size == 0) {
                 selectedBlock = null
             }
         }
