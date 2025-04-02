@@ -18,6 +18,7 @@ import cafe.adriel.voyager.navigator.CurrentScreen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import individual_board.view.IndividualBoardScreen
 import login.view.LoginViewScreen
 
 
@@ -146,6 +147,17 @@ fun NavButtons(
     val currScreenIndex by derivedStateOf { ScreenManager.currScreenIndex }
     val visitedScreens by derivedStateOf { ScreenManager.visitedScreens }
     val navigator = LocalNavigator.currentOrThrow
+    val currentScreen = visitedScreens.getOrNull(currScreenIndex)
+
+    LaunchedEffect(currentScreen) {
+        if (currentScreen is IndividualBoardScreen) {
+            fdgLayoutModel.togglePhysics(true)
+        }
+        else {
+            fdgLayoutModel.togglePhysics(false)
+        }
+    }
+
 
     Row(
         modifier = modifier,

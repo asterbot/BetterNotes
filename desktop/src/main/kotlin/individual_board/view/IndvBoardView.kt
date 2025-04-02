@@ -1,6 +1,4 @@
 package individual_board.view
-
-//import individual_board.entities.Section
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -17,19 +15,26 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import article.view.ArticleScreen
 import boards.entities.Board
 import boards.view.BoardViewScreen
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import graph_ui.GraphView
+import fdg_layout.*
 import individual_board.entities.Note
 import kotlinx.coroutines.launch
 import org.bson.types.ObjectId
 import shared.*
+import kotlin.random.Random
 
 data class IndividualBoardScreen(
     val board: Board
@@ -38,6 +43,11 @@ data class IndividualBoardScreen(
     override fun Content() {
         IndividualBoardView(board)
     }
+}
+
+@Composable
+internal fun Float.pxToDp(): Dp {
+    return (this / LocalDensity.current.density).dp
 }
 
 @Composable
@@ -105,6 +115,35 @@ fun NoteButton(
     }
 }
 
+fun initializeNotesByNoteListBuilder(fdgLayoutModel: FdgLayoutModel<Note>, noteList: List<Note>) {
+    val objectIdToIndex = mutableMapOf<ObjectId, Int>()
+
+    // nodes
+    noteList.forEachIndexed { index, note ->
+        val newNode = Node(
+            pos = Vec(
+                x = Random.nextFloat() * (fdgLayoutModel.startDisMultiplier * fdgLayoutModel.canvasWidth * 2) - (fdgLayoutModel.startDisMultiplier * fdgLayoutModel.canvasWidth),
+                y = Random.nextFloat() * (fdgLayoutModel.startDisMultiplier * fdgLayoutModel.canvasHeight * 2) - (fdgLayoutModel.startDisMultiplier * fdgLayoutModel.canvasHeight)
+            ),
+            mass = 5f,
+            data = note // assuming your Node uses `data` not `note`
+        )
+        fdgLayoutModel.nodes.add(newNode)
+        objectIdToIndex[note.id] = index
+    }
+
+    // edges
+    noteList.forEach { note ->
+        val thisIndex = objectIdToIndex[note.id] ?: return@forEach
+        note.relatedNotes.forEach { childId ->
+            val childIndex = objectIdToIndex[childId]
+            if (childIndex != null && fdgLayoutModel.edges.none { it.id1 == childIndex && it.id2 == thisIndex }) {
+                fdgLayoutModel.edges.add(Edge(id1 = thisIndex, id2 = childIndex))
+            }
+        }
+    }
+}
+
 @Composable
 fun IndividualBoardView(
     board: Board,
@@ -121,7 +160,9 @@ fun IndividualBoardView(
     var noteList by remember { mutableStateOf(individualBoardViewModel) }
 
     LaunchedEffect(noteList) {
-        graphModel.initializeNotesByNoteList(noteList.noteList) // the MVVM gets a bit complicated so i'm gonna be a bit laze
+        fdgLayoutModel.initializeGraph {
+            initializeNotesByNoteListBuilder(this, noteList.noteList)
+        }
     }
 
     val openAddSectionDialog = remember { mutableStateOf(false) }
@@ -135,13 +176,16 @@ fun IndividualBoardView(
             relatedNotesIds.add(note.id)
         }
         individualBoardModel.addNote(Note(ObjectId(), title, desc, type, relatedNotes = relatedNotesIds), board)
-        graphModel.initializeNotesByNoteList(noteList.noteList)
-
+        fdgLayoutModel.initializeGraph {
+            initializeNotesByNoteListBuilder(this, noteList.noteList)
+        }
     }
 
     fun deleteNote(note: Note) {
         individualBoardModel.del(note, board)
-        graphModel.initializeNotesByNoteList(noteList.noteList)
+        fdgLayoutModel.initializeGraph {
+            initializeNotesByNoteListBuilder(this, noteList.noteList)
+        }
     }
 
     fun editNote(note:Note, title: String, desc: String, relatedNotes: List<Note>){
@@ -150,7 +194,9 @@ fun IndividualBoardView(
             relatedNotesIds.add(note.id)
         }
         individualBoardModel.updateNote(note, board.id, title, desc, relatedNotesIds)
-        graphModel.initializeNotesByNoteList(noteList.noteList)
+        fdgLayoutModel.initializeGraph {
+            initializeNotesByNoteListBuilder(this, noteList.noteList)
+        }
     }
 
 
@@ -243,14 +289,16 @@ fun IndividualBoardView(
             },
             gesturesEnabled = false,
         ) {
-
-            GraphView(
-                onClick = { note ->
+            FdgLayoutView(
+                graphViewModel = fdgLayoutViewModel,
+                onNodeClick = { note ->
                     if (note.type=="article") {
                         individualBoardModel.updateNoteAccessed(note, board)
                         ScreenManager.push(navigator, ArticleScreen(board, note))
                     }
-                }
+                },
+                getLabel = { node -> node.title },
+                getColor = { node -> Colors.darkTeal },
             )
             IconButton(
                 onClick = {
