@@ -438,16 +438,29 @@ fun BlockFrame(
                     }
 
                     if (block.blockType == BlockType.MATH && !isSelected) {
+                        var isGraph by remember { mutableStateOf(false)}
+                        var isLatex by remember {mutableStateOf(false)}
+                        Box(modifier = Modifier.fillMaxWidth()) {
+                            TextButton(modifier = Modifier.align(Alignment.Center), colors = textButtonColours(), onClick = {isGraph = !isGraph}) {
+                                Text(if (isGraph) "close graph" else "open graph")
+                            }
+                        }
                         // Render math here
                         var latex = ""
                         try {
+                            isLatex = true
                             // Try to parse the "flaky" math
                             val rawMath = ((block as MathBlock).text).parseMath()
                             val syntax = FeaturedMathRendererWithPostProcess.Default.render(rawMath)
                             latex = LatexSyntaxRenderer.renderWithStringBuilder(syntax)
                         } catch (e: Exception) {
+                            isLatex = false
                             // Parsing error, render latex as is
                             latex = (block as MathBlock).text
+                        }
+                        if (isGraph && isLatex) {
+                            val rawMath = ((block as MathBlock).text).parseMath()
+                            addGraph(rawMath)
                         }
                         LatexRenderer(latex)
                     }
@@ -494,7 +507,7 @@ fun BlockFrame(
 
 @OptIn(UnstableKMathAPI::class)
 @Composable
-fun FunctionPlotter(
+fun addGraph(
     mst: MST,
     xMin: Double = -10.0,
     xMax: Double = 10.0,
