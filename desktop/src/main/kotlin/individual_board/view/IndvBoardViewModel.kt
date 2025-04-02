@@ -3,7 +3,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.rememberCoroutineScope
-import graph_ui.GraphModel
 import shared.ISubscriber
 import individual_board.model.IndvBoardModel;
 import individual_board.entities.Note
@@ -11,7 +10,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.bson.types.ObjectId
-import shared.graphModel
 
 // NOTE: Sort should be in ViewModel as it is a presentation logic
 class IndvBoardViewModel(private val model: IndvBoardModel, val boardId: ObjectId?): ISubscriber {

@@ -12,14 +12,15 @@ import boards.view.BoardViewModel
 import boards.view.BoardViewScreen
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.Navigator
-import graph_ui.GraphModel
-import graph_ui.GraphViewModel
-import login.model.LoginModel
 import shared.persistence.DBQueue
 import shared.persistence.DBStorage
+import login.model.LoginModel
 import shared.persistence.Operation
 import individual_board.model.IndvBoardModel as IndividualBoardModel
 import individual_board.view.IndvBoardViewModel as IndividualBoardViewModel
+import fdg_layout.FdgLayoutModel
+import fdg_layout.FdgLayoutViewModel
+import individual_board.entities.Note
 
 val dbStorage: DBStorage = DBStorage()
 val dbQueue: DBQueue = DBQueue()
@@ -35,8 +36,11 @@ lateinit var articleViewModel: ArticleViewModel
 
 val loginModel = LoginModel(dbStorage)
 
-val graphModel = GraphModel()
-val graphViewModel = GraphViewModel(graphModel)
+//val graphModel = GraphModel()
+//val graphViewModel = GraphViewModel(graphModel)
+
+val fdgLayoutModel = FdgLayoutModel<Note>()
+val fdgLayoutViewModel = FdgLayoutViewModel(fdgLayoutModel)
 
 fun initializeModels(){
     boardModel.initialize()
@@ -128,6 +132,3 @@ object ScreenManager {
         navigator.push(nextScreen)
     }
 }
-
-
-
