@@ -155,9 +155,9 @@ fun LoginView(){
                     onDismissRequest = {
                         openSignUpDialog.value = false
                     },
-                    onConfirmation = { username, password, metAllCriteria ->
+                    onConfirmation = { username, password ->
                         // Add to DB here
-                        if (!metAllCriteria){
+                        if (false in loginModel.passwordCriteriaMet(password)){
                             openSignUpDialog.value = false
                             openUnsafePasswordWarning.value = true
                         }

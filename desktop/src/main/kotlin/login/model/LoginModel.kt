@@ -13,6 +13,27 @@ class LoginModel(val persistence: IPersistence) {
 
     var currentUser by mutableStateOf("dummy-user")
 
+
+    val uwRegex = """.*U.*W""".toRegex()
+    val passwordCriteria = listOf(
+        Pair("At least 8 characters",
+            { pwd: String -> pwd.length >= 8 }
+        ),
+        Pair("At least 1 digit",
+            { pwd: String -> pwd.count(Char::isDigit) > 0 }
+        ),
+        Pair("At least 1 lowercase and 1 uppercase character",
+            { pwd: String -> pwd.any(kotlin.Char::isLowerCase) && pwd.any(kotlin.Char::isUpperCase) }
+        ),
+        Pair("At least 1 special character out of: # ! @ ^",
+            { pwd: String -> pwd.any { it in "#!@^" } }
+        ),
+        Pair("Must contain characters U and W in-order",
+            { pwd: String -> uwRegex.containsMatchIn(pwd) }
+        )
+
+    )
+
     init {
         persistence.connect()
     }
@@ -34,6 +55,16 @@ class LoginModel(val persistence: IPersistence) {
         else{
             return false
         }
+    }
+
+    fun passwordCriteriaMet(password: String): List<Boolean> {
+        val toRet = mutableListOf<Boolean>()
+
+        for (i in 0..<passwordCriteria.size){
+            toRet.add(passwordCriteria[i].second(password))
+        }
+
+        return toRet
     }
 
 }

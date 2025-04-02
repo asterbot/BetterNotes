@@ -486,7 +486,7 @@ fun EditNoteDialog(
 @Composable
 fun SignUpDialog(
     onDismissRequest: () -> Unit,
-    onConfirmation: (userName: String, password: String, metAllCriteria: Boolean) -> Unit
+    onConfirmation: (userName: String, password: String) -> Unit
 ) {
     var username by remember { mutableStateOf(TextFieldValue("")) }
     var password by remember { mutableStateOf(TextFieldValue("")) }
@@ -494,56 +494,6 @@ fun SignUpDialog(
     var isError by remember { mutableStateOf(false) }
 
     var passwordVisible by remember { mutableStateOf(false) }
-
-    // Overload some new functions for password critera!
-    val gooseRegex = """.*g.*o.*o.*s.*e""".toRegex()
-
-    var passwordCriteria = remember {
-        mutableListOf(
-            // Each triple has:
-            //  1. Name of criteria
-            //  2. A function to check the criteria
-            //  3. Whether the current password meets the criteria
-            Triple(
-                "At least 8 characters",
-                { pwd: String -> pwd.length >= 8 },
-                false
-            ),
-            Triple(
-                "At least 1 digit",
-                { pwd: String -> pwd.count(Char::isDigit) > 0 },
-                false
-            ),
-            Triple(
-                "At least 1 lowercase and 1 uppercase character",
-                { pwd: String -> pwd.any(Char::isLowerCase) && pwd.any(Char::isUpperCase) },
-                false
-            ),
-            Triple(
-                "At least 1 special character out of: # ! @ ^",
-                { pwd: String -> pwd.any { it in "#!@^" } },
-                false
-            ),
-            Triple(
-                "Must contain characters from goose in-order",
-                { pwd: String -> gooseRegex.containsMatchIn(pwd) },
-                false
-            )
-        )
-    }
-
-    fun metAllCriteria(): Boolean {
-        // Return true if all criteria are true (i.e. number of trues == number of elements)
-        return passwordCriteria.count { it.third } == passwordCriteria.size
-    }
-
-    fun updateCriteria(pwd: String) {
-        for (i in 0..<passwordCriteria.size) {
-            val t = passwordCriteria[i]
-            passwordCriteria[i] = Triple(t.first, t.second, t.second(pwd))
-
-        }
-    }
 
         AlertDialog(
             icon = { Icons.Default.Add },
@@ -567,7 +517,6 @@ fun SignUpDialog(
                         value = password,
                         onValueChange = {
                             password = it
-                            updateCriteria(password.text)
                         },
                         label = { androidx.compose.material.Text("Password") },
                         visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
@@ -588,10 +537,11 @@ fun SignUpDialog(
                 Spacer(modifier = Modifier.height(8.dp))
                 // Password verifier
                 Text("Password must contain:")
-                passwordCriteria.forEach{ criteria ->
-                    val color = if (criteria.third) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                val result = loginModel.passwordCriteriaMet(password.text)
+                loginModel.passwordCriteria.forEachIndexed { i, criteria ->
+                    val color = if (result[i]) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
                     Row{
-                        Icon(imageVector = if (criteria.third) Icons.Default.Done else Icons.Default.Close,
+                        Icon(imageVector = if (result[i]) Icons.Default.Done else Icons.Default.Close,
                             contentDescription = criteria.first,
                             tint = color,
                             modifier = Modifier.size(18.dp)
@@ -614,7 +564,6 @@ fun SignUpDialog(
                             onConfirmation(
                                 username.text,
                                 password.text,
-                                metAllCriteria()
                             )
                             username = TextFieldValue("")
                             password = TextFieldValue("")
