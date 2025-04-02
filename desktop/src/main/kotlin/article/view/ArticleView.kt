@@ -437,31 +437,29 @@ fun BlockFrame(
                     }
 
                     var isGraph by remember { mutableStateOf(false)}
+                    var graphMST by remember { mutableStateOf(("0").parseMath())}
                     if (block.blockType == BlockType.MATH && !isSelected) {
-                        var isLatex by remember {mutableStateOf(false)}
-                        Box(modifier = Modifier.fillMaxWidth()) {
-                            TextButton(modifier = Modifier.align(Alignment.Center), colors = textButtonColours(), onClick = {isGraph = !isGraph}) {
-                                Text(if (isGraph) "close graph" else "open graph")
-                            }
-                        }
                         // Render math here
                         var latex = ""
                         try {
-                            isLatex = true
                             // Try to parse the "flaky" math
                             val rawMath = ((block as MathBlock).text).parseMath()
                             val syntax = FeaturedMathRendererWithPostProcess.Default.render(rawMath)
                             latex = LatexSyntaxRenderer.renderWithStringBuilder(syntax)
+                            graphMST = rawMath
                         } catch (e: Exception) {
-                            isLatex = false
                             // Parsing error, render latex as is
                             latex = (block as MathBlock).text
                         }
-                        if (isGraph && isLatex) {
-                            val rawMath = ((block as MathBlock).text).parseMath()
-                            addGraph(rawMath)
-                        }
                         LatexRenderer(latex)
+                    }
+                    if (isGraph) {
+                        addGraph(graphMST)
+                    }
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        TextButton(modifier = Modifier.align(Alignment.Center), colors = textButtonColours(), onClick = {isGraph = !isGraph}) {
+                            Text(if (isGraph) "close graph" else "open graph")
+                        }
                     }
 
                     if (block.blockType == BlockType.CANVAS) {
