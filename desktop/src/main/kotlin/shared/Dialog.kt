@@ -10,8 +10,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.input.*
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import individual_board.entities.Note
 
 
@@ -484,7 +486,7 @@ fun EditNoteDialog(
 @Composable
 fun SignUpDialog(
     onDismissRequest: () -> Unit,
-    onConfirmation: (userName: String, password: String) -> Unit
+    onConfirmation: (userName: String, password: String, metAllCriteria: Boolean) -> Unit
 ) {
     var username by remember { mutableStateOf(TextFieldValue("")) }
     var password by remember { mutableStateOf(TextFieldValue("")) }
@@ -493,80 +495,148 @@ fun SignUpDialog(
 
     var passwordVisible by remember { mutableStateOf(false) }
 
-    AlertDialog(
-        icon = { Icons.Default.Add },
-        title = { Text(text = "Sign up!") },
-        text = {
-            Column(modifier = Modifier.padding(16.dp)) {
-                // Input field for title
-                OutlinedTextField(
-                    value = username,
-                    onValueChange = { username = it },
-                    label = { Text("Username") },
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Email,
-                        imeAction = ImeAction.Next
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                )
+    // Overload some new functions for password critera!
+    val gooseRegex = """.*g.*o.*o.*s.*e""".toRegex()
+
+    var passwordCriteria = remember {
+        mutableListOf(
+            // Each triple has:
+            //  1. Name of criteria
+            //  2. A function to check the criteria
+            //  3. Whether the current password meets the criteria
+            Triple(
+                "At least 8 characters",
+                { pwd: String -> pwd.length >= 8 },
+                false
+            ),
+            Triple(
+                "At least 1 digit",
+                { pwd: String -> pwd.count(Char::isDigit) > 0 },
+                false
+            ),
+            Triple(
+                "At least 1 lowercase and 1 uppercase character",
+                { pwd: String -> pwd.any(Char::isLowerCase) && pwd.any(Char::isUpperCase) },
+                false
+            ),
+            Triple(
+                "At least 1 special character out of: # ! @ ^",
+                { pwd: String -> pwd.any { it in "#!@^" } },
+                false
+            ),
+            Triple(
+                "Must contain characters from goose in-order",
+                { pwd: String -> gooseRegex.containsMatchIn(pwd) },
+                false
+            )
+        )
+    }
+
+    fun metAllCriteria(): Boolean {
+        // Return true if all criteria are true (i.e. number of trues == number of elements)
+        return passwordCriteria.count { it.third } == passwordCriteria.size
+    }
+
+    fun updateCriteria(pwd: String) {
+        for (i in 0..<passwordCriteria.size) {
+            val t = passwordCriteria[i]
+            passwordCriteria[i] = Triple(t.first, t.second, t.second(pwd))
+
+        }
+    }
+
+        AlertDialog(
+            icon = { Icons.Default.Add },
+            title = { Text(text = "Sign up!") },
+            text = {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    // Input field for title
+                    OutlinedTextField(
+                        value = username,
+                        onValueChange = { username = it },
+                        label = { Text("Username") },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Email,
+                            imeAction = ImeAction.Next
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    // Input field for description
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = {
+                            password = it
+                            updateCriteria(password.text)
+                        },
+                        label = { androidx.compose.material.Text("Password") },
+                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Password,
+                            imeAction = ImeAction.Done
+                        ),
+                        trailingIcon = {
+                            androidx.compose.material.IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                androidx.compose.material.Icon(
+                                    imageVector = if (passwordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                    contentDescription = if (passwordVisible) "Hide password" else "Show password"
+                                )
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 Spacer(modifier = Modifier.height(8.dp))
-                // Input field for description
-                OutlinedTextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = { androidx.compose.material.Text("Password") },
-                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Password,
-                        imeAction = ImeAction.Done
-                    ),
-                    trailingIcon = {
-                        androidx.compose.material.IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                            androidx.compose.material.Icon(
-                                imageVector = if (passwordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
-                                contentDescription = if (passwordVisible) "Hide password" else "Show password"
-                            )
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        },
-        onDismissRequest = {
-            onDismissRequest()
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    if (username.text.isBlank()) {
-                        isError = true
-                    }
-                    else {
-                        onConfirmation(
-                            username.text,
-                            password.text
+                // Password verifier
+                Text("Password must contain:")
+                passwordCriteria.forEach{ criteria ->
+                    val color = if (criteria.third) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                    Row{
+                        Icon(imageVector = if (criteria.third) Icons.Default.Done else Icons.Default.Close,
+                            contentDescription = criteria.first,
+                            tint = color,
+                            modifier = Modifier.size(18.dp)
                         )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(criteria.first, color=color, fontSize=12.sp)
+                    }
+                }
+                }
+            },
+            onDismissRequest = {
+                onDismissRequest()
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (username.text.isBlank()) {
+                            isError = true
+                        } else {
+                            onConfirmation(
+                                username.text,
+                                password.text,
+                                metAllCriteria()
+                            )
+                            username = TextFieldValue("")
+                            password = TextFieldValue("")
+                        }
+                    }
+                ) {
+                    Text("Create Account!")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        onDismissRequest()
                         username = TextFieldValue("")
                         password = TextFieldValue("")
                     }
+                ) {
+                    Text("Cancel")
                 }
-            ) {
-                Text("Create Account!")
             }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = {
-                    onDismissRequest()
-                    username = TextFieldValue("")
-                    password = TextFieldValue("")
-                }
-            ) {
-                Text("Cancel")
-            }
-        }
-    )
-}
+        )
+    }
 
 @Composable
 fun WarningDialog(
@@ -574,7 +644,7 @@ fun WarningDialog(
     onConfirmation: () -> Unit,
     dialogTitle: String,
     dialogText: String,
-){
+) {
     AlertDialog(
         icon = { Icons.Default.Warning },
         title = {
@@ -602,11 +672,11 @@ fun WarningDialog(
 fun ChangePasswordDialog(
     onDismissRequest: () -> Unit,
     onConfirmation: (oldPassword: String, newPassword: String, confirmPassword: String) -> Unit,
-){
+) {
 
-    var oldPassword by remember { mutableStateOf(TextFieldValue(""))}
+    var oldPassword by remember { mutableStateOf(TextFieldValue("")) }
     var newPassword by remember { mutableStateOf(TextFieldValue("")) }
-    var confirmPassword by remember { mutableStateOf(TextFieldValue(""))}
+    var confirmPassword by remember { mutableStateOf(TextFieldValue("")) }
 
     var isError by remember { mutableStateOf(false) }
 
@@ -691,8 +761,7 @@ fun ChangePasswordDialog(
                 onClick = {
                     if (oldPassword.text.isBlank()) {
                         isError = true
-                    }
-                    else {
+                    } else {
                         onConfirmation(oldPassword.text, newPassword.text, confirmPassword.text)
                         oldPassword = TextFieldValue("")
                         newPassword = TextFieldValue("")
@@ -723,8 +792,8 @@ fun DeleteAccountDialog(
     onDismissRequest: () -> Unit,
     onConfirmation: (currentPassword: String) -> Unit,
 
-){
-    var currentPassword by remember { mutableStateOf(TextFieldValue(""))}
+    ) {
+    var currentPassword by remember { mutableStateOf(TextFieldValue("")) }
     var passwordVisible1 by remember { mutableStateOf(false) }
     var isError by remember { mutableStateOf(false) }
 
@@ -764,8 +833,7 @@ fun DeleteAccountDialog(
                 onClick = {
                     if (currentPassword.text.isBlank()) {
                         isError = true
-                    }
-                    else {
+                    } else {
                         onConfirmation(currentPassword.text)
                         currentPassword = TextFieldValue("")
                     }
@@ -786,4 +854,3 @@ fun DeleteAccountDialog(
         }
     )
 }
-

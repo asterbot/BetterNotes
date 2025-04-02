@@ -55,6 +55,7 @@ fun LoginView(){
     val openSignUpDialog = remember { mutableStateOf(false) }
     val openSignInWarning = remember { mutableStateOf(false) }
     val openSignUpWarning = remember { mutableStateOf(false) }
+    val openUnsafePasswordWarning = remember { mutableStateOf(false) }
 
     Row(
         modifier = Modifier.fillMaxWidth()
@@ -154,15 +155,21 @@ fun LoginView(){
                     onDismissRequest = {
                         openSignUpDialog.value = false
                     },
-                    onConfirmation = { username, password ->
+                    onConfirmation = { username, password, metAllCriteria ->
                         // Add to DB here
-                        val result = loginModel.addUser(username, password)
-                        if (!result){
+                        if (!metAllCriteria){
                             openSignUpDialog.value = false
-                            openSignUpWarning.value = true
+                            openUnsafePasswordWarning.value = true
                         }
                         else{
-                            openSignUpDialog.value = false
+                            val result = loginModel.addUser(username, password)
+                            if (!result){
+                                openSignUpDialog.value = false
+                                openSignUpWarning.value = true
+                            }
+                            else{
+                                openSignUpDialog.value = false
+                            }
                         }
                     }
                 )
@@ -181,6 +188,14 @@ fun LoginView(){
                     onConfirmation = { openSignUpWarning.value = false },
                     dialogTitle = "Warning",
                     dialogText = "This username is already taken. Please choose a different username"
+                )
+            }
+            openUnsafePasswordWarning.value -> {
+                WarningDialog(
+                    onDismissRequest = { openUnsafePasswordWarning.value = false },
+                    onConfirmation = { openUnsafePasswordWarning.value = false },
+                    dialogTitle = "Warning",
+                    dialogText = "Please ensure the password matches the criteria given"
                 )
             }
         }
