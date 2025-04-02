@@ -47,6 +47,7 @@ import individual_board.entities.Note
 import individual_board.view.IndividualBoardScreen
 import io.github.vinceglb.filekit.absolutePath
 import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
+import org.bson.types.ObjectId
 import shared.*
 import space.kscience.kmath.ast.parseMath
 import space.kscience.kmath.ast.rendering.FeaturedMathRendererWithPostProcess
@@ -68,7 +69,6 @@ data class ArticleScreen(
 @Composable
 fun ArticleCompose(board: Board, article: Note) {
     val navigator = LocalNavigator.currentOrThrow
-
     articleViewModel = ArticleViewModel(articleModel, article.id)
 
     var contentBlocksList by remember { mutableStateOf(articleViewModel) }
@@ -77,6 +77,10 @@ fun ArticleCompose(board: Board, article: Note) {
     var selectedBlock by remember { mutableStateOf<Int?>(null) }
     var currEditedText = remember {mutableStateOf<String?>(null) } // keep track of the text currently being changed
     var debugState by remember { mutableStateOf(false) }
+
+
+    println(article)
+    println(contentBlocksList.contentBlocksList)
 
 
     fun changeSelectedBlock(selectedBlock: Int?) {
@@ -152,6 +156,7 @@ fun ArticleCompose(board: Board, article: Note) {
             articleModel.moveBlockDown(index, article, board)
         },
         "Delete Block" to { index ->
+            selectedBlock = null
             changeSelectedBlock(selectedBlock)
             articleModel.deleteBlock(index, article, board)
         }
@@ -192,7 +197,7 @@ fun ArticleCompose(board: Board, article: Note) {
                         changeSelectedBlock(selectedBlock)
                         ScreenManager.push(navigator, IndividualBoardScreen(board))
                     }
-                ) { Text("Back to current course") }
+                ) { Text("Back to Board") }
                 Button(
                     colors = textButtonColours(),
                     onClick = {
@@ -226,6 +231,42 @@ fun ArticleCompose(board: Board, article: Note) {
                     }
                 ) { Text(text = "DEBUG") }
             }
+
+            // code for dropdown menu, linking to other boards
+            @Composable
+            fun RelatedNotesDropDownMenu() {
+                val relatedNoteIds: List<ObjectId> = article.relatedNotes
+                val notesFromModel: MutableList<Note>? = individualBoardModel.noteDict[board.id]
+                val relatedNotes: List<Note>? = notesFromModel?.filter { it.id in relatedNoteIds }
+                // now, relatedNotes contains all Note objects that the article is related to
+                var relatedNotesExpanded by remember { mutableStateOf(false) }
+                Box {
+                    TextButton(
+                        colors = textButtonColours(),
+                        onClick = { relatedNotesExpanded = !relatedNotesExpanded }
+                    ) {
+                        Text(text="Go to related course (${relatedNotes?.size})")
+                    }
+                    DropdownMenu(
+                        expanded = relatedNotesExpanded,
+                        onDismissRequest = { relatedNotesExpanded = false }
+                    ) {
+                        relatedNotes?.forEach { currNote ->
+                            DropdownMenuItem(
+                                text = { Text(currNote.title) },
+                                onClick = {
+                                    selectedBlock = null
+                                    changeSelectedBlock(selectedBlock)
+                                    relatedNotesExpanded = false
+                                    ScreenManager.push(navigator, ArticleScreen(board, currNote))
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+
+            RelatedNotesDropDownMenu()
 
             if (contentBlocksList.contentBlocksList.isEmpty()) {
                 Text(
