@@ -12,7 +12,7 @@ import java.io.File
 
 class LoginModel(val persistence: IPersistence) {
 
-    var currentUser by mutableStateOf("dummy-user")
+    var currentUser = "dummy-user"
 
     // For password verification
     val uwRegex = """.*U.*W""".toRegex()
