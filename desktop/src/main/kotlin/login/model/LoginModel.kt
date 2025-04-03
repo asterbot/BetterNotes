@@ -1,8 +1,5 @@
 package login.model
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import login.entities.User
 import org.bson.types.ObjectId
 import org.mindrot.jbcrypt.BCrypt
@@ -32,7 +29,6 @@ class LoginModel(val persistence: IPersistence) {
         Pair("Must contain characters U and W in-order",
             { pwd: String -> uwRegex.containsMatchIn(pwd) }
         )
-
     )
 
     // For the directory to store credentials

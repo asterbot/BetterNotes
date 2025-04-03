@@ -1,9 +1,11 @@
 package fdg_layout
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -11,17 +13,13 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.Dp
 
 @Composable
 internal fun Float.pxToDp(): Dp {
@@ -81,7 +79,7 @@ fun <NodeDataType> FdgLayoutView(
                             color = Color.Black,
                             start = Offset(n1.pos.x, n1.pos.y),
                             end = Offset(n2.pos.x, n2.pos.y),
-                            strokeWidth = 1f,
+                            strokeWidth = 2f,
                         )
                     }
                 }
