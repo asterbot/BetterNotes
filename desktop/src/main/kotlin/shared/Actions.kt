@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.foundation.layout.Box
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -35,9 +36,10 @@ fun AddButton(
         onClick = {
             onClick()
         },
-        modifier = modifier
+        modifier = modifier,
+        containerColor = Colors.lightTeal
     ) {
-        Icon(Icons.Filled.Add, "Add Board Button")
+        Icon(Icons.Filled.Add, "Add Board Button", tint = Colors.darkGrey)
     }
 }
 
@@ -52,11 +54,12 @@ fun ActionMenu(
         modifier = modifier
     ) {
         IconButton(onClick = { expanded = !expanded }) {
-            Icon(Icons.Default.MoreVert, contentDescription = "More options")
+            Icon(Icons.Default.MoreVert, contentDescription = "More options", tint=Colors.white)
         }
         DropdownMenu(
             expanded = expanded,
-            onDismissRequest = { expanded = false }
+            onDismissRequest = { expanded = false },
+            containerColor = Colors.veryLightTeal
         ) {
             DropdownMenuItem(
                 text = { Text("Edit") },
@@ -82,12 +85,16 @@ fun AddNoteMenu(
     Box(
         modifier = modifier
     ) {
-        FilledIconButton(onClick = { expanded = !expanded }) {
-            Icon(Icons.Default.Add, contentDescription = "Add")
+        FloatingActionButton(
+            onClick = { expanded = !expanded },
+            containerColor = Colors.lightTeal
+        ) {
+            Icon(Icons.Default.Add, contentDescription = "Add", tint = Colors.darkGrey)
         }
         DropdownMenu(
             expanded = expanded,
-            onDismissRequest = { expanded = false }
+            onDismissRequest = { expanded = false },
+            containerColor = Colors.veryLightTeal
         ) {
             DropdownMenuItem(
                 text = { Text("Add Section") },

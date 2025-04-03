@@ -9,7 +9,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -20,7 +19,6 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import individual_board.view.IndividualBoardScreen
-import login.model.LoginModel
 import login.view.LoginViewScreen
 
 
@@ -99,9 +97,9 @@ fun AppScaffold(StartScreen: Screen) {
                             ) {
                                 Text("Dismiss")
                             }
-                        }
+                        },
+                        containerColor = Colors.veryLightTeal
                     )
-
                 }
             }
         }
@@ -125,7 +123,7 @@ fun DBStatus(
             ConnectionStatus.CONNECTED -> Icons.Default.Done
             else -> Icons.Default.Refresh
         }
-        val color = if (isConnected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+        val color = if (isConnected) Colors.darkTeal else Colors.errorColor
         val statusText = when(connectionStatus) {
             ConnectionStatus.CONNECTING -> "Connecting to DB..."
             ConnectionStatus.CONNECTED -> "Connected to DB"
@@ -240,7 +238,8 @@ fun userButton(modifier: Modifier = Modifier){
 
         DropdownMenu(
             expanded = expanded,
-            onDismissRequest = { expanded = false }
+            onDismissRequest = { expanded = false },
+            containerColor = Colors.veryLightTeal
         ) {
             // Add the greeting item at the top of the dropdown
             DropdownMenuItem(
@@ -256,7 +255,7 @@ fun userButton(modifier: Modifier = Modifier){
                 )
             )
 
-            HorizontalDivider(thickness = 2.dp)
+            HorizontalDivider(thickness = 2.dp, color = Colors.lightGrey.times(0.6f))
 
             DropdownMenuItem(
                 text = { Text("Change Password") },
@@ -275,10 +274,10 @@ fun userButton(modifier: Modifier = Modifier){
                 }
             )
 
-            HorizontalDivider(thickness = 2.dp)
+            HorizontalDivider(thickness = 2.dp, color = Colors.lightGrey.times(0.6f))
 
             DropdownMenuItem(
-                text = { Text("Delete Account", color = Color.Red) },
+                text = { Text("Delete Account", color = Colors.errorColor) },
                 onClick = {
                     deleteAccountDialog.value = true
                     expanded = !expanded
@@ -335,7 +334,7 @@ fun userButton(modifier: Modifier = Modifier){
                         else{
                             incorrectPasswordError.value = true
                         }
-                 },
+                 }
             )
         }
         openUnsafePasswordWarning.value -> {
