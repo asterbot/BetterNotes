@@ -239,7 +239,8 @@ class DBStorage() :IPersistence {
                     Updates.set("name", name),
                     Updates.set("desc", desc),
                     Updates.set("notes", notes),
-                    Updates.set("datetimeUpdated", Instant.now().toString())
+                    Updates.set("datetimeUpdated", Instant.now().toString()),
+                    Updates.set("datetimeAccessed", Instant.now().toString())
                 )
             )
         }

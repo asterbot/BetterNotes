@@ -38,5 +38,7 @@ fun MutableList<Board>.updateBoard(element: Board, name: String, desc: String): 
     val index = this.indexOf(element)
     if (index == -1) return false
     this[index] = element.copy(name = name, desc = desc)
+    this[index].datetimeUpdated = Instant.now().toString()
+    this[index].datetimeAccessed = Instant.now().toString()
     return true
 }

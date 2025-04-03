@@ -165,7 +165,7 @@ fun ArticleCompose(board: Board, article: Note) {
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text( // article name
                 text = "Article: ${article.title}",
@@ -173,7 +173,7 @@ fun ArticleCompose(board: Board, article: Note) {
                 fontWeight = FontWeight.Bold
             )
             Text( // title
-                text = "From Board ${board.name}",
+                text = "Board: ${board.name}",
                 fontSize = 18.sp,
             )
 
@@ -190,6 +190,59 @@ fun ArticleCompose(board: Board, article: Note) {
                         ScreenManager.push(navigator, IndividualBoardScreen(board))
                     }
                 ) { Text("Back to Board") }
+
+                // code for dropdown menu, linking to other boards
+                @Composable
+                fun RelatedNotesDropDownMenu() {
+                    val relatedNoteIds: List<ObjectId> = article.relatedNotes
+                    val notesFromModel: MutableList<Note>? = individualBoardModel.noteDict[board.id]
+                    val relatedNotes: List<Note>? = notesFromModel?.filter { it.id in relatedNoteIds }
+                    // now, relatedNotes contains all Note objects that the article is related to
+                    var relatedNotesExpanded by remember { mutableStateOf(false) }
+                    Box {
+                        TextButton(
+                            colors = textButtonColours(),
+                            onClick = { relatedNotesExpanded = !relatedNotesExpanded }
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = "Go to related course (${relatedNotes?.size})"
+                                )
+                                Icon(
+                                    if (relatedNotesExpanded) Icons.Filled.ArrowDropUp else Icons.Filled.ArrowDropDown,
+                                    contentDescription = "Go to Related Note",
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                        DropdownMenu(
+                            expanded = relatedNotesExpanded,
+                            onDismissRequest = { relatedNotesExpanded = false },
+                            containerColor = Colors.veryLightTeal
+                        ) {
+                            relatedNotes?.forEach { currNote ->
+                                DropdownMenuItem(
+                                    text = { Text(currNote.title) },
+                                    onClick = {
+                                        selectedBlock = null
+                                        changeSelectedBlock(selectedBlock)
+                                        relatedNotesExpanded = false
+                                        ScreenManager.push(navigator, ArticleScreen(board, currNote))
+                                        println("We pushed $currNote which has id ${currNote.id}")
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                if (article.relatedNotes.size > 0) {
+                    RelatedNotesDropDownMenu()
+                }
+
                 Button(
                     colors = textButtonColours(),
                     onClick = {
@@ -223,44 +276,6 @@ fun ArticleCompose(board: Board, article: Note) {
                     }
                 ) { Text(text = "DEBUG") }
             }
-
-            // code for dropdown menu, linking to other boards
-            @Composable
-            fun RelatedNotesDropDownMenu() {
-                val relatedNoteIds: List<ObjectId> = article.relatedNotes
-                val notesFromModel: MutableList<Note>? = individualBoardModel.noteDict[board.id]
-                val relatedNotes: List<Note>? = notesFromModel?.filter { it.id in relatedNoteIds }
-                // now, relatedNotes contains all Note objects that the article is related to
-                var relatedNotesExpanded by remember { mutableStateOf(false) }
-                Box {
-                    TextButton(
-                        colors = textButtonColours(),
-                        onClick = { relatedNotesExpanded = !relatedNotesExpanded }
-                    ) {
-                        Text(text="Go to related course (${relatedNotes?.size})")
-                    }
-                    DropdownMenu(
-                        expanded = relatedNotesExpanded,
-                        onDismissRequest = { relatedNotesExpanded = false },
-                        containerColor = Colors.veryLightTeal
-                    ) {
-                        relatedNotes?.forEach { currNote ->
-                            DropdownMenuItem(
-                                text = { Text(currNote.title) },
-                                onClick = {
-                                    selectedBlock = null
-                                    changeSelectedBlock(selectedBlock)
-                                    relatedNotesExpanded = false
-                                    ScreenManager.push(navigator, ArticleScreen(board, currNote))
-                                    println("We pushed $currNote which has id ${currNote.id}")
-                                }
-                            )
-                        }
-                    }
-                }
-            }
-
-            RelatedNotesDropDownMenu()
 
             if (articleViewModel.contentBlocksList.isEmpty()) {
                 Text(
@@ -1067,36 +1082,41 @@ fun BlockFrameMenu(index: Int, buttonFuncs: Map<String, (Int) -> Unit>, numConte
         Box (
             modifier = Modifier.align(Alignment.TopStart)
         ) {
-            Row(
-                modifier = Modifier.align(Alignment.TopStart),
-                horizontalArrangement = Arrangement.spacedBy(5.dp)
+            Column(
+                modifier = Modifier.align(Alignment.TopStart)
             ) {
-                // toggle glue with block above
-                MenuButton(
-                    buttonFuncs["Toggle Glue Above"],
-                    Icons.Filled.ArrowDropUp,
-                    "Toggle Glue Above",
-                    disabledCond = (index == 0)
-                )
-                // toggle glue with block below
-                MenuButton(
-                    buttonFuncs["Toggle Glue Below"],
-                    Icons.Filled.ArrowDropDown,
-                    "Toggle Glue Below",
-                    disabledCond = (index == numContentBlocks-1)
-                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
+                    // toggle glue with block above
+                    MenuButton(
+                        buttonFuncs["Toggle Glue Above"],
+                        Icons.Filled.ArrowDropUp,
+                        "Toggle Glue Above",
+                        disabledCond = (index == 0)
+                    )
+                    // toggle glue with block below
+                    MenuButton(
+                        buttonFuncs["Toggle Glue Below"],
+                        Icons.Filled.ArrowDropDown,
+                        "Toggle Glue Below",
+                        disabledCond = (index == numContentBlocks - 1)
+                    )
+                }
+                Spacer(modifier = Modifier.height(10.dp))
             }
+
             if (hoveredGlueButton != null) {
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-                        .background(Colors.darkGrey.copy(alpha = 0.9f))
+                        .background(Colors.darkGrey.copy(alpha = 0.8f))
                         .padding(horizontal = 4.dp, vertical = 4.dp)
                 ) {
                     Text(
                         text = hoveredGlueButton.toString(),
                         fontSize = 12.sp,
-                        color = Colors.white.copy(alpha = 0.9f)
+                        color = Colors.white.copy(alpha = 0.8f)
                     )
                 }
             }
@@ -1106,48 +1126,52 @@ fun BlockFrameMenu(index: Int, buttonFuncs: Map<String, (Int) -> Unit>, numConte
         Box (
             modifier = Modifier.align(Alignment.TopEnd)
         ) {
-            Row(
-                modifier = Modifier.align(Alignment.TopEnd),
-                horizontalArrangement = Arrangement.spacedBy(5.dp)
+            Column(
+                modifier = Modifier.align(Alignment.TopEnd)
             ) {
-                // duplicate current block
-                MenuButton(
-                    buttonFuncs["Duplicate Block"],
-                    Icons.Default.CopyAll,
-                    "Duplicate Block"
-                )
-                // move current block up
-                MenuButton(
-                    buttonFuncs["Move Block Up"],
-                    if (gluedAbove) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardDoubleArrowUp,
-                    if (gluedAbove) "Move Block Up" else "Move Glued Block Up",
-                    disabledCond = (index == 0)
-                )
-                // move current block down
-                MenuButton(
-                    buttonFuncs["Move Block Down"],
-                    if (gluedBelow) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardDoubleArrowDown,
-                    if (gluedBelow) "Move Block Down" else "Move Glued Block Down",
-                    disabledCond = (index == numContentBlocks-1)
-                )
-                // delete current block
-                MenuButton(
-                    buttonFuncs["Delete Block"],
-                    Icons.Default.Delete,
-                    "Delete"
-                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
+                    // duplicate current block
+                    MenuButton(
+                        buttonFuncs["Duplicate Block"],
+                        Icons.Default.CopyAll,
+                        "Duplicate Block"
+                    )
+                    // move current block up
+                    MenuButton(
+                        buttonFuncs["Move Block Up"],
+                        if (gluedAbove) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardDoubleArrowUp,
+                        if (gluedAbove) "Move Block Up" else "Move Glued Block Up",
+                        disabledCond = (index == 0)
+                    )
+                    // move current block down
+                    MenuButton(
+                        buttonFuncs["Move Block Down"],
+                        if (gluedBelow) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardDoubleArrowDown,
+                        if (gluedBelow) "Move Block Down" else "Move Glued Block Down",
+                        disabledCond = (index == numContentBlocks - 1)
+                    )
+                    // delete current block
+                    MenuButton(
+                        buttonFuncs["Delete Block"],
+                        Icons.Default.Delete,
+                        "Delete"
+                    )
+                }
+                Spacer(modifier = Modifier.height(10.dp))
             }
             if (hoveredOtherButton != null) {
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-                        .background(Colors.darkGrey.copy(alpha = 0.9f))
+                        .background(Colors.darkGrey.copy(alpha = 0.8f))
                         .padding(horizontal = 4.dp, vertical = 4.dp)
                 ) {
                     Text(
                         text = hoveredOtherButton.toString(),
                         fontSize = 12.sp,
-                        color = Colors.white.copy(alpha = 0.9f)
+                        color = Colors.white.copy(alpha = 0.8f)
                     )
                 }
             }
@@ -1188,13 +1212,13 @@ fun AddBlockFrameButton(article: Note, index: Int, direction: String, selectAtIn
             Box(
                 modifier = Modifier
                     .align(if (direction == "DOWN") Alignment.BottomCenter else Alignment.TopCenter)
-                    .background(Colors.darkGrey.copy(alpha=0.9f))
+                    .background(Colors.darkGrey.copy(alpha = 0.8f))
                     .padding(horizontal = 4.dp, vertical = 4.dp)
             ) {
                 Text(
                     text = "Add New Block",
                     fontSize = 12.sp,
-                    color = Colors.white.copy(alpha=0.9f)
+                    color = Colors.white.copy(alpha = 0.8f)
                 )
             }
         }
