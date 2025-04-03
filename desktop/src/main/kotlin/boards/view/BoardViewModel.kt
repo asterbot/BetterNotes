@@ -10,6 +10,7 @@ import boards.entities.Board
 class BoardViewModel(private val model: BoardModel): ISubscriber {
     val boardList = mutableStateListOf<Board>()
 
+
     init{
         model.subscribe(this)
         update()
