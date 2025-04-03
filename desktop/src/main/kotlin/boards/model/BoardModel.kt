@@ -13,7 +13,8 @@ import java.time.Instant
 class BoardModel(val persistence: IPersistence) : IPublisher(){
     var boardList = mutableListOf<Board>();
     var sortFunc: (Board, Board) -> Int = { b1, b2 -> b1.name.compareTo(b2.name) }
-    var currentSortType: String = "Title"
+    var currentSortType: String = "Last Accessed"
+    var currentIsReversed: Boolean = false
 
     init {
         persistence.connect()
@@ -31,37 +32,38 @@ class BoardModel(val persistence: IPersistence) : IPublisher(){
     // Sorting functions
     private fun sortBoardList() {
         boardList.sortWith(sortFunc)
+        if (currentIsReversed) boardList.reverse()
     }
 
     fun sortByTitle(reverse: Boolean = false) {
         currentSortType = "Title"
+        currentIsReversed = reverse
         sortFunc = { b1, b2 -> b1.name.compareTo(b2.name) }
         sortBoardList()
-        if (reverse) boardList.reverse()
         notifySubscribers()
     }
 
     fun sortByDatetimeAccessed(reverse: Boolean = false) {
-        currentSortType = "Time Accessed"
+        currentSortType = "Last Accessed"
+        currentIsReversed = reverse
         sortFunc = { b1, b2 -> b2.datetimeAccessed.compareTo(b1.datetimeAccessed) }
         sortBoardList()
-        if (reverse) boardList.reverse()
         notifySubscribers()
     }
 
     fun sortByDatetimeCreated(reverse: Boolean = false) {
-        currentSortType = "Time Created"
+        currentSortType = "Last Created"
+        currentIsReversed = reverse
         sortFunc = { b1, b2 -> b2.datetimeCreated.compareTo(b1.datetimeCreated) }
         sortBoardList()
-        if (reverse) boardList.reverse()
         notifySubscribers()
     }
 
     fun sortByDatetimeUpdated(reverse: Boolean = false) {
-        currentSortType = "Time Updated"
+        currentSortType = "Last Updated"
+        currentIsReversed = reverse
         sortFunc = { b1, b2 -> b2.datetimeUpdated.compareTo(b1.datetimeUpdated) }
         sortBoardList()
-        if (reverse) boardList.reverse()
         notifySubscribers()
     }
 

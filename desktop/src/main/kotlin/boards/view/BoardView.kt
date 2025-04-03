@@ -103,21 +103,21 @@ fun BoardsView() {
 
     // Sorting
     var selectedSort by remember { mutableStateOf(boardModel.currentSortType) }
-    var reverseOrder by remember { mutableStateOf(false) }
+    var reverseOrder by remember { mutableStateOf(boardModel.currentIsReversed) }
     val sortOptions = listOf("Title", "Last Created", "Last Updated", "Last Accessed")
     var expandedSort by remember { mutableStateOf(false) }
 
-    fun applySorting() {
-        when (selectedSort) {
-            "Title" -> boardModel.sortByTitle(reverseOrder)
-            "Last Created" -> boardModel.sortByDatetimeCreated(reverseOrder)
-            "Last Updated" -> boardModel.sortByDatetimeUpdated(reverseOrder)
-            "Last Accessed" -> boardModel.sortByDatetimeAccessed(reverseOrder)
+    fun applySorting(type: String, reverse: Boolean) {
+        when (type) {
+            "Title" -> boardModel.sortByTitle(reverse)
+            "Last Created" -> boardModel.sortByDatetimeCreated(reverse)
+            "Last Updated" -> boardModel.sortByDatetimeUpdated(reverse)
+            "Last Accessed" -> boardModel.sortByDatetimeAccessed(reverse)
         }
     }
 
     LaunchedEffect(selectedSort, reverseOrder) {
-        applySorting()
+        applySorting(selectedSort, reverseOrder)
     }
 
     // Searching
@@ -176,13 +176,16 @@ fun BoardsView() {
             horizontalArrangement = Arrangement.Center
         ) {
             Text("Sort by: ", modifier = Modifier.padding(end = 8.dp))
+
             Box {
                 Text(
                     text = selectedSort,
                     modifier = Modifier
                         .background(Color.LightGray, shape = RoundedCornerShape(4.dp))
                         .padding(8.dp)
-                        .clickable { expandedSort = true }
+                        .clickable {
+                            expandedSort = true
+                        }
                 )
                 DropdownMenu(
                     expanded = expandedSort,
@@ -194,18 +197,26 @@ fun BoardsView() {
                             onClick = {
                                 selectedSort = option
                                 expandedSort = false
+                                applySorting(selectedSort, reverseOrder)
                             }
                         )
                     }
                 }
             }
+
             Spacer(modifier = Modifier.width(16.dp))
+
             Text("Reverse: ")
+
             Switch(
                 checked = reverseOrder,
-                onCheckedChange = { reverseOrder = it }
+                onCheckedChange = {
+                    reverseOrder = it
+                    applySorting(selectedSort, reverseOrder)
+                }
             )
         }
+
 
         BoxWithConstraints(
             Modifier.fillMaxSize()
