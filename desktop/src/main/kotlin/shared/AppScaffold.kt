@@ -29,7 +29,7 @@ Used for content which is meant to be sticky (i.e. shown regardless of which scr
 */
 
 @Composable
-fun AppScaffold() {
+fun AppScaffold(StartScreen: Screen) {
     // This allows us to create "sticky" content (stays on all screens regardless of navigation)
 
     val openAlertDialog = remember { mutableStateOf(false) }
@@ -38,25 +38,8 @@ fun AppScaffold() {
 
     // Create the navigator with the starting screen
     Box(modifier = Modifier.fillMaxSize()) {
-        // The navigator goes in the background'
-        var startScreen : Screen = LoginViewScreen()
-
-        val result = loginModel.getUser()
-        if (result!=null){
-            val username = result.first
-            val password = result.second
-            if (dbStorage.authenticate(username, password)) {
-                startScreen = BoardViewScreen()
-                LoginManager.logIn()
-                loginModel.changeCurrentUser(username)
-                initializeModels()
-            }
-        }
-
-
-
-
-        Navigator(startScreen) { _ ->
+        // The navigator goes in the background
+        Navigator(StartScreen) { _ ->
             // CurrentScreen will render the current screen from the navigator
             CurrentScreen()
 

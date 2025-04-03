@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.ui.text.font.FontWeight
+import cafe.adriel.voyager.core.screen.Screen
 import login.view.LoginView
 import login.view.LoginViewScreen
 import kotlin.math.exp
@@ -59,10 +60,24 @@ fun main() {
 
     // Initialize FileKit
     FileKit.init(appId = "cs-346-project")
+
+    // Starting screen
+    var startScreen : Screen = LoginViewScreen()
+
+    val result = loginModel.getUser()
+    if (result!=null){
+        val username = result.first
+        val password = result.second
+        if (dbStorage.authenticate(username, password)) {
+            startScreen = BoardViewScreen()
+            LoginManager.logIn()
+            loginModel.changeCurrentUser(username)
+            initializeModels()
+        }
+    }
     application {
         Window(onCloseRequest = ::exitApplication) {
-            // Starting screen
-            AppScaffold()
+            AppScaffold(startScreen)
         }
     }
 }
