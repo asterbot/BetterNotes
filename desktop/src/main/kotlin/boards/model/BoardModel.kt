@@ -38,7 +38,7 @@ class BoardModel(val persistence: IPersistence) : IPublisher(){
     fun sortByTitle(reverse: Boolean = false) {
         currentSortType = "Title"
         currentIsReversed = reverse
-        sortFunc = { b1, b2 -> b1.name.compareTo(b2.name) }
+        sortFunc = { b1, b2 -> (b1.name.lowercase()).compareTo(b2.name.lowercase()) }
         sortBoardList()
         notifySubscribers()
     }
@@ -83,6 +83,7 @@ class BoardModel(val persistence: IPersistence) : IPublisher(){
             dbQueue.addToQueue(Create(persistence, board))
         }
 
+        sortBoardList()
         notifySubscribers();
     }
 
@@ -96,6 +97,7 @@ class BoardModel(val persistence: IPersistence) : IPublisher(){
         else{
             dbQueue.addToQueue(Delete(persistence, board, noteListDependency = board.notes))
         }
+        sortBoardList()
 
         notifySubscribers();
     }
@@ -110,6 +112,7 @@ class BoardModel(val persistence: IPersistence) : IPublisher(){
             dbQueue.addToQueue(Update(persistence, board,
                 mutableMapOf("name" to name, "desc" to desc, "notes" to board.notes)))
         }
+        sortBoardList()
 
         notifySubscribers();
     }
