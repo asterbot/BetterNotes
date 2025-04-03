@@ -42,7 +42,7 @@ fun ActionMenu(
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
-            modifier = modifier
+            containerColor = Colors.veryLightTeal
         ) {
             DropdownMenuItem(
                 text = { Text("Edit") },
@@ -76,7 +76,8 @@ fun AddNoteMenu(
         }
         DropdownMenu(
             expanded = expanded,
-            onDismissRequest = { expanded = false }
+            onDismissRequest = { expanded = false },
+            containerColor = Colors.veryLightTeal
         ) {
             DropdownMenuItem(
                 text = { Text("Add Section") },

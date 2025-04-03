@@ -71,7 +71,7 @@ fun NoteButton(
             shape = RoundedCornerShape(10.dp),
             colors = ButtonDefaults.buttonColors(
                 // TODO: change colours based on tags? later
-                containerColor = if (note.type=="section") Colors.darkTeal else Colors.medTeal
+                containerColor = if (note.type=="section") Colors.darkGrey else Colors.lightTeal
             )
         ) {
             Column(
@@ -183,9 +183,12 @@ fun IndividualBoardView(
 
     Box(modifier = Modifier.fillMaxSize()) {
         ModalNavigationDrawer(
+            scrimColor = Colors.black.copy(alpha=.2f),
             drawerState = drawerState,
             drawerContent = {
-                ModalDrawerSheet {
+                ModalDrawerSheet(
+                    drawerContainerColor = Colors.veryLightTeal
+                ) {
                     IconButton(
                         onClick = {
                             drawerScope.launch {
@@ -223,7 +226,7 @@ fun IndividualBoardView(
                         Box(
                             Modifier.fillMaxSize()
                                 .padding(15.dp)
-                                .background(Colors.lightGrey)
+                                .background(Colors.lightGrey.times(1.03f).copy(red = Colors.lightGrey.red))
                                 .weight(1f)
                         ) {
                             val state = rememberLazyListState()

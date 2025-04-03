@@ -9,7 +9,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -98,9 +97,9 @@ fun AppScaffold(StartScreen: Screen) {
                             ) {
                                 Text("Dismiss")
                             }
-                        }
+                        },
+                        containerColor = Colors.veryLightTeal
                     )
-
                 }
             }
         }
@@ -239,7 +238,8 @@ fun userButton(modifier: Modifier = Modifier){
 
         DropdownMenu(
             expanded = expanded,
-            onDismissRequest = { expanded = false }
+            onDismissRequest = { expanded = false },
+            containerColor = Colors.veryLightTeal
         ) {
             // Add the greeting item at the top of the dropdown
             DropdownMenuItem(
@@ -255,7 +255,7 @@ fun userButton(modifier: Modifier = Modifier){
                 )
             )
 
-            HorizontalDivider(thickness = 2.dp)
+            HorizontalDivider(thickness = 2.dp, color = Colors.lightGrey.times(0.6f))
 
             DropdownMenuItem(
                 text = { Text("Change Password") },
@@ -274,7 +274,7 @@ fun userButton(modifier: Modifier = Modifier){
                 }
             )
 
-            HorizontalDivider(thickness = 2.dp)
+            HorizontalDivider(thickness = 2.dp, color = Colors.lightGrey.times(0.6f))
 
             DropdownMenuItem(
                 text = { Text("Delete Account", color = Colors.errorColor) },
@@ -334,7 +334,7 @@ fun userButton(modifier: Modifier = Modifier){
                         else{
                             incorrectPasswordError.value = true
                         }
-                 },
+                 }
             )
         }
         openUnsafePasswordWarning.value -> {

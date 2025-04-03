@@ -241,7 +241,8 @@ fun ArticleCompose(board: Board, article: Note) {
                     }
                     DropdownMenu(
                         expanded = relatedNotesExpanded,
-                        onDismissRequest = { relatedNotesExpanded = false }
+                        onDismissRequest = { relatedNotesExpanded = false },
+                        containerColor = Colors.veryLightTeal
                     ) {
                         relatedNotes?.forEach { currNote ->
                             DropdownMenuItem(

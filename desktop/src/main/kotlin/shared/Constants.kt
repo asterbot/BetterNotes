@@ -6,13 +6,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
 object Colors {
-    val lightTeal: Color = Color(0xffB1CCD3)
-    val medTeal: Color = Color(0xff2C666E)
-    val darkTeal: Color = Color(0xff07393C)
-    val black: Color = Color(0xff0a090C)
-    val white: Color = Color(0xffFFFCFD)
-    val lightGrey: Color = Color(0xffF0EDEE)
-    val darkGrey: Color = Color(0xff333333)
+    val veryLightTeal: Color = Color(0xFFF6FBFC)
+    val lightTeal: Color = Color(0xFFB1CCD3)
+    val medTeal: Color = Color(0xFF2C666E)
+    val darkTeal: Color = Color(0xFF07393C)
+    val black: Color = Color(0xFF0A090C)
+    val white: Color = Color(0xFFFFFCFD)
+    val lightGrey: Color = Color(0xFFE0E0E0)
+    val darkGrey: Color = Color(0xFF333333)
     val errorColor: Color = Color(0xFFCF0000)
 }
 
@@ -61,7 +62,9 @@ fun textFieldColours() : androidx.compose.material3.TextFieldColors {
         unfocusedLabelColor = Colors.darkGrey,
         errorIndicatorColor = Colors.errorColor,
         errorLabelColor = Colors.errorColor,
-        errorCursorColor = Colors.errorColor
+        errorCursorColor = Colors.errorColor,
+        unfocusedContainerColor = Colors.veryLightTeal,
+        focusedContainerColor = Colors.veryLightTeal.times(0.9f)
     )
 }
 
@@ -73,3 +76,10 @@ fun checkboxColours(): CheckboxColors {
         uncheckedColor = Colors.darkTeal
     )
 }
+
+
+fun Color.times(factor: Float) = copy(
+    red = (red * factor).coerceIn(0f, 1f),
+    green = (green * factor).coerceIn(0f, 1f),
+    blue = (blue * factor).coerceIn(0f, 1f),
+)

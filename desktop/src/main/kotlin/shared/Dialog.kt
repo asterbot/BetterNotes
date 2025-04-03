@@ -54,7 +54,8 @@ fun ConfirmationDialog(
             ) {
                 Text("Cancel")
             }
-        }
+        },
+        containerColor = Colors.veryLightTeal
     )
 }
 
@@ -130,7 +131,8 @@ fun AddBoardDialog(
             ) {
                 Text("Cancel")
             }
-        }
+        },
+        containerColor = Colors.veryLightTeal
     )
 }
 
@@ -276,7 +278,8 @@ fun AddNoteDialog(
             ) {
                 Text("Cancel")
             }
-        }
+        },
+        containerColor = Colors.veryLightTeal
     )
 }
 
@@ -355,7 +358,8 @@ fun EditBoardDialog(
             ) {
                 Text("Cancel")
             }
-        }
+        },
+        containerColor = Colors.veryLightTeal
     )
 }
 
@@ -499,7 +503,8 @@ fun EditNoteDialog(
             ) {
                 Text("Cancel")
             }
-        }
+        },
+        containerColor = Colors.veryLightTeal
     )
 }
 
@@ -531,79 +536,84 @@ fun SignUpDialog(
 
     var passwordVisible by remember { mutableStateOf(false) }
 
-        AlertDialog(
-            icon = { Icons.Default.Add },
-            title = { Text(text = "Sign up!") },
-            text = {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    // Input field for title
-                    OutlinedTextField(
-                        value = username,
-                        onValueChange = { username = it },
-                        label = { Text("Username", color = Colors.darkGrey) },
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Email,
-                            imeAction = ImeAction.Next
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    // Input field for description
-                    OutlinedTextField(
-                        value = password,
-                        onValueChange = {
-                            password = it
-                        },
-                        label = { Text("Password", color = Colors.darkGrey) },
-                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Password,
-                            imeAction = ImeAction.Done
-                        ),
-                        trailingIcon = {
-                            androidx.compose.material.IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                                androidx.compose.material.Icon(
-                                    imageVector = if (passwordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
-                                    contentDescription = if (passwordVisible) "Hide password" else "Show password"
-                                )
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    PasswordCriteriaDisplay(password.text)
-                }
-            },
-            onDismissRequest = {
-                onDismissRequest()
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        onConfirmation(
-                            username.text,
-                            password.text,
-                        )
-                        username = TextFieldValue("")
-                        password = TextFieldValue("")
-                    }
-                ) {
-                    Text("Create Account!")
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = {
-                        onDismissRequest()
-                        username = TextFieldValue("")
-                        password = TextFieldValue("")
-                    }
-                ) {
-                    Text("Cancel")
-                }
+    AlertDialog(
+        icon = { Icons.Default.Add },
+        title = { Text(text = "Sign up!") },
+        text = {
+            Column(modifier = Modifier.padding(16.dp)) {
+                // Input field for title
+                OutlinedTextField(
+                    colors = outlinedTextFieldColours(),
+                    value = username,
+                    onValueChange = { username = it },
+                    label = { Text("Username", color = Colors.darkGrey) },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Email,
+                        imeAction = ImeAction.Next
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                // Input field for description
+                OutlinedTextField(
+                    colors = outlinedTextFieldColours(),
+                    value = password,
+                    onValueChange = {
+                        password = it
+                    },
+                    label = { Text("Password", color = Colors.darkGrey) },
+                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Done
+                    ),
+                    trailingIcon = {
+                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                            Icon(
+                                imageVector = if (passwordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                contentDescription = if (passwordVisible) "Hide password" else "Show password"
+                            )
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                PasswordCriteriaDisplay(password.text)
             }
-        )
-    }
+        },
+        onDismissRequest = {
+            onDismissRequest()
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onConfirmation(
+                        username.text,
+                        password.text,
+                    )
+                    username = TextFieldValue("")
+                    password = TextFieldValue("")
+                },
+                colors = transparentTextButtonColours()
+            ) {
+                Text("Create Account!")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = {
+                    onDismissRequest()
+                    username = TextFieldValue("")
+                    password = TextFieldValue("")
+                },
+                colors = transparentTextButtonColours()
+            ) {
+                Text("Cancel")
+            }
+        },
+        containerColor = Colors.veryLightTeal
+    )
+}
 
 @Composable
 fun WarningDialog(
@@ -632,7 +642,8 @@ fun WarningDialog(
             ) {
                 Text("OK")
             }
-        }
+        },
+        containerColor = Colors.veryLightTeal
     )
 }
 
@@ -760,7 +771,8 @@ fun ChangePasswordDialog(
             ) {
                 Text("Cancel")
             }
-        }
+        },
+        containerColor = Colors.veryLightTeal
     )
 }
 
@@ -831,6 +843,7 @@ fun DeleteAccountDialog(
             ) {
                 Text("Cancel")
             }
-        }
+        },
+        containerColor = Colors.veryLightTeal
     )
 }

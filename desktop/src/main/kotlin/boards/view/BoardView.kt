@@ -98,7 +98,7 @@ fun BoardsView() {
     }
 
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize().background(Colors.veryLightTeal),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(text = "Boards", style = MaterialTheme.typography.h2)
@@ -106,7 +106,7 @@ fun BoardsView() {
         Box(
             Modifier.fillMaxSize()
                 .padding(15.dp)
-                .background(Colors.lightGrey)
+                .background(Colors.lightGrey.times(1.03f).copy(red = Colors.lightGrey.red))
                 .weight(1f)
         ) {
             val state = rememberLazyGridState()
