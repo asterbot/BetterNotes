@@ -2,6 +2,7 @@ package boards.view
 
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -9,25 +10,24 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.MaterialTheme
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.foundation.clickable
+import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
-import androidx.compose.ui.graphics.Color
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import boards.entities.Board
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import individual_board.view.IndividualBoardScreen
 import org.bson.types.ObjectId
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.sp
 import shared.*
 
 class BoardViewScreen: Screen{
@@ -56,7 +56,10 @@ fun BoardButton(
                 ScreenManager.push(navigator, IndividualBoardScreen(board))
             },
             modifier = Modifier.fillMaxSize(),
-            shape = RoundedCornerShape(10.dp)
+            shape = RoundedCornerShape(10.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Colors.medTeal
+            )
         ) {
             Column(
                 modifier = Modifier.padding(10.dp),
@@ -144,7 +147,7 @@ fun BoardsView() {
     }
 
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize().background(Colors.veryLightTeal),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(text = "Boards", style = MaterialTheme.typography.h2)
@@ -158,13 +161,14 @@ fun BoardsView() {
                 Icon(
                     imageVector = Icons.Default.Search,
                     contentDescription = "Search",
-                    tint = androidx.compose.material3.MaterialTheme.colorScheme.primary
+                    tint = Colors.medTeal
                 )
             },
             shape = RoundedCornerShape(16.dp),
             modifier = Modifier
                 .fillMaxWidth(0.5f)
-                .padding(8.dp)
+                .padding(8.dp),
+            colors = outlinedTextFieldColours()
         )
 
         // Sorting
@@ -181,7 +185,7 @@ fun BoardsView() {
                 Text(
                     text = selectedSort,
                     modifier = Modifier
-                        .background(Color.LightGray, shape = RoundedCornerShape(4.dp))
+                        .background(Colors.lightGrey, shape = RoundedCornerShape(4.dp))
                         .padding(8.dp)
                         .clickable {
                             expandedSort = true
@@ -189,7 +193,8 @@ fun BoardsView() {
                 )
                 DropdownMenu(
                     expanded = expandedSort,
-                    onDismissRequest = { expandedSort = false }
+                    onDismissRequest = { expandedSort = false },
+                    containerColor = Colors.veryLightTeal
                 ) {
                     sortOptions.forEach { option ->
                         DropdownMenuItem(
@@ -213,7 +218,8 @@ fun BoardsView() {
                 onCheckedChange = {
                     reverseOrder = it
                     applySorting(selectedSort, reverseOrder)
-                }
+                },
+                colors = switchColours(),
             )
         }
 
@@ -221,7 +227,7 @@ fun BoardsView() {
         BoxWithConstraints(
             Modifier.fillMaxSize()
                 .padding(15.dp)
-                .background(Colors.lightGrey)
+                .background(Colors.lightGrey.times(1.03f).copy(red = Colors.lightGrey.red))
                 .weight(1f)
         ) {
             val maxWidthDp = maxWidth
