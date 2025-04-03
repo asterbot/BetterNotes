@@ -12,6 +12,8 @@ import java.time.Instant
 
 class BoardModel(val persistence: IPersistence) : IPublisher(){
     var boardList = mutableListOf<Board>();
+    var sortFunc: (Board, Board) -> Int = { b1, b2 -> b1.name.compareTo(b2.name) }
+    var currentSortType: String = "Title"
 
     init {
         persistence.connect()
@@ -24,6 +26,43 @@ class BoardModel(val persistence: IPersistence) : IPublisher(){
             boardList = persistence.readBoards().toMutableList()
             notifySubscribers()
         }
+    }
+
+    // Sorting functions
+    private fun sortBoardList() {
+        boardList.sortWith(sortFunc)
+    }
+
+    fun sortByTitle(reverse: Boolean = false) {
+        currentSortType = "Title"
+        sortFunc = { b1, b2 -> b1.name.compareTo(b2.name) }
+        sortBoardList()
+        if (reverse) boardList.reverse()
+        notifySubscribers()
+    }
+
+    fun sortByDatetimeAccessed(reverse: Boolean = false) {
+        currentSortType = "Time Accessed"
+        sortFunc = { b1, b2 -> b2.datetimeAccessed.compareTo(b1.datetimeAccessed) }
+        sortBoardList()
+        if (reverse) boardList.reverse()
+        notifySubscribers()
+    }
+
+    fun sortByDatetimeCreated(reverse: Boolean = false) {
+        currentSortType = "Time Created"
+        sortFunc = { b1, b2 -> b2.datetimeCreated.compareTo(b1.datetimeCreated) }
+        sortBoardList()
+        if (reverse) boardList.reverse()
+        notifySubscribers()
+    }
+
+    fun sortByDatetimeUpdated(reverse: Boolean = false) {
+        currentSortType = "Time Updated"
+        sortFunc = { b1, b2 -> b2.datetimeUpdated.compareTo(b1.datetimeUpdated) }
+        sortBoardList()
+        if (reverse) boardList.reverse()
+        notifySubscribers()
     }
 
 
