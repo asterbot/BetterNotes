@@ -1,16 +1,16 @@
 package shared
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.input.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -39,7 +39,8 @@ fun ConfirmationDialog(
             TextButton(
                 onClick = {
                     onConfirmation()
-                }
+                },
+                colors = transparentTextButtonColours()
             ) {
                 Text("Confirm")
             }
@@ -48,7 +49,8 @@ fun ConfirmationDialog(
             TextButton(
                 onClick = {
                     onDismissRequest()
-                }
+                },
+                colors = transparentTextButtonColours()
             ) {
                 Text("Cancel")
             }
@@ -77,18 +79,20 @@ fun AddBoardDialog(
                     onValueChange = { newText ->
                         boardName = newText
                         isError = newText.text.isBlank()
-                                    },
-                    label = { androidx.compose.material.Text("Board Name") },
+                    },
+                    label = { Text("Board Name", color = Colors.darkGrey) },
                     modifier = Modifier.fillMaxWidth(),
                     isError = isError,
+                    colors = textFieldColours()
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 // Input field for description
                 TextField(
                     value = boardDesc,
                     onValueChange = { boardDesc = it },
-                    label = { androidx.compose.material.Text("Board Description") },
-                    modifier = Modifier.fillMaxWidth()
+                    label = { Text("Board Description", color = Colors.darkGrey) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = textFieldColours()
                 )
             }
         },
@@ -109,7 +113,8 @@ fun AddBoardDialog(
                         boardName = TextFieldValue("")
                         boardDesc = TextFieldValue("")
                     }
-                }
+                },
+                colors = transparentTextButtonColours()
             ) {
                 Text("Add")
             }
@@ -120,7 +125,8 @@ fun AddBoardDialog(
                     onDismissRequest()
                     boardName = TextFieldValue("")
                     boardDesc = TextFieldValue("")
-                }
+                },
+                colors = transparentTextButtonColours()
             ) {
                 Text("Cancel")
             }
@@ -163,25 +169,28 @@ fun AddNoteDialog(
                         noteTitle = newText
                         isError = newText.text.isBlank()
                     },
-                    label = { androidx.compose.material.Text("Note Title") },
+                    label = { Text("Note Title", color = Colors.darkGrey) },
                     modifier = Modifier.fillMaxWidth(),
                     isError = isError,
+                    colors = textFieldColours()
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 // Input field for description
                 TextField(
                     value = noteDesc,
                     onValueChange = { noteDesc = it },
-                    label = { androidx.compose.material.Text("Note Description") },
-                    modifier = Modifier.fillMaxWidth()
+                    label = { Text("Note Description", color=Colors.darkGrey) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = textFieldColours()
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 // Autocomplete field for related notes
                 TextField(
                     value = query,
                     onValueChange = { query = it },
-                    label = { androidx.compose.material.Text("Add Related Note") },
-                    modifier = Modifier.fillMaxWidth()
+                    label = { Text("Add Related Note", color=Colors.darkGrey) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = textFieldColours()
                 )
                 LazyColumn {
                     items(suggestions) { note ->
@@ -205,7 +214,7 @@ fun AddNoteDialog(
                 Spacer(modifier = Modifier.height(8.dp))
                 // Display selected related notes as chips (or simple texts)
                 if (relatedNotes.isNotEmpty()) {
-                    Text("Related Notes:")
+                    Text("Related Notes:", color=Colors.darkGrey)
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
                         relatedNotes.forEach { note ->
                             Surface(
@@ -217,11 +226,12 @@ fun AddNoteDialog(
                                         suggestions = suggestions.filter { it !in relatedNotes }
                                     },
                                 shape = MaterialTheme.shapes.small,
-                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                                color = Colors.medTeal.copy(alpha=.2f)
                             ) {
                                 Text(
                                     text = note.title,
-                                    modifier = Modifier.padding(8.dp)
+                                    modifier = Modifier.padding(8.dp),
+                                    color = Colors.medTeal.copy(alpha=.2f)
                                 )
                             }
                         }
@@ -248,7 +258,8 @@ fun AddNoteDialog(
                         noteDesc = TextFieldValue("")
                         relatedNotes = emptyList()
                     }
-                }
+                },
+                colors = transparentTextButtonColours()
             ) {
                 Text("Add")
             }
@@ -260,7 +271,8 @@ fun AddNoteDialog(
                     noteTitle = TextFieldValue("")
                     noteDesc = TextFieldValue("")
                     relatedNotes = emptyList()
-                }
+                },
+                colors = transparentTextButtonColours()
             ) {
                 Text("Cancel")
             }
@@ -292,17 +304,19 @@ fun EditBoardDialog(
                         newBoardName = newText
                         isError = newText.text.isBlank()
                     },
-                    label = { androidx.compose.material.Text("Board Name") },
+                    label = { Text("Board Name", color = Colors.darkGrey) },
                     modifier = Modifier.fillMaxWidth(),
                     isError = isError,
+                    colors = textFieldColours()
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 // Input field for description
                 TextField(
                     value = newBoardDesc,
                     onValueChange = { newBoardDesc = it },
-                    label = { androidx.compose.material.Text("Board Description") },
-                    modifier = Modifier.fillMaxWidth()
+                    label = { Text("Board Description", color = Colors.darkGrey) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = textFieldColours()
                 )
             }
         },
@@ -323,7 +337,8 @@ fun EditBoardDialog(
                         newBoardName = TextFieldValue("")
                         newBoardDesc = TextFieldValue("")
                     }
-                }
+                },
+                colors = transparentTextButtonColours()
             ) {
                 Text("Save")
             }
@@ -335,7 +350,8 @@ fun EditBoardDialog(
                     onDismissRequest()
                     newBoardName = TextFieldValue("")
                     newBoardDesc = TextFieldValue("")
-                }
+                },
+                colors = transparentTextButtonColours()
             ) {
                 Text("Cancel")
             }
@@ -369,7 +385,7 @@ fun EditNoteDialog(
     }
 
     AlertDialog(
-        icon = { Icon(Icons.Default.Edit, contentDescription = null) },
+        icon = { Icons.Default.Edit },
         title = { Text(text = "Edit ${type}") },
         text = {
             Column(modifier = Modifier.padding(16.dp)) {
@@ -380,25 +396,28 @@ fun EditNoteDialog(
                         newNoteTitle = newText
                         isError = newText.text.isBlank()
                     },
-                    label = { androidx.compose.material.Text("Note Title") },
+                    label = { Text("Note Title", color = Colors.darkGrey) },
                     modifier = Modifier.fillMaxWidth(),
                     isError = isError,
+                    colors = textFieldColours()
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 // Description field
                 TextField(
                     value = newNoteDesc,
                     onValueChange = { newNoteDesc = it },
-                    label = { androidx.compose.material.Text("Note Description") },
-                    modifier = Modifier.fillMaxWidth()
+                    label = { Text("Note Description", color = Colors.darkGrey) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = textFieldColours()
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 // Related note search input
                 TextField(
                     value = query,
                     onValueChange = { query = it },
-                    label = { androidx.compose.material.Text("Add Related Note") },
-                    modifier = Modifier.fillMaxWidth()
+                    label = { Text("Add Related Note", color = Colors.darkGrey) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = textFieldColours()
                 )
                 // Suggestions list
                 LazyColumn {
@@ -432,7 +451,7 @@ fun EditNoteDialog(
                                         suggestions = onGetOtherNotes(query).filter { it !in relatedNotes }
                                     },
                                 shape = MaterialTheme.shapes.small,
-                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                                color = Colors.medTeal.copy(alpha = 0.2f)
                             ) {
                                 Text(
                                     text = note.title,
@@ -462,7 +481,8 @@ fun EditNoteDialog(
                         newNoteDesc = TextFieldValue("")
                         relatedNotes.clear()
                     }
-                }
+                },
+                colors = transparentTextButtonColours()
             ) {
                 Text("Save")
             }
@@ -474,7 +494,8 @@ fun EditNoteDialog(
                     newNoteTitle = TextFieldValue("")
                     newNoteDesc = TextFieldValue("")
                     relatedNotes.clear()
-                }
+                },
+                colors = transparentTextButtonColours()
             ) {
                 Text("Cancel")
             }
@@ -487,7 +508,7 @@ fun PasswordCriteriaDisplay(password: String){
     Text("Password must contain:")
     val result = loginModel.passwordCriteriaMet(password)
     loginModel.passwordCriteria.forEachIndexed { i, criteria ->
-        val color = if (result[i]) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+        val color = if (result[i]) Colors.medTeal else Colors.errorColor
         Row{
             Icon(imageVector = if (result[i]) Icons.Default.Done else Icons.Default.Close,
                 contentDescription = criteria.first,
@@ -519,7 +540,7 @@ fun SignUpDialog(
                     OutlinedTextField(
                         value = username,
                         onValueChange = { username = it },
-                        label = { Text("Username") },
+                        label = { Text("Username", color = Colors.darkGrey) },
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Email,
                             imeAction = ImeAction.Next
@@ -533,7 +554,7 @@ fun SignUpDialog(
                         onValueChange = {
                             password = it
                         },
-                        label = { androidx.compose.material.Text("Password") },
+                        label = { Text("Password", color = Colors.darkGrey) },
                         visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Password,
@@ -606,7 +627,8 @@ fun WarningDialog(
             TextButton(
                 onClick = {
                     onConfirmation()
-                }
+                },
+                colors = transparentTextButtonColours()
             ) {
                 Text("OK")
             }
@@ -639,49 +661,51 @@ fun ChangePasswordDialog(
                 OutlinedTextField(
                     value = oldPassword,
                     onValueChange = { oldPassword = it },
-                    label = { androidx.compose.material.Text("Old Password") },
+                    label = { Text("Old Password", color = Colors.darkGrey) },
                     visualTransformation = if (passwordVisible1) VisualTransformation.None else PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Password,
                         imeAction = ImeAction.Done
                     ),
                     trailingIcon = {
-                        androidx.compose.material.IconButton(onClick = { passwordVisible1 = !passwordVisible1 }) {
-                            androidx.compose.material.Icon(
+                        IconButton(onClick = { passwordVisible1 = !passwordVisible1 }) {
+                            Icon(
                                 imageVector = if (passwordVisible1) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
                                 contentDescription = if (passwordVisible1) "Hide password" else "Show password"
                             )
                         }
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = outlinedTextFieldColours()
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 // Input field for description
                 OutlinedTextField(
                     value = newPassword,
                     onValueChange = { newPassword = it },
-                    label = { androidx.compose.material.Text("New Password") },
+                    label = { Text("New Password", color = Colors.darkGrey) },
                     visualTransformation = if (passwordVisible2) VisualTransformation.None else PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Password,
                         imeAction = ImeAction.Done
                     ),
                     trailingIcon = {
-                        androidx.compose.material.IconButton(onClick = { passwordVisible2 = !passwordVisible2 }) {
-                            androidx.compose.material.Icon(
+                        IconButton(onClick = { passwordVisible2 = !passwordVisible2 }) {
+                            Icon(
                                 imageVector = if (passwordVisible2) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
                                 contentDescription = if (passwordVisible2) "Hide password" else "Show password"
                             )
                         }
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = outlinedTextFieldColours()
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 // Input field for description
                 OutlinedTextField(
                     value = confirmPassword,
                     onValueChange = { confirmPassword = it },
-                    label = { androidx.compose.material.Text("Confirm New Password") },
+                    label = { Text("Confirm New Password", color = Colors.darkGrey) },
                     visualTransformation = if (passwordVisible3) VisualTransformation.None else PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Password,
@@ -695,7 +719,8 @@ fun ChangePasswordDialog(
                             )
                         }
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = outlinedTextFieldColours()
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 // Password verifier
@@ -717,7 +742,8 @@ fun ChangePasswordDialog(
                         newPassword = TextFieldValue("")
                         confirmPassword = TextFieldValue("")
                     }
-                }
+                },
+                colors = transparentTextButtonColours()
             ) {
                 Text("Change Password!")
             }
@@ -729,7 +755,8 @@ fun ChangePasswordDialog(
                     oldPassword = TextFieldValue("")
                     newPassword = TextFieldValue("")
                     confirmPassword = TextFieldValue("")
-                }
+                },
+                colors = transparentTextButtonColours()
             ) {
                 Text("Cancel")
             }
@@ -753,25 +780,26 @@ fun DeleteAccountDialog(
         text = {
             Column(modifier = Modifier.padding(16.dp)) {
                 // Input field for title
-                Text("This will delete EVERYTHING you own. Are you sure?", color = Color.Red)
+                Text("This will delete EVERYTHING you own. Are you sure?", color = Colors.errorColor)
                 OutlinedTextField(
                     value = currentPassword,
                     onValueChange = { currentPassword = it },
-                    label = { androidx.compose.material.Text("Confirm Password") },
+                    label = { Text("Confirm Password", color=Colors.darkGrey)},
                     visualTransformation = if (passwordVisible1) VisualTransformation.None else PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Password,
                         imeAction = ImeAction.Done
                     ),
                     trailingIcon = {
-                        androidx.compose.material.IconButton(onClick = { passwordVisible1 = !passwordVisible1 }) {
-                            androidx.compose.material.Icon(
+                        IconButton(onClick = { passwordVisible1 = !passwordVisible1 }) {
+                            Icon(
                                 imageVector = if (passwordVisible1) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
                                 contentDescription = if (passwordVisible1) "Hide password" else "Show password"
                             )
                         }
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = outlinedTextFieldColours()
                 )
             }
         },
@@ -787,7 +815,8 @@ fun DeleteAccountDialog(
                         onConfirmation(currentPassword.text)
                         currentPassword = TextFieldValue("")
                     }
-                }
+                },
+                colors = transparentTextButtonColours()
             ) {
                 Text("Goodbye, World!")
             }
@@ -797,7 +826,8 @@ fun DeleteAccountDialog(
                 onClick = {
                     onDismissRequest()
                     currentPassword = TextFieldValue("")
-                }
+                },
+                colors = transparentTextButtonColours()
             ) {
                 Text("Cancel")
             }

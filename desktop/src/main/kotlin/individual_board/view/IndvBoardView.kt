@@ -14,15 +14,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import article.view.ArticleScreen
 import boards.entities.Board
 import boards.view.BoardViewScreen
@@ -50,26 +45,6 @@ internal fun Float.pxToDp(): Dp {
     return (this / LocalDensity.current.density).dp
 }
 
-@Composable
-fun AddNoteOptions(
-    onAddSection: () -> Unit,
-    onAddArticle: () -> Unit
-) {
-    Column {
-        Button(
-            onClick = onAddSection,
-            modifier = Modifier.padding(8.dp)
-        ) {
-            Text("Add Section")
-        }
-        Button(
-            onClick = onAddArticle,
-            modifier = Modifier.padding(8.dp)
-        ) {
-            Text("Add Article")
-        }
-    }
-}
 
 @Composable
 fun NoteButton(
@@ -80,10 +55,11 @@ fun NoteButton(
 ) {
     val navigator = LocalNavigator.currentOrThrow
     Box (
-        modifier = Modifier.padding(15.dp),
+        modifier = Modifier.padding(horizontal=20.dp, vertical=5.dp)
     ) {
         Button(
-            modifier = Modifier.padding(15.dp)
+            modifier = Modifier
+                .padding(15.dp)
                 .fillMaxWidth(0.9f),
             onClick = {
                 println("DEBUG: Clicked ${note.title}")
@@ -94,7 +70,8 @@ fun NoteButton(
             },
             shape = RoundedCornerShape(10.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = if (note.type=="section") Colors.darkTeal else Colors.lightTeal
+                // TODO: change colours based on tags? later
+                containerColor = if (note.type=="section") Colors.darkTeal else Colors.medTeal
             )
         ) {
             Column(
@@ -105,13 +82,19 @@ fun NoteButton(
                 note.desc?.let { Text(it, textAlign = TextAlign.Center) }
             }
         }
-        ActionMenu(
-            onEdit = { onEdit(note) },
-            onDelete = { onDelete(note) },
+        Box(
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .padding(16.dp)
-        )
+                .padding(10.dp)
+        ) {
+            ActionMenu(
+                onEdit = { onEdit(note) },
+                onDelete = { onDelete(note) },
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(4.dp)
+            )
+        }
     }
 }
 
@@ -152,8 +135,6 @@ fun IndividualBoardView(
 
     val drawerState = rememberDrawerState(DrawerValue.Open)
     val drawerScope = rememberCoroutineScope()
-    val drawerWidth = remember { mutableStateOf(300.dp) } // Initial width
-    val isDragging = remember { mutableStateOf(false) }
 
     individualBoardViewModel = IndvBoardViewModel(individualBoardModel, board.id)
 
@@ -231,9 +212,10 @@ fun IndividualBoardView(
                             modifier = Modifier.padding(10.dp)
                         )
 
-                        Button(
+                        TextButton(
                             onClick = { ScreenManager.push(navigator, BoardViewScreen()) },
-                            modifier = Modifier.padding(2.dp)
+                            modifier = Modifier.padding(2.dp),
+                            colors = textButtonColours()
                         ) {
                             Text("Back to All Boards")
                         }
@@ -241,7 +223,7 @@ fun IndividualBoardView(
                         Box(
                             Modifier.fillMaxSize()
                                 .padding(15.dp)
-                                .background(Color(0xFFF0EDEE))
+                                .background(Colors.lightGrey)
                                 .weight(1f)
                         ) {
                             val state = rememberLazyListState()

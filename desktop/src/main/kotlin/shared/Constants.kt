@@ -1,10 +1,7 @@
 package shared
 import androidx.compose.material.TextFieldColors
 import androidx.compose.material.TextFieldDefaults.outlinedTextFieldColors
-import androidx.compose.material3.ButtonColors
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.IconButtonColors
-import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
@@ -16,6 +13,7 @@ object Colors {
     val white: Color = Color(0xffFFFCFD)
     val lightGrey: Color = Color(0xffF0EDEE)
     val darkGrey: Color = Color(0xff333333)
+    val errorColor: Color = Color(0xFFCF0000)
 }
 
 @Composable
@@ -23,6 +21,14 @@ fun textButtonColours(): ButtonColors {
     return ButtonDefaults.buttonColors(
         containerColor = Colors.medTeal,
         contentColor = Colors.white
+    )
+}
+
+@Composable
+fun transparentTextButtonColours(): ButtonColors {
+    return ButtonDefaults.buttonColors(
+        containerColor = Color.Transparent,
+        contentColor = Colors.medTeal
     )
 }
 
@@ -43,5 +49,27 @@ fun outlinedTextFieldColours(): TextFieldColors {
         focusedLabelColor = Colors.medTeal,
         unfocusedLabelColor = Colors.darkGrey,
         cursorColor = Colors.black
+    )
+}
+
+@Composable
+fun textFieldColours() : androidx.compose.material3.TextFieldColors {
+    return TextFieldDefaults.colors(
+        cursorColor = Color.Black,
+        focusedLabelColor = Colors.darkGrey,
+        focusedIndicatorColor = Colors.medTeal,
+        unfocusedLabelColor = Colors.darkGrey,
+        errorIndicatorColor = Colors.errorColor,
+        errorLabelColor = Colors.errorColor,
+        errorCursorColor = Colors.errorColor
+    )
+}
+
+@Composable
+fun checkboxColours(): CheckboxColors {
+    return CheckboxDefaults.colors(
+        checkmarkColor = Color.White,
+        checkedColor = Colors.medTeal,
+        uncheckedColor = Colors.darkTeal
     )
 }

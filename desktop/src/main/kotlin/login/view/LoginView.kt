@@ -121,6 +121,7 @@ fun LoginView(){
                     verticalAlignment = Alignment.CenterVertically,
                 ){
                     Checkbox(
+                        colors = checkboxColours(),
                         checked = keepSignedIn.value,
                         onCheckedChange = { keepSignedIn.value = it }
                     )

@@ -332,6 +332,12 @@ fun BlockFrame(
 ) {
     var block by remember { mutableStateOf(articleViewModel.contentBlocksList[blockIndex]) }
 
+    val backgroundColor = if (isSelected) Colors.lightTeal.copy(
+        red = Colors.lightTeal.red * 0.9f,
+        blue = Colors.lightTeal.blue * 0.9f,
+        green = Colors.lightTeal.green * 0.9f
+    ) else Colors.lightTeal
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -349,21 +355,21 @@ fun BlockFrame(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(4.dp)
-                            .background(if (glueParam) Colors.lightTeal else Colors.medTeal)
+                            .background(if (glueParam) backgroundColor else Colors.medTeal)
                     )
                 }
                 Spacer(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height((if (glueParam) 0 else 25).dp)
-                        .background(Colors.lightTeal)
+                        .background(backgroundColor)
                 )
                 if (dir == "Below") {
                     Spacer(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(4.dp)
-                            .background(if (glueParam) Colors.lightTeal else Colors.medTeal)
+                            .background(if (glueParam) backgroundColor else Colors.medTeal)
                     )
                 }
             }
@@ -373,7 +379,7 @@ fun BlockFrame(
 
             Box(
                 modifier = Modifier
-                    .background(Colors.lightTeal)
+                    .background(backgroundColor)
                     .padding(horizontal=5.dp)
                     .clip(RoundedCornerShape(5.dp)),
             ) {
@@ -1044,13 +1050,13 @@ fun BlockFrameMenu(index: Int, buttonFuncs: Map<String, (Int) -> Unit>, numConte
             IconButton(
                 onClick = { onClick?.invoke(index) },
                 colors = iconButtonColours(),
-                modifier = Modifier.hoverable(interactionSource = interactionSource).size(40.dp),
+                modifier = Modifier.hoverable(interactionSource = interactionSource).size(45.dp),
                 enabled = !disabledCond
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = desc,
-                    modifier = Modifier.size(25.dp)
+                    modifier = Modifier.size(30.dp)
                 )
             }
         }
@@ -1167,12 +1173,12 @@ fun AddBlockFrameButton(article: Note, index: Int, direction: String, selectAtIn
         IconButton(
             onClick = { showBlockTypes = !showBlockTypes },
             colors = iconButtonColours(),
-            modifier = Modifier.hoverable(interactionSource = interactionSource).size(40.dp)
+            modifier = Modifier.hoverable(interactionSource = interactionSource).size(45.dp)
         ) {
             Icon(
                 imageVector = Icons.Default.Add,
                 contentDescription = "Add Block Type",
-                modifier = Modifier.size(30.dp)
+                modifier = Modifier.size(35.dp)
             )
         }
 

@@ -10,11 +10,11 @@ import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import boards.entities.Board
@@ -51,7 +51,10 @@ fun BoardButton(
                 ScreenManager.push(navigator, IndividualBoardScreen(board))
             },
             modifier = Modifier.fillMaxSize(),
-            shape = RoundedCornerShape(10.dp)
+            shape = RoundedCornerShape(10.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Colors.medTeal
+            )
         ) {
             Column(
                 modifier = Modifier.padding(15.dp),
@@ -103,7 +106,7 @@ fun BoardsView() {
         Box(
             Modifier.fillMaxSize()
                 .padding(15.dp)
-                .background(Color(0xFFF0EDEE))
+                .background(Colors.lightGrey)
                 .weight(1f)
         ) {
             val state = rememberLazyGridState()

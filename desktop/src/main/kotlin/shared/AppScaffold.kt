@@ -20,7 +20,6 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import individual_board.view.IndividualBoardScreen
-import login.model.LoginModel
 import login.view.LoginViewScreen
 
 
@@ -29,7 +28,7 @@ Used for content which is meant to be sticky (i.e. shown regardless of which scr
 */
 
 @Composable
-fun AppScaffold() {
+fun AppScaffold(StartScreen: Screen) {
     // This allows us to create "sticky" content (stays on all screens regardless of navigation)
 
     val openAlertDialog = remember { mutableStateOf(false) }
@@ -38,25 +37,8 @@ fun AppScaffold() {
 
     // Create the navigator with the starting screen
     Box(modifier = Modifier.fillMaxSize()) {
-        // The navigator goes in the background'
-        var startScreen : Screen = LoginViewScreen()
-
-        val result = loginModel.getUser()
-        if (result!=null){
-            val username = result.first
-            val password = result.second
-            if (dbStorage.authenticate(username, password)) {
-                startScreen = BoardViewScreen()
-                LoginManager.logIn()
-                loginModel.changeCurrentUser(username)
-                initializeModels()
-            }
-        }
-
-
-
-
-        Navigator(startScreen) { _ ->
+        // The navigator goes in the background
+        Navigator(StartScreen) { _ ->
             // CurrentScreen will render the current screen from the navigator
             CurrentScreen()
 
@@ -142,7 +124,7 @@ fun DBStatus(
             ConnectionStatus.CONNECTED -> Icons.Default.Done
             else -> Icons.Default.Refresh
         }
-        val color = if (isConnected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+        val color = if (isConnected) Colors.darkTeal else Colors.errorColor
         val statusText = when(connectionStatus) {
             ConnectionStatus.CONNECTING -> "Connecting to DB..."
             ConnectionStatus.CONNECTED -> "Connected to DB"
@@ -295,7 +277,7 @@ fun userButton(modifier: Modifier = Modifier){
             HorizontalDivider(thickness = 2.dp)
 
             DropdownMenuItem(
-                text = { Text("Delete Account", color = Color.Red) },
+                text = { Text("Delete Account", color = Colors.errorColor) },
                 onClick = {
                     deleteAccountDialog.value = true
                     expanded = !expanded

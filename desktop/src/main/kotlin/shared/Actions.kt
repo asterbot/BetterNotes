@@ -1,7 +1,6 @@
 package shared
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -10,7 +9,6 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 
 @Composable
 fun AddButton(
@@ -21,9 +19,10 @@ fun AddButton(
         onClick = {
             onClick()
         },
-        modifier = modifier
+        modifier = modifier,
+        containerColor = Colors.lightTeal
     ) {
-        Icon(Icons.Filled.Add, "Add Board Button")
+        Icon(Icons.Filled.Add, "Add Board Button", tint = Colors.darkGrey)
     }
 }
 
@@ -38,11 +37,12 @@ fun ActionMenu(
         modifier = modifier
     ) {
         IconButton(onClick = { expanded = !expanded }) {
-            Icon(Icons.Default.MoreVert, contentDescription = "More options")
+            Icon(Icons.Default.MoreVert, contentDescription = "More options", tint=Colors.white)
         }
         DropdownMenu(
             expanded = expanded,
-            onDismissRequest = { expanded = false }
+            onDismissRequest = { expanded = false },
+            modifier = modifier
         ) {
             DropdownMenuItem(
                 text = { Text("Edit") },
@@ -68,8 +68,11 @@ fun AddNoteMenu(
     Box(
         modifier = modifier
     ) {
-        FilledIconButton(onClick = { expanded = !expanded }) {
-            Icon(Icons.Default.Add, contentDescription = "Add")
+        FloatingActionButton(
+            onClick = { expanded = !expanded },
+            containerColor = Colors.lightTeal
+        ) {
+            Icon(Icons.Default.Add, contentDescription = "Add", tint = Colors.darkGrey)
         }
         DropdownMenu(
             expanded = expanded,
