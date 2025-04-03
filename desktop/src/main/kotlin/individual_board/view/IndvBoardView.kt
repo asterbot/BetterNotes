@@ -1,23 +1,30 @@
 package individual_board.view
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.MaterialTheme
+import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import article.view.ArticleScreen
 import boards.entities.Board
 import boards.view.BoardViewScreen
@@ -55,7 +62,7 @@ fun NoteButton(
 ) {
     val navigator = LocalNavigator.currentOrThrow
     Box (
-        modifier = Modifier.padding(horizontal=20.dp, vertical=5.dp)
+        modifier = Modifier.padding(10.dp),
     ) {
         Button(
             modifier = Modifier
@@ -75,11 +82,24 @@ fun NoteButton(
             )
         ) {
             Column(
-                modifier = Modifier.padding(15.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                modifier = Modifier.padding(10.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(5.dp)
             ) {
-                Text("${note.title} \n", textAlign = TextAlign.Center)
-                note.desc?.let { Text(it, textAlign = TextAlign.Center) }
+                Text(
+                    note.title,
+                    textAlign = TextAlign.Center,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    note.desc,
+                    textAlign = TextAlign.Center,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
         }
         Box(
@@ -146,6 +166,42 @@ fun IndividualBoardView(
         }
     }
 
+    // Sorting for notes
+    var selectedSort by remember { mutableStateOf(individualBoardModel.currentSortType) }
+    var reverseOrder by remember { mutableStateOf(individualBoardModel.currentIsReversed) }
+    val sortOptions = listOf("Title", "Last Created", "Last Updated", "Last Accessed")
+    var expandedSort by remember { mutableStateOf(false) }
+
+    fun applySorting(type: String, reverse: Boolean) {
+        when (type) {
+            "Title" -> individualBoardModel.sortByTitle(board.id, reverse)
+            "Last Created" -> individualBoardModel.sortByDatetimeCreated(board.id, reverse)
+            "Last Updated" -> individualBoardModel.sortByDatetimeUpdated(board.id, reverse)
+            "Last Accessed" -> individualBoardModel.sortByDatetimeAccessed(board.id, reverse)
+        }
+    }
+
+    LaunchedEffect(selectedSort, reverseOrder) {
+        applySorting(selectedSort, reverseOrder)
+    }
+
+    // Searching / filtering for notes
+    var query by remember { mutableStateOf("") }
+    val filteredNotes = if (query.isBlank()) {
+        noteList.noteList
+    } else {
+        noteList.noteList.filter {
+            it.title.contains(query, ignoreCase = true) ||
+                    (it.desc?.contains(query, ignoreCase = true)?: false ||
+                            it.relatedNotes.any { relatedNoteId ->
+                                noteList.noteList.any { relatedNote ->
+                                    relatedNote.id == relatedNoteId && relatedNote.title.contains(query, ignoreCase = true)
+                                }
+                            }
+                            )
+        }
+    }
+
     val openAddSectionDialog = remember { mutableStateOf(false) }
     val openAddArticleDialog = remember { mutableStateOf(false) }
     val noteToEdit = remember { mutableStateOf<Note?>(null) }
@@ -187,7 +243,10 @@ fun IndividualBoardView(
             drawerState = drawerState,
             drawerContent = {
                 ModalDrawerSheet(
-                    drawerContainerColor = Colors.veryLightTeal
+                    drawerContainerColor = Colors.veryLightTeal,
+                    modifier = Modifier
+                        .widthIn(min = 400.dp)
+                        .fillMaxWidth(0.33f)
                 ) {
                     IconButton(
                         onClick = {
@@ -206,13 +265,15 @@ fun IndividualBoardView(
                         Text(
                             text = board.name,
                             style = MaterialTheme.typography.h4,
-                            modifier = Modifier.padding(10.dp)
+                            modifier = Modifier.fillMaxWidth(0.8f)
+                                .padding(8.dp),
                         )
 
                         Text(
                             text = board.desc,
                             style = MaterialTheme.typography.body1,
-                            modifier = Modifier.padding(10.dp)
+                            modifier = Modifier.fillMaxWidth(0.8f)
+                                .padding(8.dp),
                         )
 
                         TextButton(
@@ -222,6 +283,78 @@ fun IndividualBoardView(
                         ) {
                             Text("Back to All Boards")
                         }
+
+
+                        // Search notes
+                        OutlinedTextField(
+                            value = query,
+                            onValueChange = { newQuery -> query = newQuery },
+                            label = { Text("Search notes") },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Search,
+                                    contentDescription = "Search",
+                                    tint = Colors.medTeal
+                                )
+                            },
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier
+                                .fillMaxWidth(0.8f)
+                                .padding(8.dp),
+                            colors = outlinedTextFieldColours()
+                        )
+                        // Sorting
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Text("Sort by: ", modifier = Modifier.padding(end = 8.dp))
+
+                            Box {
+                                Text(
+                                    text = selectedSort,
+                                    modifier = Modifier
+                                        .background(Color.LightGray, shape = RoundedCornerShape(4.dp))
+                                        .padding(8.dp)
+                                        .clickable {
+                                            expandedSort = true
+                                        }
+                                )
+                                DropdownMenu(
+                                    expanded = expandedSort,
+                                    onDismissRequest = { expandedSort = false },
+                                    containerColor = Colors.veryLightTeal
+                                ) {
+                                    sortOptions.forEach { option ->
+                                        DropdownMenuItem(
+                                            text = { Text(option) },
+                                            onClick = {
+                                                selectedSort = option
+                                                expandedSort = false
+                                                applySorting(selectedSort, reverseOrder)
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.width(16.dp))
+
+                            Text("Reverse: ")
+
+                            Switch(
+                                checked = reverseOrder,
+                                onCheckedChange = {
+                                    reverseOrder = it
+                                    applySorting(selectedSort, reverseOrder)
+                                },
+                                colors = switchColours()
+                            )
+                        }
+
 
                         Box(
                             Modifier.fillMaxSize()
@@ -233,18 +366,18 @@ fun IndividualBoardView(
                             LazyColumn(
                                 modifier = Modifier.fillMaxSize(),
                                 state = state,
-                                horizontalAlignment = Alignment.CenterHorizontally
+                                horizontalAlignment = Alignment.CenterHorizontally,
                             ) {
-                                if (noteList.noteList.isEmpty()) item {
+                                if (noteList.noteList.isEmpty() || filteredNotes.isEmpty()) item {
                                     Text(
                                         text = "No notes available",
-                                        modifier = Modifier
-                                            .fillMaxWidth(),
+                                        fontSize = 20.sp,
+                                        modifier = Modifier.padding(vertical=30.dp),
                                         textAlign = TextAlign.Center
                                     )
                                 }
                                 else {
-                                    for (note in noteList.noteList) {
+                                    for (note in filteredNotes) {
                                         item {
                                             NoteButton(
                                                 note = note,
