@@ -77,6 +77,18 @@ fun checkboxColours(): CheckboxColors {
     )
 }
 
+@Composable
+fun switchColours(): SwitchColors {
+    return SwitchDefaults.colors(
+        checkedThumbColor = Colors.medTeal,
+        checkedTrackColor = Colors.lightTeal,
+        checkedBorderColor = Colors.medTeal,
+        uncheckedThumbColor = Colors.lightGrey.times(0.7f),
+        uncheckedTrackColor = Color.Transparent,
+        uncheckedBorderColor = Colors.medTeal
+    )
+}
+
 
 fun Color.times(factor: Float) = copy(
     red = (red * factor).coerceIn(0f, 1f),
