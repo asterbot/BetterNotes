@@ -1,4 +1,6 @@
 package shared
+import androidx.compose.material.TextFieldColors
+import androidx.compose.material.TextFieldDefaults.outlinedTextFieldColors
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.IconButtonColors
@@ -30,5 +32,16 @@ fun iconButtonColours(): IconButtonColors {
         containerColor = Colors.medTeal,
         contentColor = Colors.white,
         disabledContainerColor = Colors.medTeal.copy(alpha = .4f)
+    )
+}
+
+@Composable
+fun outlinedTextFieldColours(): TextFieldColors {
+    return outlinedTextFieldColors(
+        focusedBorderColor = Colors.medTeal,
+        unfocusedBorderColor = Colors.darkGrey,
+        focusedLabelColor = Colors.medTeal,
+        unfocusedLabelColor = Colors.darkGrey,
+        cursorColor = Colors.black
     )
 }

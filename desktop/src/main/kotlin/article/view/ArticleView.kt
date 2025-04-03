@@ -77,8 +77,7 @@ fun ArticleCompose(board: Board, article: Note) {
     var debugState by remember { mutableStateOf(false) }
 
     fun changeSelectedBlock(selectedBlock: Int?) {
-        println("In LaunchedEffect (switching block focus)")
-        println("I moved from block $prevSelectedBlock to block $selectedBlock")
+        println("Moved from block $prevSelectedBlock to block $selectedBlock")
         if (prevSelectedBlock != selectedBlock) {
             if (prevSelectedBlock != null && currEditedText.value != null) {
                 val currBlock = articleViewModel.contentBlocksList[prevSelectedBlock!!]
