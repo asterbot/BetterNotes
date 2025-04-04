@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import article.entities.*
 import boards.entities.Board
+import kotlinx.coroutines.delay
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
@@ -52,6 +53,7 @@ import individual_board.view.pxToDp
 import io.github.vinceglb.filekit.absolutePath
 import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.exists
+import kotlinx.coroutines.launch
 import org.bson.types.ObjectId
 import shared.*
 import space.kscience.kmath.UnstableKMathAPI
@@ -258,6 +260,7 @@ fun ArticleCompose(board: Board, article: Note) {
                 // now, relatedNotes contains all Note objects that the article is related to
                 var relatedNotesExpanded by remember { mutableStateOf(false) }
 
+                val scope = rememberCoroutineScope()
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
@@ -292,8 +295,10 @@ fun ArticleCompose(board: Board, article: Note) {
                                     selectedBlock = null
                                     changeSelectedBlock(selectedBlock)
                                     relatedNotesExpanded = false
-                                    ScreenManager.push(navigator, ArticleScreen(board, currNote))
-                                }
+                                    scope.launch {
+                                        delay(150)
+                                        ScreenManager.push(navigator, ArticleScreen(board, currNote))
+                                    }                         }
                             )
                         }
                     }
