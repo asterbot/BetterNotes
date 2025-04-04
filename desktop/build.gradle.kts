@@ -91,6 +91,15 @@ compose.desktop {
             // If using JVM target and Linux distribution
             linux {
                 modules("jdk.security.auth")
+                iconFile.set(project.file("src/main/resources/betternotes_logo.png"))
+
+            }
+            macOS {
+                iconFile.set(project.file("src/main/resources/betternotes_logo.icns"))
+            }
+
+            windows {
+                iconFile.set(project.file("src/main/resources/betternotes_logo.ico"))
             }
         }
     }
