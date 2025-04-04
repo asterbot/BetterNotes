@@ -614,10 +614,6 @@ class DBStorage() :IPersistence {
     ) {
         val now = Instant.now().toString()
 
-        println(block.id)
-        println("MADE IT HERE")
-        println(canvasHeight)
-
         val job = coroutineScope.launch {
 
             // Update the content block in the content block collection
