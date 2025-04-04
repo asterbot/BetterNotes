@@ -3,10 +3,11 @@ import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.MaterialTheme
@@ -19,13 +20,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.isCtrlPressed
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -200,11 +195,6 @@ fun IndividualBoardView(
         }
     }
 
-    val searchFocusRequester = remember { FocusRequester() }
-    LaunchedEffect(Unit) {
-        searchFocusRequester.requestFocus()
-    }
-
     val openAddSectionDialog = remember { mutableStateOf(false) }
     val openAddArticleDialog = remember { mutableStateOf(false) }
     val noteToEdit = remember { mutableStateOf<Note?>(null) }
@@ -240,17 +230,7 @@ fun IndividualBoardView(
     }
 
 
-    Box(modifier = Modifier.fillMaxSize()
-        .onPreviewKeyEvent {
-            when {
-                (it.key == Key.Escape) -> {
-                    ScreenManager.push(navigator, BoardViewScreen())
-                    true
-                }
-                else -> false
-            }
-        }
-    ) {
+    Box(modifier = Modifier.fillMaxSize()) {
         ModalNavigationDrawer(
             scrimColor = Colors.black.copy(alpha=.2f),
             drawerState = drawerState,
@@ -285,7 +265,6 @@ fun IndividualBoardView(
 
                         Text(
                             text = board.desc,
-                            textAlign = TextAlign.Center,
                             style = MaterialTheme.typography.body1,
                             modifier = Modifier.fillMaxWidth(0.8f)
                                 .padding(8.dp),
@@ -315,9 +294,7 @@ fun IndividualBoardView(
                             shape = RoundedCornerShape(16.dp),
                             modifier = Modifier
                                 .fillMaxWidth(0.8f)
-                                .padding(8.dp)
-                                .focusRequester(searchFocusRequester)
-                            ,
+                                .padding(8.dp),
                             colors = outlinedTextFieldColours()
                         )
                         // Sorting
@@ -390,20 +367,13 @@ fun IndividualBoardView(
                                 state = state,
                                 columns = GridCells.Fixed(columns),
                             ) {
-                                if (noteList.noteList.isEmpty() || filteredNotes.isEmpty())
-                                    item(span = { GridItemSpan(maxLineSpan) }) {
-                                    Column(
-                                            modifier = Modifier.padding(top=15.dp),
-                                            horizontalAlignment = Alignment.CenterHorizontally,
-                                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                                        ) {
-                                        Text(
-                                            text = "No notes available",
-                                            fontSize = 20.sp,
-                                            modifier = Modifier.padding(vertical = 30.dp),
-                                            textAlign = TextAlign.Center
-                                        )
-                                    }
+                                if (noteList.noteList.isEmpty() || filteredNotes.isEmpty()) item {
+                                    Text(
+                                        text = "No notes available",
+                                        fontSize = 20.sp,
+                                        modifier = Modifier.padding(vertical=30.dp),
+                                        textAlign = TextAlign.Center
+                                    )
                                 }
                                 else {
                                     for (note in filteredNotes) {
@@ -434,23 +404,6 @@ fun IndividualBoardView(
                 }
             },
             gesturesEnabled = false,
-            modifier = Modifier.onPreviewKeyEvent {
-                when {
-                    (it.isCtrlPressed && it.key == Key.Minus) -> {
-                        drawerScope.launch {
-                            drawerState.close()
-                        }
-                        true
-                    }
-                    (it.isCtrlPressed && it.key == Key.Equals) -> {
-                        drawerScope.launch {
-                            drawerState.open()
-                        }
-                        true
-                    }
-                    else -> false
-                }
-            }
         ) {
             FdgLayoutView(
                 graphViewModel = fdgLayoutViewModel,

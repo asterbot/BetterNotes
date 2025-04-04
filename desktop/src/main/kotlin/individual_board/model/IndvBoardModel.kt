@@ -18,8 +18,8 @@ class IndvBoardModel(val persistence: IPersistence) : IPublisher() {
     // maps board ID to list of notes
     var noteDict = mutableMapOf<ObjectId, MutableList<Note>>()
 
-    var currentTags = mutableListOf<String>() // name of tags
-    var tagsMap = mutableMapOf<String, Color>() // maps tags to colors
+//    var currentTags = mutableListOf<String>() // name of tags
+//    var tagsMap = mutableMapOf<String, Color>() // maps tags to colors
 
     var currentSortType: String = "Last Accessed"
     var currentIsReversed: Boolean = false
