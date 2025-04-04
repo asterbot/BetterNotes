@@ -18,6 +18,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import individual_board.entities.Note
 
+fun sanitizeInput(input: String): String {
+    return input.filter { it.code in 32..126 } // printable ASCII only
+}
 
 @Composable
 fun ConfirmationDialog(
@@ -594,6 +597,7 @@ fun SignUpDialog(
 
     var passwordVisible by remember { mutableStateOf(false) }
 
+
     AlertDialog(
         icon = { Icons.Default.Add },
         title = { Text(text = "Sign up!") },
@@ -603,7 +607,10 @@ fun SignUpDialog(
                 OutlinedTextField(
                     colors = outlinedTextFieldColours(),
                     value = username,
-                    onValueChange = { username = it },
+                    onValueChange = { input ->
+                        val sanitized = sanitizeInput(input.text)
+                        username = input.copy(text = sanitized)
+                    },
                     label = { Text("Username", color = Colors.darkGrey) },
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Email,
@@ -616,8 +623,9 @@ fun SignUpDialog(
                 OutlinedTextField(
                     colors = outlinedTextFieldColours(),
                     value = password,
-                    onValueChange = {
-                        password = it
+                    onValueChange = { input ->
+                        val sanitized = sanitizeInput(input.text)
+                        password = input.copy(text = sanitized)
                     },
                     label = { Text("Password", color = Colors.darkGrey) },
                     visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
