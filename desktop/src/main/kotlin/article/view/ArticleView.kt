@@ -13,6 +13,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Backspace
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -24,18 +25,17 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import article.entities.*
@@ -69,6 +69,7 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.nio.ByteBuffer
 import javax.imageio.ImageIO
+import kotlin.math.max
 
 
 data class ArticleScreen(
@@ -514,7 +515,9 @@ fun BlockFrame(
                             TextButton(
                                 modifier = Modifier.align(Alignment.Center),
                                 colors = textButtonColours(),
-                                onClick = {isGraph = !isGraph}
+                                onClick = {
+                                    isGraph = !isGraph
+                                }
                             ) {
                                 Text(if (isGraph) "Close Graph" else "Open Graph")
                             }
@@ -527,9 +530,6 @@ fun BlockFrame(
                     }
 
                     if (block.blockType == BlockType.CANVAS) {
-                        Box (
-                            modifier = Modifier.clipToBounds()
-                        ) {
                             EditableCanvas(
                                 block = block,
                                 onCanvasUpdate = { bList: MutableList<Byte>, height: Int ->
@@ -544,7 +544,6 @@ fun BlockFrame(
                                     )
                                 }
                             )
-                        }
                     }
 
                     if (block.blockType == BlockType.MEDIA) {
@@ -581,6 +580,7 @@ fun addGraph(
 ) {
     // Create a general expression from the MST
     val expression = mst.compileToExpression(Float64Field)
+    var unrecognized = false
 
     val points = remember(mst, xMin, xMax) {
         try {
@@ -600,72 +600,87 @@ fun addGraph(
             }
             result
         } catch (e: Exception) {
+            unrecognized = true
             emptyList<Pair<Double, Double>>()
         }
     }
-    Box(modifier = Modifier.fillMaxWidth().height(200.dp).background(Color.White).clipToBounds()) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            // Axis
-            val xAxisY = size.height * (yMax / (yMax - yMin))
-            val yAxisX = size.width * (-xMin / (xMax - xMin))
-            drawLine(
-                Color.Gray,
-                Offset(0f, size.height - xAxisY.toFloat()),
-                Offset(size.width, size.height - xAxisY.toFloat()),
-                strokeWidth = 2f
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        if (unrecognized) {
+            Text(
+                "Function not recognized :(",
+                textAlign = TextAlign.Center,
+                color = Colors.errorColor
             )
-            drawLine(
-                Color.Gray,
-                Offset(yAxisX.toFloat(), 0f),
-                Offset(yAxisX.toFloat(), size.height),
-                strokeWidth = 2f
-            )
+        }
+        else {
+            Box(modifier = Modifier.fillMaxWidth().height(200.dp).background(Color.White).clipToBounds()) {
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    // Axis
+                    val xAxisY = size.height * (yMax / (yMax - yMin))
+                    val yAxisX = size.width * (-xMin / (xMax - xMin))
+                    drawLine(
+                        Color.Gray,
+                        Offset(0f, size.height - xAxisY.toFloat()),
+                        Offset(size.width, size.height - xAxisY.toFloat()),
+                        strokeWidth = 2f
+                    )
+                    drawLine(
+                        Color.Gray,
+                        Offset(yAxisX.toFloat(), 0f),
+                        Offset(yAxisX.toFloat(), size.height),
+                        strokeWidth = 2f
+                    )
 
-            // Function
-            if (points.size >= 2) {
-                val path = androidx.compose.ui.graphics.Path()
-                var firstPoint = true
+                    // Function
+                    if (points.size >= 2) {
+                        val path = androidx.compose.ui.graphics.Path()
+                        var firstPoint = true
 
-                for ((x, y) in points) {
-                    val screenX = ((x - xMin) / (xMax - xMin) * size.width).toFloat()
-                    val screenY = (size.height - ((y - yMin) / (yMax - yMin) * size.height)).toFloat()
+                        for ((x, y) in points) {
+                            val screenX = ((x - xMin) / (xMax - xMin) * size.width).toFloat()
+                            val screenY = (size.height - ((y - yMin) / (yMax - yMin) * size.height)).toFloat()
 
-                    if (firstPoint) {
-                        path.moveTo(screenX, screenY)
-                        firstPoint = false
-                    } else {
-                        path.lineTo(screenX, screenY)
+                            if (firstPoint) {
+                                path.moveTo(screenX, screenY)
+                                firstPoint = false
+                            } else {
+                                path.lineTo(screenX, screenY)
+                            }
+                        }
+                        drawPath(path, Color.Blue, style = Stroke(width = 3f))
+                    }
+
+                    // Grid
+                    val gridColor = Color.LightGray.copy(alpha = 0.5f)
+                    val gridStep = 1.0
+
+                    var x = Math.ceil(xMin / gridStep) * gridStep
+                    while (x <= xMax) {
+                        val screenX = ((x - xMin) / (xMax - xMin) * size.width).toFloat()
+                        drawLine(
+                            gridColor,
+                            Offset(screenX, 0f),
+                            Offset(screenX, size.height),
+                            strokeWidth = 1f
+                        )
+                        x += gridStep
+                    }
+
+                    var y = Math.ceil(yMin / gridStep) * gridStep
+                    while (y <= yMax) {
+                        val screenY = (size.height - ((y - yMin) / (yMax - yMin) * size.height)).toFloat()
+                        drawLine(
+                            gridColor,
+                            Offset(0f, screenY),
+                            Offset(size.width, screenY),
+                            strokeWidth = 1f
+                        )
+                        y += gridStep
                     }
                 }
-                drawPath(path, Color.Blue, style = Stroke(width = 3f))
-            }
-
-            // Grid
-            val gridColor = Color.LightGray.copy(alpha = 0.5f)
-            val gridStep = 1.0
-
-            var x = Math.ceil(xMin / gridStep) * gridStep
-            while (x <= xMax) {
-                val screenX = ((x - xMin) / (xMax - xMin) * size.width).toFloat()
-                drawLine(
-                    gridColor,
-                    Offset(screenX, 0f),
-                    Offset(screenX, size.height),
-                    strokeWidth = 1f
-                )
-                x += gridStep
-            }
-
-            var y = Math.ceil(yMin / gridStep) * gridStep
-            while (y <= yMax) {
-                val screenY = (size.height - ((y - yMin) / (yMax - yMin) * size.height)).toFloat()
-                drawLine(
-                    gridColor,
-                    Offset(0f, screenY),
-                    Offset(size.width, screenY),
-                    strokeWidth = 1f
-                )
-                y += gridStep
             }
         }
     }
@@ -1129,6 +1144,7 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int)
         else -> mutableListOf()
     }
     var paths by remember { mutableStateOf(bytesToPaths(initialBytes.toByteArray())) }
+    var eraserSize = 20f
 
     MaterialTheme {
         Column(
@@ -1142,28 +1158,50 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int)
                 // Top control bar
                 Row(
                     modifier = Modifier.align(Alignment.Center),
-                    horizontalArrangement = Arrangement.spacedBy(30.dp),
+                    horizontalArrangement = Arrangement.spacedBy(20.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column() {
                         Row(
+                            modifier = Modifier.defaultMinSize(30.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Text("Current: ", fontSize = 14.sp)
-                            Box(
-                                modifier = Modifier
-                                    .size((strokeWidth + 3).pxToDp())
-                                    .clip(CircleShape)
-                                    .background(selectedColor.times(0.9f))
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(strokeWidth.pxToDp())
-                                        .clip(CircleShape)
-                                        .background(selectedColor)
-                                        .align(Alignment.Center)
+                            if (isErasing) {
+                                println("I WANNA ERASE")
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.Backspace,
+                                    contentDescription = "The best eraser icon I could find",
+                                    modifier = Modifier.fillMaxHeight(),
+                                    tint = Colors.darkGrey
                                 )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Filled.Draw,
+                                    contentDescription = "The best eraser icon I could find",
+                                    modifier = Modifier.fillMaxHeight(),
+                                    tint = Colors.darkGrey
+                                )
+                                Box(
+                                    modifier = Modifier.size(25.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size((strokeWidth + 3).pxToDp())
+                                            .clip(CircleShape)
+                                            .background(selectedColor.times(0.9f))
+                                            .align(Alignment.Center)
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(strokeWidth.pxToDp())
+                                                .clip(CircleShape)
+                                                .background(selectedColor)
+                                                .align(Alignment.Center)
+                                        )
+                                    }
+                                }
                             }
                         }
                         // Stroke width slider
@@ -1189,7 +1227,7 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int)
 
                     val controller = rememberColorPickerController()
                     Box(
-                        modifier = Modifier.size(150.dp).padding(10.dp)
+                        modifier = Modifier.size(100.dp).padding(10.dp)
                     ) {
                         HsvColorPicker(
                             modifier = Modifier
@@ -1202,81 +1240,112 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int)
                             },
                         )
                     }
-                    TextButton(
-                        modifier = Modifier.defaultMinSize(minWidth=120.dp),
-                        colors = textButtonColours(),
-                        onClick = { isGrid = !isGrid }
-                    ) {
-                        Text(if (!isGrid) "Show Grid" else "Hide Grid")
+                    Column {
+                        Row (
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            TextButton(
+                                modifier = Modifier.defaultMinSize(minWidth=120.dp),
+                                colors = textButtonColours(),
+                                onClick = {isErasing = !isErasing}
+                            ) {
+                                Text( if(isErasing) "Draw" else "Erase")
+                            }
+                            TextButton(
+                                colors = textButtonColours(),
+                                onClick = { onCanvasUpdate(canvasToBytes(paths).toMutableList(), canvasHeight) }
+                            ) {
+                                Text("Save")
+                            }
+                        }
+                        TextButton(
+                            modifier = Modifier.defaultMinSize(minWidth=120.dp),
+                            colors = textButtonColours(),
+                            onClick = { isGrid = !isGrid }
+                        ) {
+                            Text(if (!isGrid) "Show Grid" else "Hide Grid")
+                        }
                     }
                 }
             }
 
 
             // Drawing canvas
-            Box(modifier = Modifier.fillMaxWidth().height(canvasHeight.dp)) {
+            Box(modifier = Modifier.fillMaxWidth().height(canvasHeight.dp).clipToBounds()) {
                 Canvas(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(Color.White)
-                        .pointerInput(isDrawing, selectedColor, strokeWidth) {
-                            if (isDrawing) {
-                                detectDragGestures(
-                                    onDragStart = { offset ->
-//                                        val boxHeight = size.height.toFloat()
-//                                        val isNearBottomEdge = offset.y in (boxHeight - resizeThreshold)..boxHeight
-//                                        if (isNearBottomEdge) {
-//                                            isResizing = true
-//                                            isDrawing = false
-//                                            println("DEBUG: RESIZING CANVAS")
-//                                        } else {
-//                                            isDrawing = true
-//                                            isOutsideBox = false
-//
-//                                            if (isErasing) {
-//
-//                                            } else {
-//                                                currentPath = listOf(offset)
-//                                            }
-//                                        }
-                                        currentPath = listOf(offset)
-                                    },
-                                    onDrag = { change, _ ->
-//                                        if (isResizing) {
-//                                        val newHeight = max(50, (canvasHeight + 0.5 * change.positionChange().y).toInt())
-//                                        canvasHeight = newHeight
-//                                        } else {
-                                            val boxWidth = size.width
-                                            val boxHeight = size.height
-                                            val isInside = change.position.x in 0f..boxWidth.toFloat() &&
-                                                    change.position.y in 0f..boxHeight.toFloat()
-                                            if (isInside) {
-                                                currentPath = currentPath + change.position
-                                                // println("is inside")
-                                                println("$change.position")
+                        .pointerInput(selectedColor, strokeWidth) {
+                            detectDragGestures(
+                                onDragStart = { offset ->
+                                    val boxHeight = size.height.toFloat()
+                                    val isNearBottomEdge = offset.y in (boxHeight - resizeThreshold)..boxHeight
+                                    if (isNearBottomEdge) {
+                                        isResizing = true
+                                        isDrawing = false
+                                        println("DEBUG: RESIZING CANVAS")
+                                    } else {
+                                        isDrawing = true
+                                        isOutsideBox = false
+
+                                        if (isErasing) {
+                                            paths.removeAll { pathData ->
+                                                pathData.points.any { point ->
+                                                    (point - offset).getDistance() < eraserSize
+                                                }
                                             }
-//
-//                                            if (isInside) {
-//                                                if (isErasing) {
-//
-//                                                } else {
-//                                                    currentPath = currentPath + change.position
-//                                                }
-//                                            } else {
-//                                                // do nothing
-//                                            }
-//                                        }
-                                    },
-                                    onDragEnd = {
-//                                        isDrawing = false
-//                                        isResizing = false
+                                            println("So tired")
+                                        } else {
+                                            currentPath = listOf(offset)
+                                        }
+                                    }
+                                },
+                                onDrag = { change, _ ->
+                                    if (isResizing) {
+                                        val newHeight = max(50, (canvasHeight + 0.5 * change.positionChange().y).toInt())
+                                        canvasHeight = newHeight
+                                    } else {
+                                        val boxWidth = size.width
+                                        val boxHeight = size.height
+                                        val isInside = change.position.x in 0f..boxWidth.toFloat() &&
+                                                change.position.y in 0f..boxHeight.toFloat()
+
+                                        if (isInside) {
+                                            if (isErasing) {
+
+                                                paths.removeAll { pathData ->
+                                                    pathData.points.any { point ->
+                                                        (point - change.position).getDistance() < eraserSize
+                                                    }
+                                                }
+
+                                                println("wanna sleep")
+                                            } else {
+                                                currentPath = currentPath + change.position
+                                            }
+                                        } else {
+                                            paths = paths.toMutableList().apply {
+                                                add(PathData(currentPath, selectedColor, strokeWidth))
+                                            }
+                                            currentPath = emptyList()
+                                        }
+                                    }
+                                },
+                                onDragEnd = {
+                                    if (isResizing) {
+                                        onCanvasUpdate(canvasToBytes(paths).toMutableList(), canvasHeight)
+                                    }
+                                    isDrawing = false
+                                    isResizing = false
+                                    if (!isErasing) {
                                         paths = paths.toMutableList().apply {
                                             add(PathData(currentPath, selectedColor, strokeWidth))
                                         }
                                         currentPath = emptyList()
                                     }
-                                )
-                            }
+                                }
+                            )
                         }
                 ) {
                     // Draw all saved paths
@@ -1294,7 +1363,7 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int)
                     if (isGrid) {
                         for (i in 0..size.width.toInt() step 20) {
                             drawLine(
-                                color = Color.LightGray,
+                                color = Colors.lightGrey,
                                 start = Offset(i.toFloat(),0f),
                                 end = Offset(i.toFloat(),size.height),
                                 strokeWidth = 1f
@@ -1302,7 +1371,7 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int)
                         }
                         for (j in 0..size.height.toInt() step 20) {
                             drawLine(
-                                color = Color.LightGray,
+                                color = Colors.lightGrey,
                                 start = Offset(0f, j.toFloat()),
                                 end = Offset(size.width, j.toFloat()),
                                 strokeWidth = 1f
@@ -1319,13 +1388,11 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int)
                             strokeWidth = strokeWidth
                             )
                     }
-
-                    onCanvasUpdate(canvasToBytes(paths).toMutableList(), canvasHeight)
                 }
                 Box(
                     modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color.LightGray)
+                    .background(Colors.lightGrey)
                     .align(Alignment.BottomCenter)
                     .height((resizeThreshold / LocalDensity.current.density).dp)
                 ) {
@@ -1338,7 +1405,7 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int)
                             imageVector = Icons.Default.Menu,
                             contentDescription = "Canvas Height Slider",
                             modifier = Modifier.size(resizeThreshold.dp - 5.dp),
-                            tint = Color.DarkGray
+                            tint = Colors.darkGrey
                         )
                     }
                 }
@@ -1464,6 +1531,12 @@ fun bytesToPaths(bytes: ByteArray): MutableList<PathData> {
                 val y = buffer.getFloat()
                 points.add(Offset(x, y))
             }
+
+fun isPointNearPath(point: Offset, path: Path, threshold: Float = 20f): Boolean {
+    val pathBounds = path.getBounds()
+    return (point.x in (pathBounds.left - threshold)..(pathBounds.right + threshold) &&
+            point.y in (pathBounds.top - threshold)..(pathBounds.bottom + threshold))
+}
 
             paths.add(PathData(points, color, strokeWidth))
         }
