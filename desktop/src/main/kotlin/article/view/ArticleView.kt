@@ -495,6 +495,7 @@ fun BlockFrame(
                     var graphMST by remember { mutableStateOf(("0").parseMath())}
                     if (block.blockType == BlockType.MATH && !isSelected) {
                         // Render math here
+
                         var latex = ""
                         try {
                             // Try to parse the "flaky" math
@@ -508,15 +509,21 @@ fun BlockFrame(
                         }
                         LatexRenderer(latex)
                     }
-                    if (block.blockType == BlockType.MATH) {
-                        if (isGraph) {
-                            addGraph(graphMST)
-                        }
+                    if (block.blockType == BlockType.MATH && isSelected) {
                         Box(modifier = Modifier.fillMaxWidth()) {
-                            TextButton(modifier = Modifier.align(Alignment.Center), colors = textButtonColours(), onClick = {isGraph = !isGraph}) {
-                                Text(if (isGraph) "close graph" else "open graph")
+                            TextButton(
+                                modifier = Modifier.align(Alignment.Center),
+                                colors = textButtonColours(),
+                                onClick = {isGraph = !isGraph}
+                            ) {
+                                Text(if (isGraph) "Close Graph" else "Open Graph")
                             }
                         }
+                    }
+
+                    // also render graph if possible
+                    if (isGraph) {
+                        addGraph(graphMST)
                     }
 
                     if (block.blockType == BlockType.CANVAS) {
@@ -596,7 +603,7 @@ fun addGraph(
             emptyList<Pair<Double, Double>>()
         }
     }
-    Box(modifier = Modifier.fillMaxWidth().height(200.dp).background(Color.White)) {
+    Box(modifier = Modifier.fillMaxWidth().height(200.dp).background(Color.White).clipToBounds()) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             // Axis
             val xAxisY = size.height * (yMax / (yMax - yMin))
