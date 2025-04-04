@@ -17,6 +17,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.input.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -73,6 +75,11 @@ fun AddBoardDialog(
     onDismissRequest: () -> Unit,
     onConfirmation: (boardName: String, boardDesc: String) -> Unit
 ) {
+    val boardTitleFocusRequester = remember { FocusRequester() }
+    LaunchedEffect(Unit) {
+        boardTitleFocusRequester.requestFocus()
+    }
+
     var boardName by remember { mutableStateOf(TextFieldValue("")) }
     var boardDesc by remember { mutableStateOf(TextFieldValue("")) }
 
@@ -91,7 +98,7 @@ fun AddBoardDialog(
                         isError = newText.text.isBlank()
                     },
                     label = { Text("Board Name", color = Colors.darkGrey) },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().focusRequester(boardTitleFocusRequester),
                     isError = isError,
                     colors = textFieldColours()
                 )
@@ -176,6 +183,11 @@ fun AddNoteDialog(
     onConfirmation: (noteName: String, noteDesc: String, relatedNotes: List<Note>, tag: String) -> Unit,
     onGetOtherNotes: (String) -> List<Note>
 ) {
+    val noteTitleFocusRequester = remember { FocusRequester() }
+    LaunchedEffect(Unit) {
+        noteTitleFocusRequester.requestFocus()
+    }
+
     var noteTitle by remember { mutableStateOf(TextFieldValue("")) }
     var noteDesc by remember { mutableStateOf(TextFieldValue("")) }
     var colors = tagColorMap.keys.toList()
@@ -208,7 +220,7 @@ fun AddNoteDialog(
                         isError = newText.text.isBlank()
                     },
                     label = { Text("Note Title", color = Colors.darkGrey) },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().focusRequester(noteTitleFocusRequester),
                     isError = isError,
                     colors = textFieldColours()
                 )

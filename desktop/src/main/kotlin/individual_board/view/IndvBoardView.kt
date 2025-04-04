@@ -1,12 +1,11 @@
 package individual_board.view
-import androidx.compose.foundation.VerticalScrollbar
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.rememberScrollbarAdapter
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.OutlinedTextField
@@ -18,7 +17,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.*
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -193,7 +195,11 @@ fun IndividualBoardView(
         }
     }
 
-    val openAddSectionDialog = remember { mutableStateOf(false) }
+    val searchFocusRequester = remember { FocusRequester() }
+    LaunchedEffect(Unit) {
+        searchFocusRequester.requestFocus()
+    }
+
     val openAddArticleDialog = remember { mutableStateOf(false) }
     val noteToEdit = remember { mutableStateOf<Note?>(null) }
     val noteToDelete = remember { mutableStateOf<Note?>(null) }
@@ -228,7 +234,17 @@ fun IndividualBoardView(
     }
 
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize()
+        .onPreviewKeyEvent {
+            when {
+                (it.key == Key.Escape) -> {
+                    ScreenManager.push(navigator, BoardViewScreen())
+                    true
+                }
+                else -> false
+            }
+        }
+    ) {
         ModalNavigationDrawer(
             scrimColor = Colors.black.copy(alpha=.2f),
             drawerState = drawerState,
@@ -249,162 +265,196 @@ fun IndividualBoardView(
                     ) {
                         Icon(Icons.Default.Close, contentDescription = "Close drawer")
                     }
-                    Column(
-                        modifier = Modifier.fillMaxSize(),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = board.name,
-                            textAlign = TextAlign.Center,
-                            style = MaterialTheme.typography.h4,
-                            modifier = Modifier.fillMaxWidth(0.8f)
-                                .padding(8.dp),
-                        )
-
-                        Text(
-                            text = board.desc,
-                            textAlign = TextAlign.Center,
-                            style = MaterialTheme.typography.body1,
-                            modifier = Modifier.fillMaxWidth(0.8f)
-                                .padding(8.dp),
-                        )
-
-                        TextButton(
-                            onClick = { ScreenManager.push(navigator, BoardViewScreen()) },
-                            modifier = Modifier.padding(2.dp),
-                            colors = textButtonColours()
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        Column(
+                            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Text("Back to All Boards")
-                        }
+                            Text(
+                                text = board.name,
+                                textAlign = TextAlign.Center,
+                                style = MaterialTheme.typography.h4,
+                                modifier = Modifier.fillMaxWidth(0.8f)
+                                    .padding(8.dp),
+                            )
 
+                            Text(
+                                text = board.desc,
+                                textAlign = TextAlign.Center,
+                                style = MaterialTheme.typography.body1,
+                                modifier = Modifier.fillMaxWidth(0.8f)
+                                    .padding(8.dp),
+                            )
 
-                        // Search notes
-                        OutlinedTextField(
-                            value = query,
-                            onValueChange = { newQuery -> query = newQuery },
-                            label = { Text("Search notes") },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Default.Search,
-                                    contentDescription = "Search",
-                                    tint = Colors.medTeal
-                                )
-                            },
-                            shape = RoundedCornerShape(16.dp),
-                            modifier = Modifier
-                                .fillMaxWidth(0.8f)
-                                .padding(8.dp),
-                            colors = outlinedTextFieldColours()
-                        )
-                        // Sorting
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            Text("Sort by: ", modifier = Modifier.padding(end = 8.dp))
-
-                            Box {
-                                Text(
-                                    text = selectedSort,
-                                    modifier = Modifier
-                                        .background(Color.LightGray, shape = RoundedCornerShape(4.dp))
-                                        .padding(8.dp)
-                                        .clickable {
-                                            expandedSort = true
-                                        }
-                                )
-                                DropdownMenu(
-                                    expanded = expandedSort,
-                                    onDismissRequest = { expandedSort = false },
-                                    containerColor = Colors.veryLightTeal
-                                ) {
-                                    sortOptions.forEach { option ->
-                                        DropdownMenuItem(
-                                            text = { Text(option) },
-                                            onClick = {
-                                                selectedSort = option
-                                                expandedSort = false
-                                                applySorting(selectedSort, reverseOrder)
-                                            }
-                                        )
-                                    }
-                                }
+                            TextButton(
+                                onClick = { ScreenManager.push(navigator, BoardViewScreen()) },
+                                modifier = Modifier.padding(2.dp),
+                                colors = textButtonColours()
+                            ) {
+                                Text("Back to All Boards")
                             }
 
-                            Spacer(modifier = Modifier.width(16.dp))
 
-                            Text("Reverse: ")
-
-                            Switch(
-                                checked = reverseOrder,
-                                onCheckedChange = {
-                                    reverseOrder = it
-                                    applySorting(selectedSort, reverseOrder)
-                                },
-                                colors = switchColours()
-                            )
-                        }
-
-
-                        BoxWithConstraints(
-                            Modifier.fillMaxSize()
-                                .padding(15.dp)
-                                .background(Colors.lightGrey.times(1.03f).copy(red = Colors.lightGrey.red))
-                                .weight(1f)
-                        ) {
-                            val maxWidthDp = maxWidth
-                            val columnWidth = 300.dp // adjust to whatever size makes sense for your grid items
-                            val columns = (maxWidthDp / columnWidth).toInt().coerceAtLeast(1)
-
-                            val state = rememberLazyGridState()
-                            LazyVerticalGrid(
-                                modifier = Modifier.fillMaxSize(),
-                                contentPadding = PaddingValues(10.dp),
-                                state = state,
-                                columns = GridCells.Fixed(columns),
-                            ) {
-                                if (noteList.noteList.isEmpty() || filteredNotes.isEmpty()) item {
-                                    Text(
-                                        text = "No notes available",
-                                        fontSize = 20.sp,
-                                        modifier = Modifier.padding(vertical=30.dp),
-                                        textAlign = TextAlign.Center
+                            // Search notes
+                            OutlinedTextField(
+                                value = query,
+                                onValueChange = { newQuery -> query = newQuery },
+                                label = { Text("Search notes") },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.Search,
+                                        contentDescription = "Search",
+                                        tint = Colors.medTeal
                                     )
-                                }
-                                else {
-                                    for (note in filteredNotes) {
-                                        item {
-                                            NoteButton(
-                                                note = note,
-                                                board = board,
-                                                onDelete = { noteToDelete.value = note },
-                                                onEdit = { noteToEdit.value = note },
-                                                containerColor = if (tagColorMap.containsKey(note.tag)) tagColorMap[note.tag]
-                                                            else tagColorMap["default"]  // 2nd case shouldn't happen, but just in case
+                                },
+                                shape = RoundedCornerShape(16.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth(0.8f)
+                                    .padding(8.dp)
+                                    .focusRequester(searchFocusRequester)
+                                ,
+                                colors = outlinedTextFieldColours()
+                            )
+                            // Sorting
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Text("Sort by: ", modifier = Modifier.padding(end = 8.dp))
+
+                                Box {
+                                    Text(
+                                        text = selectedSort,
+                                        modifier = Modifier
+                                            .background(Color.LightGray, shape = RoundedCornerShape(4.dp))
+                                            .padding(8.dp)
+                                            .clickable {
+                                                expandedSort = true
+                                            }
+                                    )
+                                    DropdownMenu(
+                                        expanded = expandedSort,
+                                        onDismissRequest = { expandedSort = false },
+                                        containerColor = Colors.veryLightTeal
+                                    ) {
+                                        sortOptions.forEach { option ->
+                                            DropdownMenuItem(
+                                                text = { Text(option) },
+                                                onClick = {
+                                                    selectedSort = option
+                                                    expandedSort = false
+                                                    applySorting(selectedSort, reverseOrder)
+                                                }
                                             )
                                         }
                                     }
                                 }
-                            }
-                            VerticalScrollbar(
-                                modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
-                                adapter = rememberScrollbarAdapter(scrollState = state)
-                            )
 
-                            AddNoteMenu(
-                                onAddArticle = { openAddArticleDialog.value = true },
-                                modifier = Modifier
-                                    .align(Alignment.BottomEnd) // bottom-right pos
-                                    .padding(16.dp)
-                            )
+                                Spacer(modifier = Modifier.width(16.dp))
+
+                                Text("Reverse: ")
+
+                                Switch(
+                                    checked = reverseOrder,
+                                    onCheckedChange = {
+                                        reverseOrder = it
+                                        applySorting(selectedSort, reverseOrder)
+                                    },
+                                    colors = switchColours()
+                                )
+                            }
+
+
+                            BoxWithConstraints(
+                                Modifier.fillMaxWidth()
+                                    .padding(15.dp)
+                                    .background(Colors.lightGrey.times(1.03f).copy(red = Colors.lightGrey.red))
+                                    .height(600.dp)
+                            ) {
+                                val maxWidthDp = maxWidth
+                                val columnWidth = 300.dp // adjust to whatever size makes sense for your grid items
+                                val columns = (maxWidthDp / columnWidth).toInt().coerceAtLeast(1)
+
+                                val state = rememberLazyGridState()
+
+                                if (noteList.noteList.isEmpty() || filteredNotes.isEmpty()) {
+                                    Box(
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = "No notes available",
+                                            fontSize = 20.sp,
+                                            modifier = Modifier.padding(vertical=30.dp),
+                                            textAlign = TextAlign.Center
+                                        )
+                                    }
+                                }
+                                else {
+                                    LazyVerticalGrid(
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentPadding = PaddingValues(10.dp),
+                                        state = state,
+                                        columns = GridCells.Fixed(columns),
+                                    ) {
+                                        for (note in filteredNotes) {
+                                            item {
+                                                NoteButton(
+                                                    note = note,
+                                                    board = board,
+                                                    onDelete = { noteToDelete.value = note },
+                                                    onEdit = { noteToEdit.value = note },
+                                                    containerColor = if (tagColorMap.containsKey(note.tag)) tagColorMap[note.tag]
+                                                    else tagColorMap["default"]  // 2nd case shouldn't happen, but just in case
+                                                )
+                                            }
+                                        }
+
+                                    }
+                                    VerticalScrollbar(
+                                        modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
+                                        adapter = rememberScrollbarAdapter(scrollState = state)
+                                    )
+                                }
+                            }
+
+
                         }
+
+                        AddNoteMenu(
+                            onAddArticle = { openAddArticleDialog.value = true },
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd) // bottom-right pos
+                                .padding(horizontal = 32.dp, vertical = 16.dp)
+                        )
                     }
                 }
             },
             gesturesEnabled = false,
+            modifier = Modifier.onPreviewKeyEvent {
+                when {
+                    (it.isCtrlPressed && it.key == Key.Minus) -> {
+                        drawerScope.launch {
+                            drawerState.close()
+                        }
+                        true
+                    }
+                    (it.isCtrlPressed && it.key == Key.Equals) -> {
+                        drawerScope.launch {
+                            drawerState.open()
+                        }
+                        true
+                    }
+                    (it.isCtrlPressed && it.key == Key.N) -> {
+                        openAddArticleDialog.value = true
+                        true
+                    }
+                    else -> false
+                }
+            }
         ) {
             FdgLayoutView(
                 graphViewModel = fdgLayoutViewModel,
@@ -443,7 +493,7 @@ fun IndividualBoardView(
                         noteList.noteList.filter {
                             it.title.contains(query, ignoreCase = true)
                         }
-                    }
+                    },
                 )
             }
 

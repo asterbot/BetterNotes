@@ -19,6 +19,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.isCtrlPressed
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -29,6 +33,7 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import individual_board.view.IndividualBoardScreen
+import kotlinx.coroutines.launch
 import org.bson.types.ObjectId
 import shared.*
 
@@ -154,7 +159,17 @@ fun BoardsView() {
     }
 
     Column(
-        modifier = Modifier.fillMaxSize().background(Colors.veryLightTeal),
+        modifier = Modifier.fillMaxSize().background(Colors.veryLightTeal)
+            .onPreviewKeyEvent {
+                when {
+                    (it.isCtrlPressed && it.key == Key.N) -> {
+                        openAddDialog.value = true
+                        true
+                    }
+
+                    else -> false
+                }
+    },
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(text = "Boards", style = MaterialTheme.typography.h2)
