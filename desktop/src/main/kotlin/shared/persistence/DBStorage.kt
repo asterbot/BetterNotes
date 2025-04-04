@@ -12,23 +12,18 @@ import com.mongodb.kotlin.client.coroutine.MongoDatabase
 import individual_board.entities.Note
 import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import login.entities.User
-import login.model.LoginModel
 import org.bson.BsonInt64
 import org.bson.Document
 import org.bson.types.ObjectId
+import org.mindrot.jbcrypt.BCrypt
 import shared.ConnectionManager
 import shared.ConnectionStatus
-import java.time.Instant
-import kotlin.jvm.internal.Ref.ObjectRef
-import org.mindrot.jbcrypt.BCrypt
 import shared.loginModel
-import kotlin.math.log
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.consumeEach
+import java.time.Instant
 
 class DBStorage() :IPersistence {
     // Call connect() before using DB
@@ -37,7 +32,7 @@ class DBStorage() :IPersistence {
 
     private val connectionString = dotenv["CONNECTION_STRING"]
 
-    private val databaseName = "cs346-users-db"
+    private val databaseName = "cs346-mock-db"
 
     private val uri = connectionString
 
