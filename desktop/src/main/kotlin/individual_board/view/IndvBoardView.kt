@@ -70,10 +70,8 @@ fun NoteButton(
         Button(
             onClick = {
                 println("DEBUG: Clicked ${note.title}")
-                if (note.type=="article") {
-                    individualBoardModel.updateNoteAccessed(note, board)
-                    ScreenManager.push(navigator, ArticleScreen(board, note))
-                }
+                individualBoardModel.updateNoteAccessed(note, board)
+                ScreenManager.push(navigator, ArticleScreen(board, note))
             },
             modifier = Modifier.fillMaxSize(),
             shape = RoundedCornerShape(10.dp),
@@ -207,7 +205,7 @@ fun IndividualBoardView(
         for (note in relatedNotes){
             relatedNotesIds.add(note.id)
         }
-        individualBoardModel.addNote(Note(ObjectId(), title, desc, type, relatedNotes = relatedNotesIds), board)
+        individualBoardModel.addNote(Note(ObjectId(), title, desc, relatedNotes = relatedNotesIds), board)
         fdgLayoutModel.initializeGraph {
             initializeNotesByNoteListBuilder(this, noteList.noteList)
         }
@@ -396,7 +394,6 @@ fun IndividualBoardView(
                             )
 
                             AddNoteMenu(
-                                onAddSection = { openAddSectionDialog.value = true },
                                 onAddArticle = { openAddArticleDialog.value = true },
                                 modifier = Modifier
                                     .align(Alignment.BottomEnd) // bottom-right pos
@@ -411,10 +408,8 @@ fun IndividualBoardView(
             FdgLayoutView(
                 graphViewModel = fdgLayoutViewModel,
                 onNodeClick = { note ->
-                    if (note.type=="article") {
-                        individualBoardModel.updateNoteAccessed(note, board)
-                        ScreenManager.push(navigator, ArticleScreen(board, note))
-                    }
+                    individualBoardModel.updateNoteAccessed(note, board)
+                    ScreenManager.push(navigator, ArticleScreen(board, note))
                 },
                 getLabel = { node -> node.title },
                 getColor = { node -> Colors.darkTeal },
@@ -436,7 +431,7 @@ fun IndividualBoardView(
         when {
             openAddArticleDialog.value -> {
                 AddNoteDialog(
-                    type = "Article",
+                    type = "Note",
                     onDismissRequest = { openAddArticleDialog.value = false },
                     onConfirmation = { title, desc, relatedNotes ->
                         addNote(title, desc, "article", relatedNotes)
@@ -451,25 +446,8 @@ fun IndividualBoardView(
                 )
             }
 
-            openAddSectionDialog.value -> {
-                AddNoteDialog(
-                    type = "Section",
-                    onDismissRequest = { openAddSectionDialog.value = false },
-                    onConfirmation = { title, desc, relatedNotes ->
-                        addNote(title, desc, "section", relatedNotes)
-                        openAddSectionDialog.value = false
-                    },
-                    onGetOtherNotes = { query ->
-                        noteList.noteList.filter {
-                            it.title.contains(query, ignoreCase = true)
-                        }
-                    }
-                )
-            }
-
             noteToEdit.value != null -> {
                 EditNoteDialog(
-                    type = noteToEdit.value!!.type,
                     noteTitle = noteToEdit.value?.title ?: "",
                     noteDesc = noteToEdit.value?.desc ?: "",
                     onDismissRequest = { noteToEdit.value = null },

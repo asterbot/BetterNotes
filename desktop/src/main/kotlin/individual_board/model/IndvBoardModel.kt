@@ -89,9 +89,7 @@ class IndvBoardModel(val persistence: IPersistence) : IPublisher() {
         noteDict[board.id]?.add(note)
         board.notes += note.id
 
-        if (note.type == "article") {
-            articleModel.contentBlockDict[note.id]= mutableListOf()
-        }
+        articleModel.contentBlockDict[note.id]= mutableListOf()
 
         note.relatedNotes.forEach { relatedId ->
             val relatedNote = noteDict[board.id]?.find { it.id == relatedId }

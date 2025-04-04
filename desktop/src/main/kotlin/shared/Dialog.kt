@@ -365,7 +365,6 @@ fun EditBoardDialog(
 
 @Composable
 fun EditNoteDialog(
-    type: String?,
     onDismissRequest: () -> Unit,
     onConfirmation: (noteTitle: String, noteDesc: String, relatedNotes: List<Note>) -> Unit,
     noteTitle: String,
@@ -390,7 +389,7 @@ fun EditNoteDialog(
 
     AlertDialog(
         icon = { Icons.Default.Edit },
-        title = { Text(text = "Edit ${type}") },
+        title = { Text(text = "Edit note") },
         text = {
             Column(modifier = Modifier.padding(16.dp)) {
                 // Title field
