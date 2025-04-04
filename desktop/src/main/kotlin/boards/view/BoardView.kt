@@ -17,6 +17,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -126,6 +128,11 @@ fun BoardsView() {
     // Searching
     var query by remember { mutableStateOf("") }
 
+    val searchFocusRequester = remember { FocusRequester() }
+    LaunchedEffect(Unit) {
+        searchFocusRequester.requestFocus()
+    }
+
     // Compute the filtered board list based on the query.
     val filteredBoards = if (query.isBlank()) {
         boardViewModel.boardList
@@ -167,7 +174,8 @@ fun BoardsView() {
             shape = RoundedCornerShape(16.dp),
             modifier = Modifier
                 .fillMaxWidth(0.5f)
-                .padding(8.dp),
+                .padding(8.dp)
+                .focusRequester(searchFocusRequester),
             colors = outlinedTextFieldColours()
         )
 
