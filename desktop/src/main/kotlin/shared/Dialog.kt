@@ -214,6 +214,34 @@ fun AddNoteDialog(
                     }
                 }
                 Spacer(modifier = Modifier.height(8.dp))
+                // Autocomplete field for related notes
+                TextField(
+                    value = query,
+                    onValueChange = { query = it },
+                    label = { Text("Add tags", color=Colors.darkGrey) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = textFieldColours()
+                )
+                LazyColumn {
+                    items(suggestions) { note ->
+                        Text(
+                            text = note.title,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    // Add the note if it's not already selected
+                                    if (note !in relatedNotes) {
+                                        relatedNotes = relatedNotes + note
+                                    }
+                                    // Clear the query and suggestions once a selection is made
+                                    query = ""
+                                    suggestions = suggestions.filter { it !in relatedNotes }
+                                }
+                                .padding(8.dp)
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
                 // Display selected related notes as chips (or simple texts)
                 if (relatedNotes.isNotEmpty()) {
                     Text("Related Notes:", color=Colors.darkGrey)
