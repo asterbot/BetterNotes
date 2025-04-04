@@ -511,9 +511,6 @@ fun BlockFrame(
                     }
 
                     if (block.blockType == BlockType.CANVAS) {
-                        Box (
-                            modifier = Modifier.clipToBounds()
-                        ) {
                             EditableCanvas(
                                 block = block,
                                 onCanvasUpdate = { bList: MutableList<Byte>, height: Int ->
@@ -528,7 +525,6 @@ fun BlockFrame(
                                     )
                                 }
                             )
-                        }
                     }
 
                     if (block.blockType == BlockType.MEDIA) {
@@ -1166,7 +1162,7 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int)
             }
 
             // Drawing canvas
-            Box(modifier = Modifier.fillMaxWidth().height(canvasHeight.dp)) {
+            Box(modifier = Modifier.fillMaxWidth().height(canvasHeight.dp).clipToBounds()) {
                 Canvas(
                     modifier = Modifier
                         .fillMaxSize()
