@@ -233,7 +233,6 @@ fun AddNoteDialog(
                                 Text(
                                     text = note.title,
                                     modifier = Modifier.padding(8.dp),
-                                    color = Colors.medTeal.copy(alpha=.2f)
                                 )
                             }
                         }
