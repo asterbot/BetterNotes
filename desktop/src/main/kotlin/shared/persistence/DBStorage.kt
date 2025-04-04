@@ -295,10 +295,8 @@ class DBStorage() :IPersistence {
         val job = coroutineScope.launch {
             // delete any content blocks from note if it is an article
             notesCollection.find(Filters.eq(noteId)).firstOrNull()?.let { noteDocument ->
-                if (noteDocument.type == "article") {
-                    noteDocument.contentBlocks.forEach {
-                        deleteContentBlock(noteDocument.id, it, boardId)
-                    }
+                noteDocument.contentBlocks.forEach {
+                    deleteContentBlock(noteDocument.id, it, boardId)
                 }
             }
 
