@@ -1,6 +1,5 @@
 package shared.persistence
 
-import androidx.compose.ui.graphics.Path
 import article.entities.*
 import boards.entities.Board
 import com.mongodb.MongoException
@@ -12,23 +11,18 @@ import com.mongodb.kotlin.client.coroutine.MongoDatabase
 import individual_board.entities.Note
 import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import login.entities.User
-import login.model.LoginModel
 import org.bson.BsonInt64
 import org.bson.Document
 import org.bson.types.ObjectId
+import org.mindrot.jbcrypt.BCrypt
 import shared.ConnectionManager
 import shared.ConnectionStatus
-import java.time.Instant
-import kotlin.jvm.internal.Ref.ObjectRef
-import org.mindrot.jbcrypt.BCrypt
 import shared.loginModel
-import kotlin.math.log
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.consumeEach
+import java.time.Instant
 
 class DBStorage() :IPersistence {
     // Call connect() before using DB
@@ -405,7 +399,8 @@ class DBStorage() :IPersistence {
                                 }.toMutableList()
                                 CanvasBlock(
                                     id = block.getObjectId("_id"),
-                                    bList = byteList
+                                    bList = byteList,
+                                    canvasHeight = block.getInteger("canvasHeight")
                                 )
                             }
                             "MATH" -> MathBlock(
@@ -421,8 +416,8 @@ class DBStorage() :IPersistence {
 
 
                                 MediaBlock(
-                                id = block.getObjectId("_id"),
-                                bList = byteList
+                                    id = block.getObjectId("_id"),
+                                    bList = byteList
                                 )
                             }
                             else -> TextBlock(
@@ -610,7 +605,7 @@ class DBStorage() :IPersistence {
     override fun updateContentBlock (
         block: ContentBlock,
         text: String,
-        pathsContent: MutableList<Path>,
+        canvasHeight: Int,
         bList: MutableList<Byte>,
         language: String,
         gluedAbove: Boolean,
@@ -622,6 +617,8 @@ class DBStorage() :IPersistence {
         val now = Instant.now().toString()
 
         println(block.id)
+        println("MADE IT HERE")
+        println(canvasHeight)
 
         val job = coroutineScope.launch {
 
@@ -630,11 +627,11 @@ class DBStorage() :IPersistence {
                 Filters.eq(block.id),
                 Updates.combine(
                     Updates.set("text", text),
+                    Updates.set("canvasHeight", canvasHeight),
                     Updates.set("language", language),
                     Updates.set("bList", bList),
                     Updates.set("gluedAbove", gluedAbove),
                     Updates.set("gluedBelow", gluedBelow),
-                    // Updates.set("paths", pathsContent) // TODO: Uncomment if needed
                 )
             )
 

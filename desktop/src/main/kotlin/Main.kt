@@ -63,7 +63,7 @@ fun main() {
             state = windowState
         ) {
             // Set minimum window size
-            window.minimumSize = java.awt.Dimension(600, 600)
+            window.minimumSize = java.awt.Dimension(800, 800)
             AppScaffold(startScreen)
         }
     }

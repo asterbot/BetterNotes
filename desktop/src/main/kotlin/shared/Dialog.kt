@@ -1,21 +1,26 @@
 package shared
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import individual_board.entities.Note
 
+fun sanitizeInput(input: String): String {
+    return input.filter { it.code in 32..126 } // printable ASCII only
+}
 
 @Composable
 fun ConfirmationDialog(
@@ -136,6 +141,7 @@ fun AddBoardDialog(
     )
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AddNoteDialog(
     type: String,
@@ -186,7 +192,9 @@ fun AddNoteDialog(
                     colors = textFieldColours()
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                // Autocomplete field for related notes
+
+                val suggestionListState = rememberLazyListState()
+
                 TextField(
                     value = query,
                     onValueChange = { query = it },
@@ -194,36 +202,58 @@ fun AddNoteDialog(
                     modifier = Modifier.fillMaxWidth(),
                     colors = textFieldColours()
                 )
-                LazyColumn {
-                    items(suggestions) { note ->
-                        Text(
-                            text = note.title,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    // Add the note if it's not already selected
-                                    if (note !in relatedNotes) {
-                                        relatedNotes = relatedNotes + note
+
+                // Make the height of the suggestions block dynamic
+                val suggestionsHeight = remember(suggestions.size) {
+                    val itemHeight = 40
+                    val totalHeight = minOf(suggestions.size * itemHeight, 2*itemHeight) // Cap at 2 blocks
+                    totalHeight.dp
+                }
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(suggestionsHeight) // Use the calculated height
+                ) {
+                    LazyColumn(
+                        state = suggestionListState,
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .fillMaxWidth()
+                    ) {
+                        items(suggestions) { note ->
+                            Text(
+                                text = note.title,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        // Add the note if it's not already selected
+                                        if (note !in relatedNotes) {
+                                            relatedNotes = relatedNotes + note
+                                        }
+                                        // Clear the query and suggestions once a selection is made
+                                        query = ""
+                                        suggestions = suggestions.filter { it !in relatedNotes }
                                     }
-                                    // Clear the query and suggestions once a selection is made
-                                    query = ""
-                                    suggestions = suggestions.filter { it !in relatedNotes }
-                                }
-                                .padding(8.dp)
-                        )
+                                    .padding(8.dp)
+                            )
+                        }
                     }
+                    VerticalScrollbar(
+                        adapter = rememberScrollbarAdapter(suggestionListState),
+                        modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
+                    )
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 // Display selected related notes as chips (or simple texts)
                 if (relatedNotes.isNotEmpty()) {
                     Text("Related Notes:", color=Colors.darkGrey)
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
+                    FlowRow(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), horizontalArrangement = Arrangement.Start) {
                         relatedNotes.forEach { note ->
                             Surface(
                                 modifier = Modifier
                                     .padding(4.dp)
                                     .clickable {
-                                        // Remove the note when clicked (optional)
                                         relatedNotes = relatedNotes - note
                                         suggestions = suggestions.filter { it !in relatedNotes }
                                     },
@@ -362,6 +392,7 @@ fun EditBoardDialog(
     )
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun EditNoteDialog(
     type: String?,
@@ -377,15 +408,16 @@ fun EditNoteDialog(
 
     var query by remember { mutableStateOf("") }
     var suggestions by remember { mutableStateOf(emptyList<Note>()) }
-    var relatedNotes by remember { mutableStateOf(initialRelatedNotes.toMutableStateList()) }
+    var relatedNotes by remember { mutableStateOf(initialRelatedNotes) }
 
     var isError by remember { mutableStateOf(false) }
 
     // Update suggestions on query change
     LaunchedEffect(query) {
         suggestions = onGetOtherNotes(query)
-            .filter { it !in relatedNotes }
     }
+
+    suggestions = suggestions.filter { it !in relatedNotes }
 
     AlertDialog(
         icon = { Icons.Default.Edit },
@@ -404,17 +436,20 @@ fun EditNoteDialog(
                     isError = isError,
                     colors = textFieldColours()
                 )
+
                 Spacer(modifier = Modifier.height(8.dp))
-                // Description field
+
                 TextField(
                     value = newNoteDesc,
                     onValueChange = { newNoteDesc = it },
-                    label = { Text("Note Description", color = Colors.darkGrey) },
+                    label = { Text("Note Description", color=Colors.darkGrey) },
                     modifier = Modifier.fillMaxWidth(),
                     colors = textFieldColours()
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                // Related note search input
+
+                val suggestionListState = rememberLazyListState()
+
                 TextField(
                     value = query,
                     onValueChange = { query = it },
@@ -422,48 +457,75 @@ fun EditNoteDialog(
                     modifier = Modifier.fillMaxWidth(),
                     colors = textFieldColours()
                 )
-                // Suggestions list
-                LazyColumn {
-                    items(suggestions) { note ->
-                        Text(
-                            text = note.title,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    if (note !in relatedNotes) {
-                                        relatedNotes.add(note)
-                                        query = ""
-                                        suggestions = emptyList()
-                                    }
-                                }
-                                .padding(8.dp)
-                        )
-                    }
+
+                // Make the height of the suggestions block dynamic
+                val suggestionsHeight = remember(suggestions.size) {
+                    val itemHeight = 40
+                    val totalHeight = minOf(suggestions.size * itemHeight, 2*itemHeight) // Cap at 2 blocks
+                    totalHeight.dp
                 }
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(suggestionsHeight) // Use the calculated height
+                ) {
+                    // Suggestions list
+                    LazyColumn(
+                        state = suggestionListState,
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .fillMaxWidth()
+                    ) {
+                        items(suggestions) { note ->
+                            Text(
+                                text = note.title,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        if (note !in relatedNotes) {
+                                            relatedNotes = relatedNotes + note
+                                        }
+                                        query = ""
+                                        suggestions = suggestions.filter { it !in relatedNotes }
+                                    }
+                                    .padding(8.dp)
+                            )
+                        }
+                    }
+
+                    VerticalScrollbar(
+                        adapter = rememberScrollbarAdapter(suggestionListState),
+                        modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(8.dp))
                 // Chips for current related notes
                 if (relatedNotes.isNotEmpty()) {
                     Text("Related Notes:")
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
+                    FlowRow(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), horizontalArrangement = Arrangement.Start) {
                         relatedNotes.forEach { note ->
                             Surface(
                                 modifier = Modifier
                                     .padding(4.dp)
                                     .clickable {
-                                        relatedNotes.remove(note)
+                                        relatedNotes = relatedNotes - note
                                         suggestions = onGetOtherNotes(query).filter { it !in relatedNotes }
                                     },
                                 shape = MaterialTheme.shapes.small,
                                 color = Colors.medTeal.copy(alpha = 0.2f)
                             ) {
                                 Text(
-                                    text = note.title,
+                                    text = if (note.title.length > 12) note.title.take(12) + "…" else note.title,
                                     modifier = Modifier.padding(8.dp)
                                 )
                             }
                         }
                     }
                 }
+
+
             }
         },
         onDismissRequest = {
@@ -482,7 +544,7 @@ fun EditNoteDialog(
                         )
                         newNoteTitle = TextFieldValue("")
                         newNoteDesc = TextFieldValue("")
-                        relatedNotes.clear()
+                        relatedNotes = emptyList()
                     }
                 },
                 colors = transparentTextButtonColours()
@@ -496,7 +558,7 @@ fun EditNoteDialog(
                     onDismissRequest()
                     newNoteTitle = TextFieldValue("")
                     newNoteDesc = TextFieldValue("")
-                    relatedNotes.clear()
+                    relatedNotes = emptyList()
                 },
                 colors = transparentTextButtonColours()
             ) {
@@ -535,6 +597,7 @@ fun SignUpDialog(
 
     var passwordVisible by remember { mutableStateOf(false) }
 
+
     AlertDialog(
         icon = { Icons.Default.Add },
         title = { Text(text = "Sign up!") },
@@ -544,7 +607,10 @@ fun SignUpDialog(
                 OutlinedTextField(
                     colors = outlinedTextFieldColours(),
                     value = username,
-                    onValueChange = { username = it },
+                    onValueChange = { input ->
+                        val sanitized = sanitizeInput(input.text)
+                        username = input.copy(text = sanitized)
+                    },
                     label = { Text("Username", color = Colors.darkGrey) },
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Email,
@@ -557,8 +623,9 @@ fun SignUpDialog(
                 OutlinedTextField(
                     colors = outlinedTextFieldColours(),
                     value = password,
-                    onValueChange = {
-                        password = it
+                    onValueChange = { input ->
+                        val sanitized = sanitizeInput(input.text)
+                        password = input.copy(text = sanitized)
                     },
                     label = { Text("Password", color = Colors.darkGrey) },
                     visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
