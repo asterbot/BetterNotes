@@ -115,9 +115,8 @@ compose.desktop {
             macOS {
                 iconFile.set(project.file("src/main/resources/betternotes_logo.icns"))
             }
-
             windows {
-                iconFile.set(project.file("src/main/resources/betternotes_logo.ico"))
+                iconFile.set(project.file("src/main/resources/betternotes_logo.png"))
             }
         }
     }
