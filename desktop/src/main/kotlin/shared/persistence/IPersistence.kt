@@ -1,6 +1,5 @@
 package shared.persistence
 
-import androidx.compose.ui.graphics.Path
 import article.entities.ContentBlock
 import boards.entities.Board
 import individual_board.entities.Note
@@ -67,7 +66,7 @@ interface IPersistence {
 
     fun deleteContentBlock(articleId: ObjectId, contentBlockId: ObjectId, boardId: ObjectId, await: Boolean = false)
     fun updateContentBlock(
-        block: ContentBlock, text: String, pathsContent: MutableList<Path>,
+        block: ContentBlock, text: String, canvasHeight: Int,
         bList: MutableList<Byte>, language: String, gluedAbove: Boolean, gluedBelow: Boolean,
         article: Note, boardId: ObjectId, await: Boolean = false
     )
