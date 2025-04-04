@@ -4,6 +4,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -62,12 +65,9 @@ fun NoteButton(
 ) {
     val navigator = LocalNavigator.currentOrThrow
     Box (
-        modifier = Modifier.padding(10.dp),
+        modifier = Modifier.padding(15.dp),
     ) {
         Button(
-            modifier = Modifier
-                .padding(15.dp)
-                .fillMaxWidth(0.9f),
             onClick = {
                 println("DEBUG: Clicked ${note.title}")
                 if (note.type=="article") {
@@ -75,10 +75,11 @@ fun NoteButton(
                     ScreenManager.push(navigator, ArticleScreen(board, note))
                 }
             },
+            modifier = Modifier.fillMaxSize(),
             shape = RoundedCornerShape(10.dp),
             colors = ButtonDefaults.buttonColors(
                 // TODO: change colours based on tags? later
-                containerColor = if (note.type=="section") Colors.darkGrey else Colors.lightTeal
+                containerColor = Colors.medTeal
             )
         ) {
             Column(
@@ -102,19 +103,13 @@ fun NoteButton(
                 )
             }
         }
-        Box(
+        ActionMenu(
+            onEdit = { onEdit(note) },
+            onDelete = { onDelete(note) },
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .padding(10.dp)
-        ) {
-            ActionMenu(
-                onEdit = { onEdit(note) },
-                onDelete = { onDelete(note) },
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(4.dp)
-            )
-        }
+                .padding(4.dp)
+        )
     }
 }
 
@@ -246,7 +241,7 @@ fun IndividualBoardView(
                     drawerContainerColor = Colors.veryLightTeal,
                     modifier = Modifier
                         .widthIn(min = 400.dp)
-                        .fillMaxWidth(0.33f)
+                        .fillMaxWidth(0.5f)
                 ) {
                     IconButton(
                         onClick = {
@@ -264,6 +259,7 @@ fun IndividualBoardView(
                     ) {
                         Text(
                             text = board.name,
+                            textAlign = TextAlign.Center,
                             style = MaterialTheme.typography.h4,
                             modifier = Modifier.fillMaxWidth(0.8f)
                                 .padding(8.dp),
@@ -356,17 +352,22 @@ fun IndividualBoardView(
                         }
 
 
-                        Box(
+                        BoxWithConstraints(
                             Modifier.fillMaxSize()
                                 .padding(15.dp)
                                 .background(Colors.lightGrey.times(1.03f).copy(red = Colors.lightGrey.red))
                                 .weight(1f)
                         ) {
-                            val state = rememberLazyListState()
-                            LazyColumn(
+                            val maxWidthDp = maxWidth
+                            val columnWidth = 300.dp // adjust to whatever size makes sense for your grid items
+                            val columns = (maxWidthDp / columnWidth).toInt().coerceAtLeast(1)
+
+                            val state = rememberLazyGridState()
+                            LazyVerticalGrid(
                                 modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(10.dp),
                                 state = state,
-                                horizontalAlignment = Alignment.CenterHorizontally,
+                                columns = GridCells.Fixed(columns),
                             ) {
                                 if (noteList.noteList.isEmpty() || filteredNotes.isEmpty()) item {
                                     Text(
