@@ -23,11 +23,8 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.pointer.pointerInput
@@ -885,11 +882,6 @@ fun addMedia(block: ContentBlock, isSelected: Boolean = true, onMediaUpdate: (Mu
 //}
 //
 //
-//fun isPointNearPath(point: Offset, path: Path, threshold: Float = 20f): Boolean {
-//    val pathBounds = path.getBounds()
-//    return (point.x in (pathBounds.left - threshold)..(pathBounds.right + threshold) &&
-//            point.y in (pathBounds.top - threshold)..(pathBounds.bottom + threshold))
-//}
 
 
 // lines are saved, best version yet
@@ -1081,13 +1073,6 @@ fun addMedia(block: ContentBlock, isSelected: Boolean = true, onMediaUpdate: (Mu
 //    }
 //}
 
-// Check if a point is near any path for erasing purposes
-//private fun isPointNearPath(point: Offset, path: Path, threshold: Float = 20f): Boolean {
-//    val pathBounds = path.getBounds()
-//    return (point.x in (pathBounds.left - threshold)..(pathBounds.right + threshold) &&
-//            point.y in (pathBounds.top - threshold)..(pathBounds.bottom + threshold))
-//}
-
 data class PathData(val points: List<Offset>, val color: Color, val strokeWidth: Float)
 @Composable
 fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int) -> Unit) {
@@ -1110,6 +1095,7 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int)
         else -> mutableListOf()
     }
     var paths by remember { mutableStateOf(bytesToPaths(initialBytes.toByteArray())) }
+    var eraserSize = 20f
 
     MaterialTheme {
         Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
@@ -1161,6 +1147,12 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int)
                         Text("Save")
                     }
                 }
+
+                Box(modifier = Modifier.width(100.dp)) {
+                    TextButton(modifier = Modifier.align(Alignment.Center), colors = textButtonColours(), onClick = {isErasing = !isErasing}) {
+                        Text(if(isErasing)"get pen" else "get eraser")
+                    }
+                }
             }
 
             // Drawing canvas
@@ -1183,7 +1175,12 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int)
                                             isOutsideBox = false
 
                                             if (isErasing) {
-
+                                                    paths.removeAll { pathData ->
+                                                        pathData.points.any { point ->
+                                                            (point - offset).getDistance() < eraserSize
+                                                        }
+                                                    }
+                                                println("So tired")
                                             } else {
                                                 currentPath = listOf(offset)
                                             }
@@ -1198,15 +1195,16 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int)
                                             val boxHeight = size.height
                                             val isInside = change.position.x in 0f..boxWidth.toFloat() &&
                                                     change.position.y in 0f..boxHeight.toFloat()
-                                            if (isInside) {
-                                                currentPath = currentPath + change.position
-                                                // println("is inside")
-                                                println("$change.position")
-                                            }
 
                                             if (isInside) {
                                                 if (isErasing) {
 
+                                                        paths.removeAll { pathData ->
+                                                            pathData.points.any { point ->
+                                                                (point - change.position).getDistance() < eraserSize
+                                                            }
+                                                        }
+                                                    println("wanna sleep")
                                                 } else {
                                                     currentPath = currentPath + change.position
                                                 }
@@ -1218,10 +1216,12 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int)
                                     onDragEnd = {
                                         isDrawing = false
                                         isResizing = false
-                                        paths = paths.toMutableList().apply {
-                                            add(PathData(currentPath, selectedColor, strokeWidth))
+                                        if (!isErasing) {
+                                            paths = paths.toMutableList().apply {
+                                                add(PathData(currentPath, selectedColor, strokeWidth))
+                                            }
+                                            currentPath = emptyList()
                                         }
-                                        currentPath = emptyList()
                                     }
                                 )
 
@@ -1291,62 +1291,6 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int)
                     }
                 }
             }
-
-            // Bottom action buttons
-//            Row(
-//                modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-//                horizontalArrangement = Arrangement.SpaceBetween
-//            ) {
-//                Button(
-//                    onClick = { showDrawingsList = !showDrawingsList },
-//                    modifier = Modifier.padding(end = 8.dp)
-//                ) {
-//                    Text(if (showDrawingsList) "Hide Drawings" else "Show Drawings")
-//                }
-//
-//                Row {
-//                    Button(
-//                        onClick = { paths = mutableListOf() },
-//                        modifier = Modifier.padding(end = 8.dp)
-//                    ) {
-//                        Icon(Icons.Default.Clear, contentDescription = "Clear")
-//                        Spacer(Modifier.width(4.dp))
-//                        Text("Clear")
-//                    }
-
-//                    Button(
-//                        onClick = {
-//                            scope.launch {
-//                                // Convert canvas to bytes
-//                                val bytes = canvasToBytes(paths, canvasWidth, canvasHeight)
-//
-//                                // Create or update drawing
-//                                val drawing = Drawing(
-//                                    id = currentDrawingId ?: UUID.randomUUID().toString(),
-//                                    name = currentDrawingName,
-//                                    width = canvasWidth,
-//                                    height = canvasHeight,
-//                                    imageData = bytes
-//                                )
-//
-//                                // Save to MongoDB
-//                                drawingRepository.saveDrawing(drawing)
-//
-//                                // Update current drawing ID
-//                                currentDrawingId = drawing.id
-//
-//                                // Refresh drawings list
-//                                drawings = drawingRepository.getAllDrawings()
-//                            }
-//                        },
-//                        modifier = Modifier.padding(end = 8.dp)
-//                    ) {
-//                        Icon(Icons.Default.Save, contentDescription = "Save")
-//                        Spacer(Modifier.width(4.dp))
-//                        Text("Save")
-//                    }
-//                }
-//            }
         }
     }
 }
