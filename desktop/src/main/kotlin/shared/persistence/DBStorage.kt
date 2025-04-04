@@ -1,6 +1,5 @@
 package shared.persistence
 
-import androidx.compose.ui.graphics.Path
 import article.entities.*
 import boards.entities.Board
 import com.mongodb.MongoException
@@ -32,7 +31,7 @@ class DBStorage() :IPersistence {
 
     private val connectionString = dotenv["CONNECTION_STRING"]
 
-    private val databaseName = "cs346-users-db"
+    private val databaseName = "cs346-mock-db"
 
     private val uri = connectionString
 
@@ -400,7 +399,8 @@ class DBStorage() :IPersistence {
                                 }.toMutableList()
                                 CanvasBlock(
                                     id = block.getObjectId("_id"),
-                                    bList = byteList
+                                    bList = byteList,
+                                    canvasHeight = block.getInteger("canvasHeight")
                                 )
                             }
                             "MATH" -> MathBlock(
@@ -416,8 +416,8 @@ class DBStorage() :IPersistence {
 
 
                                 MediaBlock(
-                                id = block.getObjectId("_id"),
-                                bList = byteList
+                                    id = block.getObjectId("_id"),
+                                    bList = byteList
                                 )
                             }
                             else -> TextBlock(
@@ -605,7 +605,7 @@ class DBStorage() :IPersistence {
     override fun updateContentBlock (
         block: ContentBlock,
         text: String,
-        pathsContent: MutableList<Path>,
+        canvasHeight: Int,
         bList: MutableList<Byte>,
         language: String,
         gluedAbove: Boolean,
@@ -617,6 +617,8 @@ class DBStorage() :IPersistence {
         val now = Instant.now().toString()
 
         println(block.id)
+        println("MADE IT HERE")
+        println(canvasHeight)
 
         val job = coroutineScope.launch {
 
@@ -625,11 +627,11 @@ class DBStorage() :IPersistence {
                 Filters.eq(block.id),
                 Updates.combine(
                     Updates.set("text", text),
+                    Updates.set("canvasHeight", canvasHeight),
                     Updates.set("language", language),
                     Updates.set("bList", bList),
                     Updates.set("gluedAbove", gluedAbove),
                     Updates.set("gluedBelow", gluedBelow),
-                    // Updates.set("paths", pathsContent) // TODO: Uncomment if needed
                 )
             )
 
