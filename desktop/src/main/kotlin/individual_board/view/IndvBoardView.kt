@@ -265,6 +265,7 @@ fun IndividualBoardView(
 
                         Text(
                             text = board.desc,
+                            textAlign = TextAlign.Center,
                             style = MaterialTheme.typography.body1,
                             modifier = Modifier.fillMaxWidth(0.8f)
                                 .padding(8.dp),
