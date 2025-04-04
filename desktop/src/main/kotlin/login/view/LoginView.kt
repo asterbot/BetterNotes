@@ -2,6 +2,7 @@ package login.view
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
@@ -15,7 +16,11 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.*
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -53,6 +58,30 @@ fun LoginView(){
 
     val keepSignedIn = remember { mutableStateOf(false) }
 
+    // Focus management
+    val usernameFocusRequester = remember { FocusRequester() }
+    val passwordFocusRequester = remember { FocusRequester() }
+    LaunchedEffect(Unit) {
+        usernameFocusRequester.requestFocus()
+    }
+    val loginAction = {
+        if (dbStorage.authenticate(username, password)) {
+            LoginManager.logIn()
+            loginModel.changeCurrentUser(username)
+            initializeModels()
+            navigator.push(BoardViewScreen())
+            if (keepSignedIn.value) {
+                loginModel.saveUser(username, password)
+            }
+        } else {
+            openSignInWarning.value = true
+        }
+    }
+
+    fun sanitizeInput(input: String): String {
+        return input.filter { it.code in 32..126 } // printable ASCII only
+    }
+
     Row(
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -83,23 +112,25 @@ fun LoginView(){
                 )
 
                 OutlinedTextField(
-                    colors = outlinedTextFieldColours(),
                     value = username,
-                    onValueChange = { username = it },
+                    onValueChange = { username = sanitizeInput(it) },
                     label = { Text("Username") },
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Email,
+                    keyboardOptions = KeyboardOptions.Default.copy(
                         imeAction = ImeAction.Next
                     ),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(usernameFocusRequester),
+                    colors = outlinedTextFieldColours()
                 )
+
 
                 Spacer(modifier = Modifier.height(16.dp))
 
                 OutlinedTextField(
                     colors = outlinedTextFieldColours(),
                     value = password,
-                    onValueChange = { password = it },
+                    onValueChange = { password = sanitizeInput(it) },
                     label = { Text("Password") },
                     visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(
@@ -115,6 +146,16 @@ fun LoginView(){
                         }
                     },
                     modifier = Modifier.fillMaxWidth()
+                        .focusRequester(passwordFocusRequester)
+                        .onPreviewKeyEvent {
+                            when {
+                                (it.key == Key.Enter) && (it.type == KeyEventType.KeyUp) -> {
+                                    loginAction()
+                                    true
+                                }
+                                else -> false
+                            }
+                    },
                 )
 
                 Row(
@@ -130,20 +171,7 @@ fun LoginView(){
 
 
                 Button(
-                    onClick = {
-                        if (dbStorage.authenticate(username, password)) {
-                            LoginManager.logIn()
-                            loginModel.changeCurrentUser(username)
-                            initializeModels()
-                            navigator.push(BoardViewScreen())
-                            if (keepSignedIn.value) {
-                                loginModel.saveUser(username, password)
-                            }
-                        }
-                        else{
-                            openSignInWarning.value = true
-                        }
-                    },
+                    onClick = { loginAction() },
                     modifier = Modifier.fillMaxWidth(),
                     colors = textButtonColours()
                 ) {

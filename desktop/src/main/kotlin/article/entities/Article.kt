@@ -1,6 +1,5 @@
 package article.entities
 
-import androidx.compose.ui.graphics.Path
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
