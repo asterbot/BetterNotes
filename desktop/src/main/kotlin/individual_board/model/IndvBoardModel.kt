@@ -11,11 +11,15 @@ import shared.persistence.Create
 import shared.persistence.Delete
 import shared.persistence.IPersistence
 import shared.persistence.Update
+import java.awt.Color
 import java.time.Instant
 
 class IndvBoardModel(val persistence: IPersistence) : IPublisher() {
     // maps board ID to list of notes
     var noteDict = mutableMapOf<ObjectId, MutableList<Note>>()
+
+//    var currentTags = mutableListOf<String>() // name of tags
+//    var tagsMap = mutableMapOf<String, Color>() // maps tags to colors
 
     var currentSortType: String = "Last Accessed"
     var currentIsReversed: Boolean = false
@@ -89,9 +93,7 @@ class IndvBoardModel(val persistence: IPersistence) : IPublisher() {
         noteDict[board.id]?.add(note)
         board.notes += note.id
 
-        if (note.type == "article") {
-            articleModel.contentBlockDict[note.id]= mutableListOf()
-        }
+        articleModel.contentBlockDict[note.id]= mutableListOf()
 
         note.relatedNotes.forEach { relatedId ->
             val relatedNote = noteDict[board.id]?.find { it.id == relatedId }
