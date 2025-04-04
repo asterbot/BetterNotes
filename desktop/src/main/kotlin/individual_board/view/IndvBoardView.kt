@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -369,13 +370,20 @@ fun IndividualBoardView(
                                 state = state,
                                 columns = GridCells.Fixed(columns),
                             ) {
-                                if (noteList.noteList.isEmpty() || filteredNotes.isEmpty()) item {
-                                    Text(
-                                        text = "No notes available",
-                                        fontSize = 20.sp,
-                                        modifier = Modifier.padding(vertical=30.dp),
-                                        textAlign = TextAlign.Center
-                                    )
+                                if (noteList.noteList.isEmpty() || filteredNotes.isEmpty())
+                                    item(span = { GridItemSpan(maxLineSpan) }) {
+                                    Column(
+                                            modifier = Modifier.padding(top=15.dp),
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                        Text(
+                                            text = "No notes available",
+                                            fontSize = 20.sp,
+                                            modifier = Modifier.padding(vertical = 30.dp),
+                                            textAlign = TextAlign.Center
+                                        )
+                                    }
                                 }
                                 else {
                                     for (note in filteredNotes) {
