@@ -172,12 +172,12 @@ fun ArticleCompose(board: Board, article: Note) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(5.dp)
             .clickable(
                 // passing in empty MutableInteractionSource means no ripple effect (i.e. box not grayed out when hovered over)
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null
             ) { selectedBlock = null }
+            .background(tagColorMap[article.tag]!!.copy(alpha=0.05f))
     ) {
         Column(
             modifier = Modifier.padding(top=15.dp),
@@ -187,7 +187,8 @@ fun ArticleCompose(board: Board, article: Note) {
             Text( // article name
                 text = article.title,
                 fontSize = 24.sp,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = tagColorMap[article.tag]!!.times(0.7f)
             )
             Text( // article description
                 text = article.desc,

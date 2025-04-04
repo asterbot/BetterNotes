@@ -3,11 +3,9 @@ import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.MaterialTheme
@@ -61,7 +59,8 @@ fun NoteButton(
     note: Note,
     board: Board,
     onDelete: (Note) -> Unit,
-    onEdit: (Note) -> Unit
+    onEdit: (Note) -> Unit,
+    containerColor: Color? = tagColorMap["default"]
 ) {
     val navigator = LocalNavigator.currentOrThrow
     Box (
@@ -76,8 +75,7 @@ fun NoteButton(
             modifier = Modifier.fillMaxSize(),
             shape = RoundedCornerShape(10.dp),
             colors = ButtonDefaults.buttonColors(
-                // TODO: change colours based on tags? later
-                containerColor = Colors.medTeal
+                containerColor = containerColor!!
             )
         ) {
             Column(
@@ -200,12 +198,12 @@ fun IndividualBoardView(
     val noteToEdit = remember { mutableStateOf<Note?>(null) }
     val noteToDelete = remember { mutableStateOf<Note?>(null) }
 
-    fun addNote(title: String, desc: String, type: String, relatedNotes: List<Note>){
+    fun addNote(title: String, desc: String, type: String, relatedNotes: List<Note>, tagColor: String){
         var relatedNotesIds = mutableListOf<ObjectId>()
         for (note in relatedNotes){
             relatedNotesIds.add(note.id)
         }
-        individualBoardModel.addNote(Note(ObjectId(), title, desc, relatedNotes = relatedNotesIds), board)
+        individualBoardModel.addNote(Note(ObjectId(), title, desc, relatedNotes = relatedNotesIds, tag = tagColor), board)
         fdgLayoutModel.initializeGraph {
             initializeNotesByNoteListBuilder(this, noteList.noteList)
         }
@@ -218,12 +216,12 @@ fun IndividualBoardView(
         }
     }
 
-    fun editNote(note:Note, title: String, desc: String, relatedNotes: List<Note>){
+    fun editNote(note: Note, title: String, desc: String, relatedNotes: List<Note>, tagColor: String){
         var relatedNotesIds = mutableListOf<ObjectId>()
         for (note in relatedNotes){
             relatedNotesIds.add(note.id)
         }
-        individualBoardModel.updateNote(note, board.id, title, desc, relatedNotesIds)
+        individualBoardModel.updateNote(note, board.id, title, desc, relatedNotesIds, tagColor)
         fdgLayoutModel.initializeGraph {
             initializeNotesByNoteListBuilder(this, noteList.noteList)
         }
@@ -383,7 +381,9 @@ fun IndividualBoardView(
                                                 note = note,
                                                 board = board,
                                                 onDelete = { noteToDelete.value = note },
-                                                onEdit = { noteToEdit.value = note }
+                                                onEdit = { noteToEdit.value = note },
+                                                containerColor = if (tagColorMap.containsKey(note.tag)) tagColorMap[note.tag]
+                                                            else tagColorMap["default"]  // 2nd case shouldn't happen, but just in case
                                             )
                                         }
                                     }
@@ -413,7 +413,7 @@ fun IndividualBoardView(
                     ScreenManager.push(navigator, ArticleScreen(board, note))
                 },
                 getLabel = { node -> node.title },
-                getColor = { node -> Colors.darkTeal },
+                getColor = { node -> if (tagColorMap.containsKey(node.tag)) tagColorMap[node.tag]!! else tagColorMap["default"]!! },
             )
             IconButton(
                 onClick = {
@@ -434,8 +434,8 @@ fun IndividualBoardView(
                 AddNoteDialog(
                     type = "Note",
                     onDismissRequest = { openAddArticleDialog.value = false },
-                    onConfirmation = { title, desc, relatedNotes ->
-                        addNote(title, desc, "article", relatedNotes)
+                    onConfirmation = { title, desc, relatedNotes, tagColor ->
+                        addNote(title, desc, "article", relatedNotes, tagColor)
                         openAddArticleDialog.value = false
                         println("relatedNotes: $relatedNotes")
                     },
@@ -452,8 +452,8 @@ fun IndividualBoardView(
                     noteTitle = noteToEdit.value?.title ?: "",
                     noteDesc = noteToEdit.value?.desc ?: "",
                     onDismissRequest = { noteToEdit.value = null },
-                    onConfirmation = { title, desc, relatedNotes ->
-                        editNote(noteToEdit.value as Note, title, desc, relatedNotes)
+                    onConfirmation = { title, desc, relatedNotes, tagColor ->
+                        editNote(noteToEdit.value as Note, title, desc, relatedNotes, tagColor)
                         noteToEdit.value = null
                     },
                     initialRelatedNotes = noteList.noteList.filter { note ->
@@ -463,7 +463,8 @@ fun IndividualBoardView(
                         noteList.noteList.filter {
                             it.title.contains(query, ignoreCase = true) && it.id != noteToEdit.value?.id
                         }
-                    }
+                    },
+                    noteColor = noteToEdit.value?.tag!!
                 )
             }
 
