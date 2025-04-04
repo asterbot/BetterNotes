@@ -404,7 +404,7 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
     }
 
     // TODO: later (expand to other ContentBlock types)
-    fun saveBlock(index: Int, stringContent: String = "", pathsContent: MutableList<Path> = mutableListOf(), canvasHeight: Int = 0, bListContent: MutableList<Byte> = mutableListOf(),
+    fun saveBlock(index: Int, stringContent: String = "", pathsContent: MutableList<Path> = mutableListOf(), canvasHeight: Int = 0, bList: MutableList<Byte> = mutableListOf(),
                   language: String = "kotlin", gluedAbove: Boolean, gluedBelow: Boolean, article: Note, board: Board) {
         println("I'M IN HERE")
         contentBlockDict[article.id]?.let { contentBlocks ->
@@ -417,13 +417,13 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
                 } else if (block is CodeBlock) {
                     (block as CodeBlock).text = stringContent
                 } else if (block is CanvasBlock) {
-                    (block as CanvasBlock).paths = pathsContent
+                    (block as CanvasBlock).bList = bList
                     (block as CanvasBlock).canvasHeight = canvasHeight
 
                 } else if (block is MathBlock) {
                     (block as MathBlock).text = stringContent
                 } else if (block is MediaBlock) {
-                    (block as MediaBlock).bList = bListContent
+                    (block as MediaBlock).bList = bList
                 }
                 // TODO: might need to fix for canvas? idk if it can handle it yet
 
@@ -431,14 +431,14 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
                 block.gluedBelow = gluedBelow
 
                 if (ConnectionManager.isConnected) {
-                    persistence.updateContentBlock(block, stringContent, pathsContent, language, gluedAbove, gluedBelow, article, board.id)
+                    persistence.updateContentBlock(block, stringContent, pathsContent, bList, language, gluedAbove, gluedBelow, article, board.id)
                 }
-                else{
+                else {
                     dbQueue.addToQueue(
                         Update(persistence, block, mutableMapOf(
                         "text" to stringContent,
                         "pathsContent" to pathsContent,
-                        "bListContent" to bListContent,
+                        "bList" to bList,
                         "language" to language,
                         "gluedAbove" to gluedAbove,
                         "gluedBelow" to gluedBelow,
