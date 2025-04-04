@@ -1,6 +1,7 @@
 
 
 // Filekit (delete "core" from import and don't use $verison in dependency)
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import boards.view.BoardViewScreen
@@ -54,9 +55,13 @@ fun main() {
         }
     }
     application {
-        Window(onCloseRequest = ::exitApplication) {
+        Window(onCloseRequest = ::exitApplication,
+            title = "BetterNotes",
+            icon = painterResource("betternotes_logo.png")
+        ) {
             AppScaffold(startScreen)
         }
     }
 }
+
 
