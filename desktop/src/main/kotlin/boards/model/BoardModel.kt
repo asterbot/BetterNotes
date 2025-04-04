@@ -12,6 +12,9 @@ import java.time.Instant
 
 class BoardModel(val persistence: IPersistence) : IPublisher(){
     var boardList = mutableListOf<Board>();
+    var sortFunc: (Board, Board) -> Int = { b1, b2 -> b1.name.compareTo(b2.name) }
+    var currentSortType: String = "Last Accessed"
+    var currentIsReversed: Boolean = false
 
     init {
         persistence.connect()
@@ -24,6 +27,44 @@ class BoardModel(val persistence: IPersistence) : IPublisher(){
             boardList = persistence.readBoards().toMutableList()
             notifySubscribers()
         }
+    }
+
+    // Sorting functions
+    private fun sortBoardList() {
+        boardList.sortWith(sortFunc)
+        if (currentIsReversed) boardList.reverse()
+    }
+
+    fun sortByTitle(reverse: Boolean = false) {
+        currentSortType = "Title"
+        currentIsReversed = reverse
+        sortFunc = { b1, b2 -> (b1.name.lowercase()).compareTo(b2.name.lowercase()) }
+        sortBoardList()
+        notifySubscribers()
+    }
+
+    fun sortByDatetimeAccessed(reverse: Boolean = false) {
+        currentSortType = "Last Accessed"
+        currentIsReversed = reverse
+        sortFunc = { b1, b2 -> b2.datetimeAccessed.compareTo(b1.datetimeAccessed) }
+        sortBoardList()
+        notifySubscribers()
+    }
+
+    fun sortByDatetimeCreated(reverse: Boolean = false) {
+        currentSortType = "Last Created"
+        currentIsReversed = reverse
+        sortFunc = { b1, b2 -> b2.datetimeCreated.compareTo(b1.datetimeCreated) }
+        sortBoardList()
+        notifySubscribers()
+    }
+
+    fun sortByDatetimeUpdated(reverse: Boolean = false) {
+        currentSortType = "Last Updated"
+        currentIsReversed = reverse
+        sortFunc = { b1, b2 -> b2.datetimeUpdated.compareTo(b1.datetimeUpdated) }
+        sortBoardList()
+        notifySubscribers()
     }
 
 
@@ -42,6 +83,7 @@ class BoardModel(val persistence: IPersistence) : IPublisher(){
             dbQueue.addToQueue(Create(persistence, board))
         }
 
+        sortBoardList()
         notifySubscribers();
     }
 
@@ -55,6 +97,7 @@ class BoardModel(val persistence: IPersistence) : IPublisher(){
         else{
             dbQueue.addToQueue(Delete(persistence, board, noteListDependency = board.notes))
         }
+        sortBoardList()
 
         notifySubscribers();
     }
@@ -69,6 +112,7 @@ class BoardModel(val persistence: IPersistence) : IPublisher(){
             dbQueue.addToQueue(Update(persistence, board,
                 mutableMapOf("name" to name, "desc" to desc, "notes" to board.notes)))
         }
+        sortBoardList()
 
         notifySubscribers();
     }

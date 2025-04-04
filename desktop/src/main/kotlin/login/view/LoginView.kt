@@ -3,14 +3,19 @@ package login.view
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.OutlinedTextField
-import androidx.compose.material.IconButton
 import androidx.compose.material.Icon
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.IconButton
+import androidx.compose.material.OutlinedTextField
+import androidx.compose.material.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -19,18 +24,6 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material.Text
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.Button
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import boards.view.BoardViewScreen
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
@@ -55,6 +48,10 @@ fun LoginView(){
     val openSignUpDialog = remember { mutableStateOf(false) }
     val openSignInWarning = remember { mutableStateOf(false) }
     val openSignUpWarning = remember { mutableStateOf(false) }
+    val emptyUsernameWarning = remember { mutableStateOf(false) }
+    val openUnsafePasswordWarning = remember { mutableStateOf(false) }
+
+    val keepSignedIn = remember { mutableStateOf(false) }
 
     Row(
         modifier = Modifier.fillMaxWidth()
@@ -86,6 +83,7 @@ fun LoginView(){
                 )
 
                 OutlinedTextField(
+                    colors = outlinedTextFieldColours(),
                     value = username,
                     onValueChange = { username = it },
                     label = { Text("Username") },
@@ -99,6 +97,7 @@ fun LoginView(){
                 Spacer(modifier = Modifier.height(16.dp))
 
                 OutlinedTextField(
+                    colors = outlinedTextFieldColours(),
                     value = password,
                     onValueChange = { password = it },
                     label = { Text("Password") },
@@ -114,12 +113,21 @@ fun LoginView(){
                                 contentDescription = if (passwordVisible) "Hide password" else "Show password"
                             )
                         }
-                    }
-                    ,
+                    },
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Spacer(modifier = Modifier.height(32.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                ){
+                    Checkbox(
+                        colors = checkboxColours(),
+                        checked = keepSignedIn.value,
+                        onCheckedChange = { keepSignedIn.value = it }
+                    )
+                    Text("Stay logged in")
+                }
+
 
                 Button(
                     onClick = {
@@ -128,6 +136,9 @@ fun LoginView(){
                             loginModel.changeCurrentUser(username)
                             initializeModels()
                             navigator.push(BoardViewScreen())
+                            if (keepSignedIn.value) {
+                                loginModel.saveUser(username, password)
+                            }
                         }
                         else{
                             openSignInWarning.value = true
@@ -156,13 +167,23 @@ fun LoginView(){
                     },
                     onConfirmation = { username, password ->
                         // Add to DB here
-                        val result = loginModel.addUser(username, password)
-                        if (!result){
+                        if (false in loginModel.passwordCriteriaMet(password)){
                             openSignUpDialog.value = false
-                            openSignUpWarning.value = true
+                            openUnsafePasswordWarning.value = true
+                        }
+                        else if (username==""){
+                            openSignUpDialog.value = false
+                            emptyUsernameWarning.value = true
                         }
                         else{
-                            openSignUpDialog.value = false
+                            val result = loginModel.addUser(username, password)
+                            if (!result){
+                                openSignUpDialog.value = false
+                                openSignUpWarning.value = true
+                            }
+                            else{
+                                openSignUpDialog.value = false
+                            }
                         }
                     }
                 )
@@ -183,6 +204,23 @@ fun LoginView(){
                     dialogText = "This username is already taken. Please choose a different username"
                 )
             }
+            openUnsafePasswordWarning.value -> {
+                WarningDialog(
+                    onDismissRequest = { openUnsafePasswordWarning.value = false },
+                    onConfirmation = { openUnsafePasswordWarning.value = false },
+                    dialogTitle = "Warning",
+                    dialogText = "Please ensure the password matches the criteria given"
+                )
+            }
+            emptyUsernameWarning.value -> {
+                WarningDialog(
+                    onDismissRequest = { emptyUsernameWarning.value=false },
+                    onConfirmation =  { emptyUsernameWarning.value = false },
+                    dialogTitle = "Warning",
+                    dialogText = "Username must not be empty"
+                )
+            }
+
         }
     }
 }

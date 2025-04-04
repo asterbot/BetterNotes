@@ -1,14 +1,7 @@
 package individual_board.model
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import boards.entities.Board
-import graph_ui.Edge
-import graph_ui.Node
-import graph_ui.Vec
 import individual_board.entities.Note
 import individual_board.entities.removeNote
-import kotlinx.coroutines.delay
 import org.bson.types.ObjectId
 import shared.ConnectionManager
 import shared.IPublisher
@@ -19,19 +12,64 @@ import shared.persistence.Delete
 import shared.persistence.IPersistence
 import shared.persistence.Update
 import java.time.Instant
-import kotlin.random.Random
-
 
 class IndvBoardModel(val persistence: IPersistence) : IPublisher() {
     // maps board ID to list of notes
     var noteDict = mutableMapOf<ObjectId, MutableList<Note>>()
 
+    var currentSortType: String = "Last Accessed"
+    var currentIsReversed: Boolean = false
+
+    private fun sortNoteList(noteList: MutableList<Note>) {
+        when (currentSortType) {
+            "Title" -> noteList.sortBy { (it.title).toString().lowercase() }
+            "Last Created" -> noteList.sortByDescending { it.datetimeCreated }
+            "Last Updated" -> noteList.sortByDescending { it.datetimeUpdated }
+            "Last Accessed" -> noteList.sortByDescending { it.datetimeAccessed }
+            else -> noteList.sortBy { it.title }
+        }
+        if (currentIsReversed) noteList.reverse()
+    }
+
+    // Public functions to sort notes for a given board.
+    fun sortByTitle(boardId: ObjectId, reverse: Boolean = false) {
+        currentSortType = "Title"
+        currentIsReversed = reverse
+        noteDict[boardId]?.let { notes ->
+            sortNoteList(notes)
+            notifySubscribers()
+        }
+    }
+
+    fun sortByDatetimeCreated(boardId: ObjectId, reverse: Boolean = false) {
+        currentSortType = "Last Created"
+        currentIsReversed = reverse
+        noteDict[boardId]?.let { notes ->
+            sortNoteList(notes)
+            notifySubscribers()
+        }
+    }
+
+    fun sortByDatetimeUpdated(boardId: ObjectId, reverse: Boolean = false) {
+        currentSortType = "Last Updated"
+        currentIsReversed = reverse
+        noteDict[boardId]?.let { notes ->
+            sortNoteList(notes)
+            notifySubscribers()
+        }
+    }
+
+    fun sortByDatetimeAccessed(boardId: ObjectId, reverse: Boolean = false) {
+        currentSortType = "Last Accessed"
+        currentIsReversed = reverse
+        noteDict[boardId]?.let { notes ->
+            sortNoteList(notes)
+            notifySubscribers()
+        }
+    }
+
     init {
         persistence.connect()
-//        if (ConnectionManager.isConnected) {
-//            noteDict = persistence.readNotes()
-//            notifySubscribers()
-//        }
     }
 
     fun initialize() {
@@ -81,17 +119,22 @@ class IndvBoardModel(val persistence: IPersistence) : IPublisher() {
             dbQueue.addToQueue(Create(persistence, note, boardDependency = board))
         }
 
+        noteDict[board.id]?.let { notes ->
+            sortNoteList(notes)
+        }
+
         notifySubscribers()
     }
 
     fun updateNote(note: Note, boardId: ObjectId?, title: String, desc: String, relatedNotes: List<ObjectId>) {
+
         val oldRelated = note.relatedNotes
 
         // Update the note itself in local list
         noteDict[boardId]?.let { notes ->
             val index = notes.indexOfFirst { it.id == note.id }
             if (index != -1) {
-                val updatedNote = note.copy(title = title, desc = desc, relatedNotes = relatedNotes)
+                val updatedNote = note.copy(title = title, desc = desc, relatedNotes = relatedNotes, datetimeUpdated = Instant.now().toString(), datetimeAccessed = Instant.now().toString())
                 notes[index] = updatedNote
             }
         }
@@ -147,6 +190,10 @@ class IndvBoardModel(val persistence: IPersistence) : IPublisher() {
             dbQueue.addToQueue(Update(persistence, note, mutableMapOf("title" to title, "desc" to desc, "relatedNotes" to relatedNotes)))
         }
 
+        noteDict[boardId]?.let { notes ->
+            sortNoteList(notes)
+        }
+
         notifySubscribers()
     }
 
@@ -186,6 +233,10 @@ class IndvBoardModel(val persistence: IPersistence) : IPublisher() {
         }
         else{
             dbQueue.addToQueue(Delete(persistence, note, boardDependency = board))
+        }
+
+        noteDict[board.id]?.let { notes ->
+            sortNoteList(notes)
         }
 
         notifySubscribers()

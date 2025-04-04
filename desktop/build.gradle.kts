@@ -30,8 +30,13 @@ dependencies {
     implementation("org.jetbrains:markdown-jvm:0.7.3")
     implementation(compose.material3)
 
+    // FDG layout
+    implementation(project(":fdg_layout"))
+
     // Kotlin coroutine dependency
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.6.4")
+
     // MongoDB Kotlin driver dependency
     implementation("org.mongodb:mongodb-driver-kotlin-coroutine:4.11.1")
 
@@ -88,7 +93,9 @@ tasks.test {
     useJUnitPlatform()
 }
 
-
+configurations.all {
+    exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-android")
+}
 
 compose.desktop {
     application {
@@ -102,6 +109,15 @@ compose.desktop {
             // If using JVM target and Linux distribution
             linux {
                 modules("jdk.security.auth")
+                iconFile.set(project.file("src/main/resources/betternotes_logo.png"))
+
+            }
+            macOS {
+                iconFile.set(project.file("src/main/resources/betternotes_logo.icns"))
+            }
+
+            windows {
+                iconFile.set(project.file("src/main/resources/betternotes_logo.ico"))
             }
         }
     }

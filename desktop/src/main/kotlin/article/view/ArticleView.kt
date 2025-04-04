@@ -1,7 +1,6 @@
 package article.view
 
 import LatexRenderer
-import androidx.compose.animation.core.animateOffsetAsState
 import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -50,6 +49,7 @@ import individual_board.view.IndividualBoardScreen
 import io.github.vinceglb.filekit.absolutePath
 import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.exists
+import org.bson.types.ObjectId
 import shared.*
 import space.kscience.kmath.UnstableKMathAPI
 import space.kscience.kmath.asm.compileToExpression
@@ -82,23 +82,18 @@ data class ArticleScreen(
 @Composable
 fun ArticleCompose(board: Board, article: Note) {
     val navigator = LocalNavigator.currentOrThrow
-
     articleViewModel = ArticleViewModel(articleModel, article.id)
-
-    var contentBlocksList by remember { mutableStateOf(articleViewModel) }
 
     var prevSelectedBlock by remember { mutableStateOf<Int?>(null) }
     var selectedBlock by remember { mutableStateOf<Int?>(null) }
     var currEditedText = remember {mutableStateOf<String?>(null) } // keep track of the text currently being changed
     var debugState by remember { mutableStateOf(false) }
 
-
     fun changeSelectedBlock(selectedBlock: Int?) {
-        println("In LaunchedEffect (switching block focus)")
-        println("I moved from block $prevSelectedBlock to block $selectedBlock")
+        println("Moved from block $prevSelectedBlock to block $selectedBlock")
         if (prevSelectedBlock != selectedBlock) {
             if (prevSelectedBlock != null && currEditedText.value != null) {
-                val currBlock = contentBlocksList.contentBlocksList[prevSelectedBlock!!]
+                val currBlock = articleViewModel.contentBlocksList[prevSelectedBlock!!]
                 if (currBlock.blockType == BlockType.CODE) {
                     articleModel.saveBlock(
                         prevSelectedBlock!!, stringContent = currEditedText.value!!, article = article,
@@ -142,7 +137,7 @@ fun ArticleCompose(board: Board, article: Note) {
             articleModel.duplicateBlock(index, article, board)
         },
         "Move Block Up" to { index ->
-            val blocks: MutableList<ContentBlock> = contentBlocksList.contentBlocksList
+            val blocks: MutableList<ContentBlock> = articleViewModel.contentBlocksList
             val (upperBlockStart, lowerBlockEnd) = articleModel.getBlockBounds(blocks, index-1, index)
             if (blocks[index].gluedAbove) {
                 selectedBlock = index - 1
@@ -154,7 +149,7 @@ fun ArticleCompose(board: Board, article: Note) {
             articleModel.moveBlockUp(index, article, board)
         },
         "Move Block Down" to { index ->
-            val blocks: MutableList<ContentBlock> = contentBlocksList.contentBlocksList
+            val blocks: MutableList<ContentBlock> = articleViewModel.contentBlocksList
             val (upperBlockStart, lowerBlockEnd) = articleModel.getBlockBounds(blocks, index, index+1)
             if (blocks[index].gluedBelow) {
                 selectedBlock = index + 1
@@ -182,17 +177,18 @@ fun ArticleCompose(board: Board, article: Note) {
             ) { selectedBlock = null }
     ) {
         Column(
+            modifier = Modifier.padding(top=15.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text( // article name
-                text = "Article: ${article.title}",
-                fontSize = 25.sp,
+                text = article.title,
+                fontSize = 24.sp,
                 fontWeight = FontWeight.Bold
             )
-            Text( // title
-                text = "From Board ${board.name}",
-                fontSize = 18.sp,
+            Text( // article description
+                text = article.desc,
+                fontSize = 16.sp,
             )
 
             // row containing any useful functionality (as buttons)
@@ -207,7 +203,8 @@ fun ArticleCompose(board: Board, article: Note) {
                         changeSelectedBlock(selectedBlock)
                         ScreenManager.push(navigator, IndividualBoardScreen(board))
                     }
-                ) { Text("Back to current course") }
+                ) { Text("Back to ${board.name} Board") }
+
                 Button(
                     colors = textButtonColours(),
                     onClick = {
@@ -232,7 +229,7 @@ fun ArticleCompose(board: Board, article: Note) {
                         }
                         // println("FROM VIEWMODEL: ${contentBlocksList.contentBlocksList}")
                         println("FROM VIEWMODEL:")
-                        for (contentBlock in contentBlocksList.contentBlocksList) {
+                        for (contentBlock in articleViewModel.contentBlocksList) {
                             println("Glued Above? ${contentBlock.gluedAbove}")
                             if (contentBlock.blockType == BlockType.CANVAS) {
                                 println("\tCANVAS HAS ${(contentBlock as CanvasBlock).bList.size} PATHS")
@@ -249,7 +246,59 @@ fun ArticleCompose(board: Board, article: Note) {
                 ) { Text(text = "DEBUG") }
             }
 
-            if (contentBlocksList.contentBlocksList.isEmpty()) {
+            // code for dropdown menu, linking to other boards
+            @Composable
+            fun RelatedNotesDropDownMenu() {
+                val relatedNoteIds: List<ObjectId> = article.relatedNotes
+                val notesFromModel: MutableList<Note>? = individualBoardModel.noteDict[board.id]
+                val relatedNotes: List<Note>? = notesFromModel?.filter { it.id in relatedNoteIds }
+                // now, relatedNotes contains all Note objects that the article is related to
+                var relatedNotesExpanded by remember { mutableStateOf(false) }
+                Box {
+                    TextButton(
+                        colors = textButtonColours(),
+                        onClick = { relatedNotesExpanded = !relatedNotesExpanded }
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "Go to related course (${relatedNotes?.size})"
+                            )
+                            Icon(
+                                if (relatedNotesExpanded) Icons.Filled.ArrowDropUp else Icons.Filled.ArrowDropDown,
+                                contentDescription = "Go to Related Note",
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                    DropdownMenu(
+                        expanded = relatedNotesExpanded,
+                        onDismissRequest = { relatedNotesExpanded = false },
+                        containerColor = Colors.veryLightTeal
+                    ) {
+                        relatedNotes?.forEach { currNote ->
+                            DropdownMenuItem(
+                                text = { Text(currNote.title) },
+                                onClick = {
+                                    selectedBlock = null
+                                    changeSelectedBlock(selectedBlock)
+                                    relatedNotesExpanded = false
+                                    ScreenManager.push(navigator, ArticleScreen(board, currNote))
+                                    println("We pushed $currNote which has id ${currNote.id}")
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+
+            if (article.relatedNotes.size > 0) {
+                RelatedNotesDropDownMenu()
+            }
+
+            if (articleViewModel.contentBlocksList.isEmpty()) {
                 Text(
                     text="\nNo content blocks: try adding one!",
                     fontSize = 25.sp
@@ -265,7 +314,7 @@ fun ArticleCompose(board: Board, article: Note) {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 itemsIndexed(
-                    contentBlocksList.contentBlocksList, // itemsIndexed iterates over this collection
+                    articleViewModel.contentBlocksList, // itemsIndexed iterates over this collection
                     key = { index: Int, block: ContentBlock -> block.id } // Jetpack Compose uses keys to track recompositions
                 ) { index: Int, block: ContentBlock ->
                     {} // honestly I'm not sure what this does, but it's needed
@@ -284,7 +333,7 @@ fun ArticleCompose(board: Board, article: Note) {
                         board = board,
                         gluedAbove = block.gluedAbove,
                         gluedBelow = block.gluedBelow,
-                        numContentBlocks = contentBlocksList.contentBlocksList.size,
+                        numContentBlocks = articleViewModel.contentBlocksList.size,
                         currEditedText = currEditedText,
                         debugState = debugState
                     )
@@ -296,7 +345,7 @@ fun ArticleCompose(board: Board, article: Note) {
                 }
             }
             // if no blocks, set select index to null
-            if (contentBlocksList.contentBlocksList.size == 0) {
+            if (articleViewModel.contentBlocksList.size == 0) {
                 selectedBlock = null
             }
         }
@@ -320,6 +369,12 @@ fun BlockFrame(
 ) {
     var block by remember { mutableStateOf(articleViewModel.contentBlocksList[blockIndex]) }
 
+    val backgroundColor = if (isSelected) Colors.lightTeal.copy(
+        red = Colors.lightTeal.red * 0.9f,
+        blue = Colors.lightTeal.blue * 0.9f,
+        green = Colors.lightTeal.green * 0.9f
+    ) else Colors.lightTeal
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -337,21 +392,21 @@ fun BlockFrame(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(4.dp)
-                            .background(if (glueParam) Colors.lightTeal else Colors.medTeal)
+                            .background(if (glueParam) backgroundColor else Colors.medTeal)
                     )
                 }
                 Spacer(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height((if (glueParam) 0 else 25).dp)
-                        .background(Colors.lightTeal)
+                        .background(backgroundColor)
                 )
                 if (dir == "Below") {
                     Spacer(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(4.dp)
-                            .background(if (glueParam) Colors.lightTeal else Colors.medTeal)
+                            .background(if (glueParam) backgroundColor else Colors.medTeal)
                     )
                 }
             }
@@ -361,8 +416,8 @@ fun BlockFrame(
 
             Box(
                 modifier = Modifier
-                    .background(Colors.lightTeal)
-                    .padding(horizontal = 5.dp)
+                    .background(backgroundColor)
+                    .padding(horizontal=5.dp)
                     .clip(RoundedCornerShape(5.dp)),
             ) {
 
@@ -610,7 +665,7 @@ fun loadImageFromBytes(imageBytes: ByteArray): ImageBitmap? {
 
         // Convert the BufferedImage to ImageBitmap (for Jetpack Compose)
         bufferedImage.toComposeImageBitmap()
-    } catch (e: IOException) {
+    } catch (e: NullPointerException) {
         println("Error loading image: ${e.message}")
         null
     }
@@ -628,21 +683,22 @@ fun addMedia(block: ContentBlock, isSelected: Boolean = true, onMediaUpdate: (Mu
     var imageBytes by remember { mutableStateOf(initialBytes) }
     var filePath by remember { mutableStateOf<String?>(null) }
 
-        val launcher = rememberFilePickerLauncher { file ->
-                if (file != null) {
-                    filePath = file.absolutePath()
-                    println(filePath)
-                    if (file.exists()) {
-                        imageBytes = File(filePath).readBytes().toMutableList()
-                    }
-                } else {
-                    println("No file selected")
-                }
+    val launcher = rememberFilePickerLauncher { file ->
+        if (file != null) {
+            filePath = file.absolutePath()
+            println(filePath)
+            if (file.exists()) {
+                imageBytes = File(filePath).readBytes().toMutableList()
+            }
+        } else {
+            println("No file selected")
         }
+    }
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
-        if (isSelected && filePath == null && imageBytes.isEmpty()) {
+        // filePath == null && imageBytes.isEmpty()
+        if (isSelected) {
             TextButton(
                 modifier = Modifier.align(Alignment.CenterHorizontally),
                 colors = textButtonColours(),
@@ -658,21 +714,23 @@ fun addMedia(block: ContentBlock, isSelected: Boolean = true, onMediaUpdate: (Mu
 //        val imageBitmap = makeFromEncoded(imageBytes.toByteArray()).toComposeImageBitmap()
         val imageBitmap = loadImageFromBytes(imageBytes.toByteArray())
 
-        Image(
-            bitmap = imageBitmap!!,
-            contentDescription = "everyone's favorite bird",
-            modifier = Modifier.fillMaxSize()
-                .pointerInput(Unit) {
-                    detectTapGestures(
-                        onDoubleTap = {
-                            cropImage()
-                            println("crop mode :)")
-                        }
-                    )
-                }
-        )
+        if (imageBitmap != null) {
+            Image(
+                bitmap = imageBitmap,
+                contentDescription = "everyone's favorite bird",
+                modifier = Modifier.fillMaxSize()
+                    .pointerInput(Unit) {
+                        detectTapGestures(
+                            onDoubleTap = {
+                                cropImage()
+                                println("crop mode :)")
+                            }
+                        )
+                    }
+            )
+        }
     } else {
-        println("File cannot be displayed")
+        println("No file to display")
     }
 }
 
@@ -1286,7 +1344,6 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int)
         }
     }
 }
-
 // Convert canvas paths to bytes for storage
 fun canvasToBytes(paths: List<PathData>): ByteArray {
     // Instead of direct pixel manipulation, we'll serialize the path data
@@ -1464,13 +1521,13 @@ fun BlockFrameMenu(index: Int, buttonFuncs: Map<String, (Int) -> Unit>, numConte
             IconButton(
                 onClick = { onClick?.invoke(index) },
                 colors = iconButtonColours(),
-                modifier = Modifier.hoverable(interactionSource = interactionSource).size(40.dp),
+                modifier = Modifier.hoverable(interactionSource = interactionSource).size(45.dp),
                 enabled = !disabledCond
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = desc,
-                    modifier = Modifier.size(25.dp)
+                    modifier = Modifier.size(30.dp)
                 )
             }
         }
@@ -1480,36 +1537,41 @@ fun BlockFrameMenu(index: Int, buttonFuncs: Map<String, (Int) -> Unit>, numConte
         Box (
             modifier = Modifier.align(Alignment.TopStart)
         ) {
-            Row(
-                modifier = Modifier.align(Alignment.TopStart),
-                horizontalArrangement = Arrangement.spacedBy(5.dp)
+            Column(
+                modifier = Modifier.align(Alignment.TopStart)
             ) {
-                // toggle glue with block above
-                MenuButton(
-                    buttonFuncs["Toggle Glue Above"],
-                    Icons.Filled.ArrowDropUp,
-                    "Toggle Glue Above",
-                    disabledCond = (index == 0)
-                )
-                // toggle glue with block below
-                MenuButton(
-                    buttonFuncs["Toggle Glue Below"],
-                    Icons.Filled.ArrowDropDown,
-                    "Toggle Glue Below",
-                    disabledCond = (index == numContentBlocks-1)
-                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
+                    // toggle glue with block above
+                    MenuButton(
+                        buttonFuncs["Toggle Glue Above"],
+                        Icons.Filled.ArrowDropUp,
+                        "Toggle Glue Above",
+                        disabledCond = (index == 0)
+                    )
+                    // toggle glue with block below
+                    MenuButton(
+                        buttonFuncs["Toggle Glue Below"],
+                        Icons.Filled.ArrowDropDown,
+                        "Toggle Glue Below",
+                        disabledCond = (index == numContentBlocks - 1)
+                    )
+                }
+                Spacer(modifier = Modifier.height(10.dp))
             }
+
             if (hoveredGlueButton != null) {
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-                        .background(Colors.darkGrey.copy(alpha = 0.9f))
+                        .background(Colors.darkGrey.copy(alpha = 0.8f))
                         .padding(horizontal = 4.dp, vertical = 4.dp)
                 ) {
                     Text(
                         text = hoveredGlueButton.toString(),
                         fontSize = 12.sp,
-                        color = Colors.white.copy(alpha = 0.9f)
+                        color = Colors.white.copy(alpha = 0.8f)
                     )
                 }
             }
@@ -1519,48 +1581,52 @@ fun BlockFrameMenu(index: Int, buttonFuncs: Map<String, (Int) -> Unit>, numConte
         Box (
             modifier = Modifier.align(Alignment.TopEnd)
         ) {
-            Row(
-                modifier = Modifier.align(Alignment.TopEnd),
-                horizontalArrangement = Arrangement.spacedBy(5.dp)
+            Column(
+                modifier = Modifier.align(Alignment.TopEnd)
             ) {
-                // duplicate current block
-                MenuButton(
-                    buttonFuncs["Duplicate Block"],
-                    Icons.Default.CopyAll,
-                    "Duplicate Block"
-                )
-                // move current block up
-                MenuButton(
-                    buttonFuncs["Move Block Up"],
-                    if (gluedAbove) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardDoubleArrowUp,
-                    if (gluedAbove) "Move Block Up" else "Move Glued Block Up",
-                    disabledCond = (index == 0)
-                )
-                // move current block down
-                MenuButton(
-                    buttonFuncs["Move Block Down"],
-                    if (gluedBelow) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardDoubleArrowDown,
-                    if (gluedBelow) "Move Block Down" else "Move Glued Block Down",
-                    disabledCond = (index == numContentBlocks-1)
-                )
-                // delete current block
-                MenuButton(
-                    buttonFuncs["Delete Block"],
-                    Icons.Default.Delete,
-                    "Delete"
-                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
+                    // duplicate current block
+                    MenuButton(
+                        buttonFuncs["Duplicate Block"],
+                        Icons.Default.CopyAll,
+                        "Duplicate Block"
+                    )
+                    // move current block up
+                    MenuButton(
+                        buttonFuncs["Move Block Up"],
+                        if (gluedAbove) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardDoubleArrowUp,
+                        if (gluedAbove) "Move Block Up" else "Move Glued Block Up",
+                        disabledCond = (index == 0)
+                    )
+                    // move current block down
+                    MenuButton(
+                        buttonFuncs["Move Block Down"],
+                        if (gluedBelow) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardDoubleArrowDown,
+                        if (gluedBelow) "Move Block Down" else "Move Glued Block Down",
+                        disabledCond = (index == numContentBlocks - 1)
+                    )
+                    // delete current block
+                    MenuButton(
+                        buttonFuncs["Delete Block"],
+                        Icons.Default.Delete,
+                        "Delete"
+                    )
+                }
+                Spacer(modifier = Modifier.height(10.dp))
             }
             if (hoveredOtherButton != null) {
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-                        .background(Colors.darkGrey.copy(alpha = 0.9f))
+                        .background(Colors.darkGrey.copy(alpha = 0.8f))
                         .padding(horizontal = 4.dp, vertical = 4.dp)
                 ) {
                     Text(
                         text = hoveredOtherButton.toString(),
                         fontSize = 12.sp,
-                        color = Colors.white.copy(alpha = 0.9f)
+                        color = Colors.white.copy(alpha = 0.8f)
                     )
                 }
             }
@@ -1587,12 +1653,12 @@ fun AddBlockFrameButton(article: Note, index: Int, direction: String, selectAtIn
         IconButton(
             onClick = { showBlockTypes = !showBlockTypes },
             colors = iconButtonColours(),
-            modifier = Modifier.hoverable(interactionSource = interactionSource).size(40.dp)
+            modifier = Modifier.hoverable(interactionSource = interactionSource).size(45.dp)
         ) {
             Icon(
                 imageVector = Icons.Default.Add,
                 contentDescription = "Add Block Type",
-                modifier = Modifier.size(30.dp)
+                modifier = Modifier.size(35.dp)
             )
         }
 
@@ -1601,13 +1667,13 @@ fun AddBlockFrameButton(article: Note, index: Int, direction: String, selectAtIn
             Box(
                 modifier = Modifier
                     .align(if (direction == "DOWN") Alignment.BottomCenter else Alignment.TopCenter)
-                    .background(Colors.darkGrey.copy(alpha=0.9f))
+                    .background(Colors.darkGrey.copy(alpha = 0.8f))
                     .padding(horizontal = 4.dp, vertical = 4.dp)
             ) {
                 Text(
                     text = "Add New Block",
                     fontSize = 12.sp,
-                    color = Colors.white.copy(alpha=0.9f)
+                    color = Colors.white.copy(alpha = 0.8f)
                 )
             }
         }

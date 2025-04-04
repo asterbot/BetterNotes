@@ -9,15 +9,16 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import boards.view.BoardViewScreen
+import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.CurrentScreen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import individual_board.view.IndividualBoardScreen
 import login.view.LoginViewScreen
 
 
@@ -26,7 +27,7 @@ Used for content which is meant to be sticky (i.e. shown regardless of which scr
 */
 
 @Composable
-fun AppScaffold() {
+fun AppScaffold(StartScreen: Screen) {
     // This allows us to create "sticky" content (stays on all screens regardless of navigation)
 
     val openAlertDialog = remember { mutableStateOf(false) }
@@ -36,7 +37,7 @@ fun AppScaffold() {
     // Create the navigator with the starting screen
     Box(modifier = Modifier.fillMaxSize()) {
         // The navigator goes in the background
-        Navigator(LoginViewScreen()) { _ ->
+        Navigator(StartScreen) { _ ->
             // CurrentScreen will render the current screen from the navigator
             CurrentScreen()
 
@@ -96,9 +97,9 @@ fun AppScaffold() {
                             ) {
                                 Text("Dismiss")
                             }
-                        }
+                        },
+                        containerColor = Colors.veryLightTeal
                     )
-
                 }
             }
         }
@@ -122,7 +123,7 @@ fun DBStatus(
             ConnectionStatus.CONNECTED -> Icons.Default.Done
             else -> Icons.Default.Refresh
         }
-        val color = if (isConnected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+        val color = if (isConnected) Colors.darkTeal else Colors.errorColor
         val statusText = when(connectionStatus) {
             ConnectionStatus.CONNECTING -> "Connecting to DB..."
             ConnectionStatus.CONNECTED -> "Connected to DB"
@@ -146,6 +147,17 @@ fun NavButtons(
     val currScreenIndex by derivedStateOf { ScreenManager.currScreenIndex }
     val visitedScreens by derivedStateOf { ScreenManager.visitedScreens }
     val navigator = LocalNavigator.currentOrThrow
+    val currentScreen = visitedScreens.getOrNull(currScreenIndex)
+
+    LaunchedEffect(currentScreen) {
+        if (currentScreen is IndividualBoardScreen) {
+            fdgLayoutModel.togglePhysics(true)
+        }
+        else {
+            fdgLayoutModel.togglePhysics(false)
+        }
+    }
+
 
     Row(
         modifier = modifier,
@@ -203,6 +215,7 @@ fun userButton(modifier: Modifier = Modifier){
     val passwordConfirmError = remember { mutableStateOf(false) }
     val incorrectPasswordError = remember { mutableStateOf(false) }
     val deleteAccountDialog = remember { mutableStateOf(false) }
+    val openUnsafePasswordWarning = remember { mutableStateOf(false) }
 
     val navigator = LocalNavigator.currentOrThrow
 
@@ -225,7 +238,8 @@ fun userButton(modifier: Modifier = Modifier){
 
         DropdownMenu(
             expanded = expanded,
-            onDismissRequest = { expanded = false }
+            onDismissRequest = { expanded = false },
+            containerColor = Colors.veryLightTeal
         ) {
             // Add the greeting item at the top of the dropdown
             DropdownMenuItem(
@@ -241,7 +255,7 @@ fun userButton(modifier: Modifier = Modifier){
                 )
             )
 
-            HorizontalDivider(thickness = 2.dp)
+            HorizontalDivider(thickness = 2.dp, color = Colors.lightGrey.times(0.6f))
 
             DropdownMenuItem(
                 text = { Text("Change Password") },
@@ -256,13 +270,14 @@ fun userButton(modifier: Modifier = Modifier){
                     expanded = !expanded
                     LoginManager.logOut()
                     navigator.push(LoginViewScreen())
+                    loginModel.credentialsFile.delete()
                 }
             )
 
-            HorizontalDivider(thickness = 2.dp)
+            HorizontalDivider(thickness = 2.dp, color = Colors.lightGrey.times(0.6f))
 
             DropdownMenuItem(
-                text = { Text("Delete Account", color = Color.Red) },
+                text = { Text("Delete Account", color = Colors.errorColor) },
                 onClick = {
                     deleteAccountDialog.value = true
                     expanded = !expanded
@@ -319,7 +334,15 @@ fun userButton(modifier: Modifier = Modifier){
                         else{
                             incorrectPasswordError.value = true
                         }
-                 },
+                 }
+            )
+        }
+        openUnsafePasswordWarning.value -> {
+            WarningDialog(
+                onDismissRequest = { openUnsafePasswordWarning.value = false },
+                onConfirmation = { openUnsafePasswordWarning.value = false },
+                dialogTitle = "Warning",
+                dialogText = "Please ensure the password matches the criteria given"
             )
         }
     }
