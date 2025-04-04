@@ -164,17 +164,18 @@ fun ArticleCompose(board: Board, article: Note) {
             ) { selectedBlock = null }
     ) {
         Column(
+            modifier = Modifier.padding(top=15.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text( // article name
-                text = "Article: ${article.title}",
-                fontSize = 25.sp,
+                text = article.title,
+                fontSize = 24.sp,
                 fontWeight = FontWeight.Bold
             )
-            Text( // title
-                text = "Board: ${board.name}",
-                fontSize = 18.sp,
+            Text( // article description
+                text = article.desc,
+                fontSize = 16.sp,
             )
 
             // row containing any useful functionality (as buttons)
@@ -189,59 +190,7 @@ fun ArticleCompose(board: Board, article: Note) {
                         changeSelectedBlock(selectedBlock)
                         ScreenManager.push(navigator, IndividualBoardScreen(board))
                     }
-                ) { Text("Back to Board") }
-
-                // code for dropdown menu, linking to other boards
-                @Composable
-                fun RelatedNotesDropDownMenu() {
-                    val relatedNoteIds: List<ObjectId> = article.relatedNotes
-                    val notesFromModel: MutableList<Note>? = individualBoardModel.noteDict[board.id]
-                    val relatedNotes: List<Note>? = notesFromModel?.filter { it.id in relatedNoteIds }
-                    // now, relatedNotes contains all Note objects that the article is related to
-                    var relatedNotesExpanded by remember { mutableStateOf(false) }
-                    Box {
-                        TextButton(
-                            colors = textButtonColours(),
-                            onClick = { relatedNotesExpanded = !relatedNotesExpanded }
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Text(
-                                    text = "Go to related course (${relatedNotes?.size})"
-                                )
-                                Icon(
-                                    if (relatedNotesExpanded) Icons.Filled.ArrowDropUp else Icons.Filled.ArrowDropDown,
-                                    contentDescription = "Go to Related Note",
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                        }
-                        DropdownMenu(
-                            expanded = relatedNotesExpanded,
-                            onDismissRequest = { relatedNotesExpanded = false },
-                            containerColor = Colors.veryLightTeal
-                        ) {
-                            relatedNotes?.forEach { currNote ->
-                                DropdownMenuItem(
-                                    text = { Text(currNote.title) },
-                                    onClick = {
-                                        selectedBlock = null
-                                        changeSelectedBlock(selectedBlock)
-                                        relatedNotesExpanded = false
-                                        ScreenManager.push(navigator, ArticleScreen(board, currNote))
-                                        println("We pushed $currNote which has id ${currNote.id}")
-                                    }
-                                )
-                            }
-                        }
-                    }
-                }
-
-                if (article.relatedNotes.size > 0) {
-                    RelatedNotesDropDownMenu()
-                }
+                ) { Text("Back to ${board.name} Board") }
 
                 Button(
                     colors = textButtonColours(),
@@ -275,6 +224,58 @@ fun ArticleCompose(board: Board, article: Note) {
                         debugState = !debugState
                     }
                 ) { Text(text = "DEBUG") }
+            }
+
+            // code for dropdown menu, linking to other boards
+            @Composable
+            fun RelatedNotesDropDownMenu() {
+                val relatedNoteIds: List<ObjectId> = article.relatedNotes
+                val notesFromModel: MutableList<Note>? = individualBoardModel.noteDict[board.id]
+                val relatedNotes: List<Note>? = notesFromModel?.filter { it.id in relatedNoteIds }
+                // now, relatedNotes contains all Note objects that the article is related to
+                var relatedNotesExpanded by remember { mutableStateOf(false) }
+                Box {
+                    TextButton(
+                        colors = textButtonColours(),
+                        onClick = { relatedNotesExpanded = !relatedNotesExpanded }
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "Go to related course (${relatedNotes?.size})"
+                            )
+                            Icon(
+                                if (relatedNotesExpanded) Icons.Filled.ArrowDropUp else Icons.Filled.ArrowDropDown,
+                                contentDescription = "Go to Related Note",
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                    DropdownMenu(
+                        expanded = relatedNotesExpanded,
+                        onDismissRequest = { relatedNotesExpanded = false },
+                        containerColor = Colors.veryLightTeal
+                    ) {
+                        relatedNotes?.forEach { currNote ->
+                            DropdownMenuItem(
+                                text = { Text(currNote.title) },
+                                onClick = {
+                                    selectedBlock = null
+                                    changeSelectedBlock(selectedBlock)
+                                    relatedNotesExpanded = false
+                                    ScreenManager.push(navigator, ArticleScreen(board, currNote))
+                                    println("We pushed $currNote which has id ${currNote.id}")
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+
+            if (article.relatedNotes.size > 0) {
+                RelatedNotesDropDownMenu()
             }
 
             if (articleViewModel.contentBlocksList.isEmpty()) {
