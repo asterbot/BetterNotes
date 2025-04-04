@@ -9,6 +9,7 @@ import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
@@ -47,6 +48,7 @@ import com.github.skydoves.colorpicker.compose.HsvColorPicker
 import com.github.skydoves.colorpicker.compose.rememberColorPickerController
 import individual_board.entities.Note
 import individual_board.view.IndividualBoardScreen
+import individual_board.view.pxToDp
 import io.github.vinceglb.filekit.absolutePath
 import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.exists
@@ -1133,27 +1135,49 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int)
                 // Top control bar
                 Row(
                     modifier = Modifier.align(Alignment.Center),
-                    horizontalArrangement = Arrangement.spacedBy(20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(30.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    // Stroke width slider
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    Column() {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text("Current: ", fontSize = 14.sp)
+                            Box(
+                                modifier = Modifier
+                                    .size((strokeWidth + 3).pxToDp())
+                                    .clip(CircleShape)
+                                    .background(selectedColor.times(0.9f))
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(strokeWidth.pxToDp())
+                                        .clip(CircleShape)
+                                        .background(selectedColor)
+                                        .align(Alignment.Center)
+                                )
+                            }
+                        }
+                        // Stroke width slider
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
 
-                    ) {
-                        Text("Stroke: ", fontSize = 14.sp)
-                        Slider(
-                            value = strokeWidth,
-                            onValueChange = { strokeWidth = it },
-                            valueRange = 1f..20f,
-                            modifier = Modifier.width(150.dp),
-                            colors = SliderDefaults.colors(
-                                thumbColor = Colors.darkTeal,
-                                activeTrackColor = Colors.medTeal,
-                                inactiveTrackColor = Colors.lightTeal
+                        ) {
+                            Text("Stroke: ", fontSize = 14.sp)
+                            Slider(
+                                value = strokeWidth,
+                                onValueChange = { strokeWidth = it },
+                                valueRange = 1f..20f,
+                                modifier = Modifier.width(150.dp),
+                                colors = SliderDefaults.colors(
+                                    thumbColor = Colors.darkTeal,
+                                    activeTrackColor = Colors.medTeal,
+                                    inactiveTrackColor = Colors.lightTeal
+                                )
                             )
-                        )
+                        }
                     }
 
                     val controller = rememberColorPickerController()
