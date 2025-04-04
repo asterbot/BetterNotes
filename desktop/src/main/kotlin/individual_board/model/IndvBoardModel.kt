@@ -106,7 +106,7 @@ class IndvBoardModel(val persistence: IPersistence) : IPublisher() {
                     }
 
                     if (ConnectionManager.isConnected) {
-                        persistence.updateNote(updated.id, updated.title, updated.desc, updated.relatedNotes)
+                        persistence.updateNote(updated.id, updated.title, updated.desc, updated.relatedNotes, tagColor = updated.tag)
                     } else {
                         dbQueue.addToQueue(Update(persistence, it, mutableMapOf("relatedNotes" to updated.relatedNotes)))
                     }
@@ -128,7 +128,7 @@ class IndvBoardModel(val persistence: IPersistence) : IPublisher() {
         notifySubscribers()
     }
 
-    fun updateNote(note: Note, boardId: ObjectId?, title: String, desc: String, relatedNotes: List<ObjectId>) {
+    fun updateNote(note: Note, boardId: ObjectId?, title: String, desc: String, relatedNotes: List<ObjectId>, tagColor: String) {
 
         val oldRelated = note.relatedNotes
 
@@ -136,7 +136,7 @@ class IndvBoardModel(val persistence: IPersistence) : IPublisher() {
         noteDict[boardId]?.let { notes ->
             val index = notes.indexOfFirst { it.id == note.id }
             if (index != -1) {
-                val updatedNote = note.copy(title = title, desc = desc, relatedNotes = relatedNotes, datetimeUpdated = Instant.now().toString(), datetimeAccessed = Instant.now().toString())
+                val updatedNote = note.copy(title = title, desc = desc, relatedNotes = relatedNotes, tag = tagColor ,datetimeUpdated = Instant.now().toString(), datetimeAccessed = Instant.now().toString())
                 notes[index] = updatedNote
             }
         }
@@ -156,7 +156,7 @@ class IndvBoardModel(val persistence: IPersistence) : IPublisher() {
 
                     // Persist the update if online
                     if (ConnectionManager.isConnected) {
-                        persistence.updateNote(relatedId, updated.title, updated.desc, updated.relatedNotes)
+                        persistence.updateNote(relatedId, updated.title, updated.desc, updated.relatedNotes, tagColor)
                     } else {
                         dbQueue.addToQueue(Update(persistence, it, mutableMapOf("relatedNotes" to updated.relatedNotes)))
                     }
@@ -177,7 +177,7 @@ class IndvBoardModel(val persistence: IPersistence) : IPublisher() {
                     }
 
                     if (ConnectionManager.isConnected) {
-                        persistence.updateNote(removedId, updated.title, updated.desc, updated.relatedNotes)
+                        persistence.updateNote(removedId, updated.title, updated.desc, updated.relatedNotes, tagColor)
                     } else {
                         dbQueue.addToQueue(Update(persistence, it, mutableMapOf("relatedNotes" to updated.relatedNotes)))
                     }
@@ -187,9 +187,9 @@ class IndvBoardModel(val persistence: IPersistence) : IPublisher() {
 
         // Persist main note
         if (ConnectionManager.isConnected) {
-            persistence.updateNote(note.id, title, desc, relatedNotes)
+            persistence.updateNote(note.id, title, desc, relatedNotes, tagColor)
         } else {
-            dbQueue.addToQueue(Update(persistence, note, mutableMapOf("title" to title, "desc" to desc, "relatedNotes" to relatedNotes)))
+            dbQueue.addToQueue(Update(persistence, note, mutableMapOf("title" to title, "desc" to desc, "relatedNotes" to relatedNotes, "tag" to tagColor)))
         }
 
         noteDict[boardId]?.let { notes ->
@@ -219,7 +219,7 @@ class IndvBoardModel(val persistence: IPersistence) : IPublisher() {
                     }
 
                     if (ConnectionManager.isConnected) {
-                        persistence.updateNote(updated.id, updated.title, updated.desc, updated.relatedNotes)
+                        persistence.updateNote(updated.id, updated.title, updated.desc, updated.relatedNotes, updated.tag)
                     } else {
                         dbQueue.addToQueue(Update(persistence, it, mutableMapOf("relatedNotes" to updated.relatedNotes)))
                     }
