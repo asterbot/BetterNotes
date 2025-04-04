@@ -1135,7 +1135,7 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int)
 
                 val controller = rememberColorPickerController()
                 Box(
-                    modifier = Modifier.width(150.dp).height(150.dp).background(Color.Green)
+                    modifier = Modifier.width(100.dp).height(100.dp).background(Color.Green)
                 ) {
                     HsvColorPicker(
                         modifier = Modifier
@@ -1152,9 +1152,15 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int)
 
                     )
                 }
-                Box(modifier = Modifier.width(200.dp)) {
+                Box(modifier = Modifier.width(100.dp)) {
                     TextButton(modifier = Modifier.align(Alignment.Center), colors = textButtonColours(), onClick = {isGrid = !isGrid}) {
                         Text(if (!isGrid) "open Grid" else "close Grid")
+                    }
+                }
+
+                Box(modifier = Modifier.width(100.dp)) {
+                    TextButton(modifier = Modifier.align(Alignment.Center), colors = textButtonColours(), onClick = {onCanvasUpdate(canvasToBytes(paths).toMutableList(), canvasHeight)}) {
+                        Text("Save")
                     }
                 }
             }
@@ -1265,8 +1271,6 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int)
                             strokeWidth = strokeWidth
                             )
                     }
-
-                    onCanvasUpdate(canvasToBytes(paths).toMutableList(), canvasHeight)
                 }
                 Box(
                     modifier = Modifier
