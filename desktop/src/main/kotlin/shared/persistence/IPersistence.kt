@@ -10,6 +10,7 @@ import org.bson.types.ObjectId
 interface IPersistence {
     // Connects and returns whether it was successful
     fun connect(): Boolean
+
     // Pings DB to check if connection is active or not, and updates global state
     suspend fun pingDB(): Boolean
 
@@ -34,16 +35,40 @@ interface IPersistence {
     fun updateNoteAccessed(noteId: ObjectId, boardId: ObjectId, await: Boolean = false)
 
     // ContentBlocks: TODO
-    fun updateGlueStatus(contentBlockId: ObjectId, gluedAbove: Boolean, gluedBelow: Boolean, articleId: ObjectId, boardId: ObjectId, await: Boolean = false)
-    fun readContentBlocks(): MutableMap<ObjectId, MutableList<ContentBlock>>
-    fun insertContentBlock(article: Note, contentBlock: ContentBlock, index: Int, boardId: ObjectId, await: Boolean = false) // insert to index
-    fun addContentBlock(article: Note, contentBlock: ContentBlock, boardId: ObjectId, await: Boolean = false) // add to end
-    fun swapContentBlocks(articleId: ObjectId, upperBlockStart: Int, upperBlockEnd: Int,
-                          lowerBlockStart: Int, lowerBlockEnd: Int, boardId: ObjectId, await: Boolean = false)
-    fun deleteContentBlock(articleId: ObjectId, contentBlockId: ObjectId, boardId: ObjectId, await: Boolean = false)
-    fun updateContentBlock(
-        block: ContentBlock, text: String, pathsContent: MutableList<Path>, language: String,
-        gluedAbove: Boolean, gluedBelow: Boolean, article: Note, boardId: ObjectId, await: Boolean = false
+    fun updateGlueStatus(
+        contentBlockId: ObjectId,
+        gluedAbove: Boolean,
+        gluedBelow: Boolean,
+        articleId: ObjectId,
+        boardId: ObjectId,
+        await: Boolean = false
     )
 
+    fun readContentBlocks(): MutableMap<ObjectId, MutableList<ContentBlock>>
+    fun insertContentBlock(
+        article: Note,
+        contentBlock: ContentBlock,
+        index: Int,
+        boardId: ObjectId,
+        await: Boolean = false
+    ) // insert to index
+
+    fun addContentBlock(
+        article: Note,
+        contentBlock: ContentBlock,
+        boardId: ObjectId,
+        await: Boolean = false
+    ) // add to end
+
+    fun swapContentBlocks(
+        articleId: ObjectId, upperBlockStart: Int, upperBlockEnd: Int,
+        lowerBlockStart: Int, lowerBlockEnd: Int, boardId: ObjectId, await: Boolean = false
+    )
+
+    fun deleteContentBlock(articleId: ObjectId, contentBlockId: ObjectId, boardId: ObjectId, await: Boolean = false)
+    fun updateContentBlock(
+        block: ContentBlock, text: String, pathsContent: MutableList<Path>,
+        bList: MutableList<Byte>, language: String, gluedAbove: Boolean, gluedBelow: Boolean,
+        article: Note, boardId: ObjectId, await: Boolean = false
+    )
 }

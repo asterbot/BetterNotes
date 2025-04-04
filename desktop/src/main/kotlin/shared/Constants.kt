@@ -7,7 +7,7 @@ import androidx.compose.ui.graphics.Color
 
 object Colors {
     val veryLightTeal: Color = Color(0xFFF6FBFC)
-    val lightTeal: Color = Color(0xFFB1CCD3)
+    val lightTeal: Color = Color(0xFFC5DBE0)
     val medTeal: Color = Color(0xFF2C666E)
     val darkTeal: Color = Color(0xFF07393C)
     val black: Color = Color(0xFF0A090C)

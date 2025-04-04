@@ -395,14 +395,34 @@ class DBStorage() :IPersistence {
                                 text = block.getString("text"),
                                 language = block.getString("language"),
                             )
-                            "CANVAS" -> CanvasBlock(
-                                id = block.getObjectId("_id"),
-                                // TODO: paths = block.getList("paths"),
-                            )
+                            "CANVAS" ->{
+                                val bList = block["bList"] as? List<*>
+                                println(bList!!::class)
+                                val byteList = bList.mapNotNull {
+                                    (it as? Number)?.toByte()
+                                }.toMutableList()
+                                CanvasBlock(
+                                    id = block.getObjectId("_id"),
+                                    bList = byteList
+                                )
+                            }
                             "MATH" -> MathBlock(
                                 id = block.getObjectId("_id"),
                                 text = block.getString("text"),
                             )
+                            "MEDIA" ->{
+                                val bList = block["bList"] as? List<*>
+                                println(bList!!::class)
+                                val byteList = bList.mapNotNull {
+                                    (it as? Number)?.toByte()
+                                }.toMutableList()
+
+
+                                MediaBlock(
+                                id = block.getObjectId("_id"),
+                                bList = byteList
+                                )
+                            }
                             else -> TextBlock(
                                 id = ObjectId(),
                                 text = "BAD!!!!!! THIS SHOULD NOT HAPPEN!!!!!!!",
@@ -589,6 +609,7 @@ class DBStorage() :IPersistence {
         block: ContentBlock,
         text: String,
         pathsContent: MutableList<Path>,
+        bList: MutableList<Byte>,
         language: String,
         gluedAbove: Boolean,
         gluedBelow: Boolean,
@@ -598,6 +619,8 @@ class DBStorage() :IPersistence {
     ) {
         val now = Instant.now().toString()
 
+        println(block.id)
+
         val job = coroutineScope.launch {
 
             // Update the content block in the content block collection
@@ -606,6 +629,7 @@ class DBStorage() :IPersistence {
                 Updates.combine(
                     Updates.set("text", text),
                     Updates.set("language", language),
+                    Updates.set("bList", bList),
                     Updates.set("gluedAbove", gluedAbove),
                     Updates.set("gluedBelow", gluedBelow),
                     // Updates.set("paths", pathsContent) // TODO: Uncomment if needed
