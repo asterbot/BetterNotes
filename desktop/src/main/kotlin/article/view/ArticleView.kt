@@ -9,6 +9,7 @@ import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
@@ -47,6 +48,7 @@ import com.github.skydoves.colorpicker.compose.HsvColorPicker
 import com.github.skydoves.colorpicker.compose.rememberColorPickerController
 import individual_board.entities.Note
 import individual_board.view.IndividualBoardScreen
+import individual_board.view.pxToDp
 import io.github.vinceglb.filekit.absolutePath
 import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.exists
@@ -59,15 +61,14 @@ import space.kscience.kmath.ast.rendering.FeaturedMathRendererWithPostProcess
 import space.kscience.kmath.ast.rendering.LatexSyntaxRenderer
 import space.kscience.kmath.ast.rendering.renderWithStringBuilder
 import space.kscience.kmath.expressions.MST
+import space.kscience.kmath.expressions.invoke
+import space.kscience.kmath.operations.Float64Field
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
-import java.io.IOException
 import java.nio.ByteBuffer
 import javax.imageio.ImageIO
-import space.kscience.kmath.expressions.*
-import space.kscience.kmath.operations.*
 
 
 data class ArticleScreen(
@@ -457,22 +458,30 @@ fun BlockFrame(
 
                     if (block.blockType == BlockType.PLAINTEXT && !isSelected) {
                         Box(
-                            modifier = Modifier.background(Color.White).fillMaxWidth()
+                            modifier = Modifier.background(Colors.lightTeal).fillMaxWidth().padding(horizontal=12.dp)
                         ) {
-                            Text(text = (block as TextBlock).text)
+                            Box(
+                                modifier = Modifier.background(Colors.white).fillMaxWidth()
+                            ) {
+                                Text(text = (block as TextBlock).text)
+                            }
                         }
                     }
 
                     if (block.blockType == BlockType.CODE && !isSelected) {
                         Box(
-                            modifier = Modifier.background(Colors.black).fillMaxWidth()
+                            modifier = Modifier.background(Colors.lightTeal).fillMaxWidth().padding(horizontal=12.dp)
                         ) {
-                            Text(
-                                text = (block as CodeBlock).text,
-                                color = Color.Green,
-                                fontFamily = FontFamily.Monospace,
-                                fontWeight = FontWeight.W200
-                            )
+                            Box(
+                                modifier = Modifier.background(Colors.black).fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = (block as CodeBlock).text,
+                                    color = Color.Green,
+                                    fontFamily = FontFamily.Monospace,
+                                    fontWeight = FontWeight.W200
+                                )
+                            }
                         }
                     }
 
@@ -486,6 +495,7 @@ fun BlockFrame(
                     var graphMST by remember { mutableStateOf(("0").parseMath())}
                     if (block.blockType == BlockType.MATH && !isSelected) {
                         // Render math here
+
                         var latex = ""
                         try {
                             // Try to parse the "flaky" math
@@ -499,15 +509,21 @@ fun BlockFrame(
                         }
                         LatexRenderer(latex)
                     }
-                    if (block.blockType == BlockType.MATH) {
-                        if (isGraph) {
-                            addGraph(graphMST)
-                        }
+                    if (block.blockType == BlockType.MATH && isSelected) {
                         Box(modifier = Modifier.fillMaxWidth()) {
-                            TextButton(modifier = Modifier.align(Alignment.Center), colors = textButtonColours(), onClick = {isGraph = !isGraph}) {
-                                Text(if (isGraph) "close graph" else "open graph")
+                            TextButton(
+                                modifier = Modifier.align(Alignment.Center),
+                                colors = textButtonColours(),
+                                onClick = {isGraph = !isGraph}
+                            ) {
+                                Text(if (isGraph) "Close Graph" else "Open Graph")
                             }
                         }
+                    }
+
+                    // also render graph if possible
+                    if (isGraph) {
+                        addGraph(graphMST)
                     }
 
                     if (block.blockType == BlockType.CANVAS) {
@@ -587,7 +603,7 @@ fun addGraph(
             emptyList<Pair<Double, Double>>()
         }
     }
-    Box(modifier = Modifier.fillMaxWidth().height(200.dp).background(Color.White)) {
+    Box(modifier = Modifier.fillMaxWidth().height(200.dp).background(Color.White).clipToBounds()) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             // Axis
             val xAxisY = size.height * (yMax / (yMax - yMin))
@@ -1091,6 +1107,7 @@ fun addMedia(block: ContentBlock, isSelected: Boolean = true, onMediaUpdate: (Mu
 //}
 
 data class PathData(val points: List<Offset>, val color: Color, val strokeWidth: Float)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int) -> Unit) {
 //    val drawingRepository = remember { DrawingRepository() }
@@ -1114,50 +1131,87 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int)
     var paths by remember { mutableStateOf(bytesToPaths(initialBytes.toByteArray())) }
 
     MaterialTheme {
-        Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-            // Top control bar
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp).background(Color.Black),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal=12.dp)
+        ) {
+            Box(
+                modifier = Modifier.fillMaxWidth().background(Colors.lightGrey)
             ) {
-                // Stroke width slider
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Stroke:")
-                    Spacer(Modifier.width(8.dp))
-                    Slider(
-                        value = strokeWidth,
-                        onValueChange = { strokeWidth = it },
-                        valueRange = 1f..20f,
-                        modifier = Modifier.width(150.dp)
-                    )
-                }
-
-                val controller = rememberColorPickerController()
-                Box(
-                    modifier = Modifier.width(150.dp).height(150.dp).background(Color.Green)
+                // Top control bar
+                Row(
+                    modifier = Modifier.align(Alignment.Center),
+                    horizontalArrangement = Arrangement.spacedBy(30.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    HsvColorPicker(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(450.dp)
-                            .padding(10.dp),
-                        controller = controller,
-                        initialColor = Color.Black,
-                        onColorChanged = { colorEnvelope: ColorEnvelope ->
-                            // do something
-                            selectedColor = colorEnvelope.color
-                            println("color changed to $selectedColor!!")
+                    Column() {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text("Current: ", fontSize = 14.sp)
+                            Box(
+                                modifier = Modifier
+                                    .size((strokeWidth + 3).pxToDp())
+                                    .clip(CircleShape)
+                                    .background(selectedColor.times(0.9f))
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(strokeWidth.pxToDp())
+                                        .clip(CircleShape)
+                                        .background(selectedColor)
+                                        .align(Alignment.Center)
+                                )
+                            }
                         }
+                        // Stroke width slider
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
 
-                    )
-                }
-                Box(modifier = Modifier.width(200.dp)) {
-                    TextButton(modifier = Modifier.align(Alignment.Center), colors = textButtonColours(), onClick = {isGrid = !isGrid}) {
-                        Text(if (!isGrid) "open Grid" else "close Grid")
+                        ) {
+                            Text("Stroke: ", fontSize = 14.sp)
+                            Slider(
+                                value = strokeWidth,
+                                onValueChange = { strokeWidth = it },
+                                valueRange = 1f..20f,
+                                modifier = Modifier.width(150.dp),
+                                colors = SliderDefaults.colors(
+                                    thumbColor = Colors.darkTeal,
+                                    activeTrackColor = Colors.medTeal,
+                                    inactiveTrackColor = Colors.lightTeal
+                                )
+                            )
+                        }
+                    }
+
+                    val controller = rememberColorPickerController()
+                    Box(
+                        modifier = Modifier.size(150.dp).padding(10.dp)
+                    ) {
+                        HsvColorPicker(
+                            modifier = Modifier
+                                .fillMaxSize(),
+                            controller = controller,
+                            initialColor = Color.Black,
+                            onColorChanged = { colorEnvelope: ColorEnvelope ->
+                                selectedColor = colorEnvelope.color
+                                println("color changed to $selectedColor!!")
+                            },
+                        )
+                    }
+                    TextButton(
+                        modifier = Modifier.defaultMinSize(minWidth=120.dp),
+                        colors = textButtonColours(),
+                        onClick = { isGrid = !isGrid }
+                    ) {
+                        Text(if (!isGrid) "Show Grid" else "Hide Grid")
                     }
                 }
             }
+
 
             // Drawing canvas
             Box(modifier = Modifier.fillMaxWidth().height(canvasHeight.dp)) {
@@ -1468,7 +1522,13 @@ fun EditableTextBox(
     }
 
     Column(
-        modifier = Modifier.clickable { focusRequester.requestFocus() } // Ensure click brings focus
+        modifier = Modifier
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() }, // Prevents ripple effect
+                indication = null
+            ) { focusRequester.requestFocus() } // Ensure click brings focus
+            .padding(horizontal = 12.dp, vertical = 8.dp)
+            .background(if (block.blockType == BlockType.CODE) Colors.black else Colors.white)
     ) {
         BasicTextField(
             value = textFieldValue,
