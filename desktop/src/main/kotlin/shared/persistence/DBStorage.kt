@@ -32,7 +32,7 @@ class DBStorage() :IPersistence {
 
     private val connectionString = dotenv["CONNECTION_STRING"]
 
-    private val databaseName = "cs346-mock-db"
+    private val databaseName = "cs346-users-db"
 
     private val uri = connectionString
 
