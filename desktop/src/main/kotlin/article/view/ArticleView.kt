@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -68,6 +69,7 @@ import java.nio.ByteBuffer
 import javax.imageio.ImageIO
 import space.kscience.kmath.expressions.*
 import space.kscience.kmath.operations.*
+import kotlin.math.max
 
 
 data class ArticleScreen(
@@ -1167,33 +1169,31 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int)
                     modifier = Modifier
                         .fillMaxSize()
                         .background(Color.White)
-                        .pointerInput(isDrawing, selectedColor, strokeWidth) {
-                            if (isDrawing) {
+                        .pointerInput(selectedColor, strokeWidth) {
                                 detectDragGestures(
                                     onDragStart = { offset ->
-//                                        val boxHeight = size.height.toFloat()
-//                                        val isNearBottomEdge = offset.y in (boxHeight - resizeThreshold)..boxHeight
-//                                        if (isNearBottomEdge) {
-//                                            isResizing = true
-//                                            isDrawing = false
-//                                            println("DEBUG: RESIZING CANVAS")
-//                                        } else {
-//                                            isDrawing = true
-//                                            isOutsideBox = false
-//
-//                                            if (isErasing) {
-//
-//                                            } else {
-//                                                currentPath = listOf(offset)
-//                                            }
-//                                        }
-                                        currentPath = listOf(offset)
+                                        val boxHeight = size.height.toFloat()
+                                        val isNearBottomEdge = offset.y in (boxHeight - resizeThreshold)..boxHeight
+                                        if (isNearBottomEdge) {
+                                            isResizing = true
+                                            isDrawing = false
+                                            println("DEBUG: RESIZING CANVAS")
+                                        } else {
+                                            isDrawing = true
+                                            isOutsideBox = false
+
+                                            if (isErasing) {
+
+                                            } else {
+                                                currentPath = listOf(offset)
+                                            }
+                                        }
                                     },
                                     onDrag = { change, _ ->
-//                                        if (isResizing) {
-//                                        val newHeight = max(50, (canvasHeight + 0.5 * change.positionChange().y).toInt())
-//                                        canvasHeight = newHeight
-//                                        } else {
+                                        if (isResizing) {
+                                        val newHeight = max(50, (canvasHeight + 0.5 * change.positionChange().y).toInt())
+                                        canvasHeight = newHeight
+                                        } else {
                                             val boxWidth = size.width
                                             val boxHeight = size.height
                                             val isInside = change.position.x in 0f..boxWidth.toFloat() &&
@@ -1203,28 +1203,28 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int)
                                                 // println("is inside")
                                                 println("$change.position")
                                             }
-//
-//                                            if (isInside) {
-//                                                if (isErasing) {
-//
-//                                                } else {
-//                                                    currentPath = currentPath + change.position
-//                                                }
-//                                            } else {
-//                                                // do nothing
-//                                            }
-//                                        }
+
+                                            if (isInside) {
+                                                if (isErasing) {
+
+                                                } else {
+                                                    currentPath = currentPath + change.position
+                                                }
+                                            } else {
+                                                // do nothing
+                                            }
+                                        }
                                     },
                                     onDragEnd = {
-//                                        isDrawing = false
-//                                        isResizing = false
+                                        isDrawing = false
+                                        isResizing = false
                                         paths = paths.toMutableList().apply {
                                             add(PathData(currentPath, selectedColor, strokeWidth))
                                         }
                                         currentPath = emptyList()
                                     }
                                 )
-                            }
+
                         }
                 ) {
                     // Draw all saved paths
@@ -1259,13 +1259,15 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int)
                     }
 
                     // Draw current path
-                    for (i in 0 until currentPath.size - 1) {
+                    if (isDrawing) {
+                        for (i in 0 until currentPath.size - 1) {
                             drawLine(
-                            color = selectedColor,
-                            start = currentPath[i],
-                            end = currentPath[i + 1],
-                            strokeWidth = strokeWidth
+                                color = selectedColor,
+                                start = currentPath[i],
+                                end = currentPath[i + 1],
+                                strokeWidth = strokeWidth
                             )
+                        }
                     }
                 }
                 Box(
