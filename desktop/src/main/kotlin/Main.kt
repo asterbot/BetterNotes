@@ -4,6 +4,7 @@
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
+import androidx.compose.ui.window.rememberWindowState
 import boards.view.BoardViewScreen
 import cafe.adriel.voyager.core.screen.Screen
 import io.github.vinceglb.filekit.FileKit
@@ -55,10 +56,14 @@ fun main() {
         }
     }
     application {
+        val windowState = rememberWindowState()
         Window(onCloseRequest = ::exitApplication,
             title = "BetterNotes",
-            icon = painterResource("betternotes_logo.png")
+            icon = painterResource("betternotes_logo.png"),
+            state = windowState
         ) {
+            // Set minimum window size
+            window.minimumSize = java.awt.Dimension(600, 600)
             AppScaffold(startScreen)
         }
     }
