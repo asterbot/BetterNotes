@@ -40,7 +40,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import article.entities.*
 import boards.entities.Board
-import kotlinx.coroutines.delay
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
@@ -53,6 +52,7 @@ import individual_board.view.pxToDp
 import io.github.vinceglb.filekit.absolutePath
 import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.exists
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.bson.types.ObjectId
 import shared.*
@@ -190,7 +190,7 @@ fun ArticleCompose(board: Board, article: Note) {
                 text = article.title,
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
-                color = tagColorMap[article.tag]!!.times(0.7f)
+                color = tagColorMap[article.tag]!!.times(0.6f)
             )
             Text( // article description
                 text = article.desc,
@@ -291,7 +291,12 @@ fun ArticleCompose(board: Board, article: Note) {
                     ) {
                         relatedNotes?.forEach { currNote ->
                             DropdownMenuItem(
-                                text = { Text(currNote.title) },
+                                text = {
+                                    Text(
+                                        currNote.title,
+                                        color = tagColorMap[currNote.tag]!!.times(0.7f)
+                                    )
+                                },
                                 onClick = {
                                     selectedBlock = null
                                     changeSelectedBlock(selectedBlock)
@@ -299,7 +304,9 @@ fun ArticleCompose(board: Board, article: Note) {
                                     scope.launch {
                                         delay(150)
                                         ScreenManager.push(navigator, ArticleScreen(board, currNote))
-                                    }                         }
+                                    }
+                                },
+                                modifier = Modifier.background(tagColorMap[currNote.tag]!!.copy(alpha=0.05f))
                             )
                         }
                     }
