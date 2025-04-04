@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
@@ -166,7 +167,7 @@ fun ArticleCompose(board: Board, article: Note) {
         Column(
             modifier = Modifier.padding(top=15.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(5.dp)
         ) {
             Text( // article name
                 text = article.title,
@@ -234,7 +235,10 @@ fun ArticleCompose(board: Board, article: Note) {
                 val relatedNotes: List<Note>? = notesFromModel?.filter { it.id in relatedNoteIds }
                 // now, relatedNotes contains all Note objects that the article is related to
                 var relatedNotesExpanded by remember { mutableStateOf(false) }
-                Box {
+
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                     TextButton(
                         colors = textButtonColours(),
                         onClick = { relatedNotesExpanded = !relatedNotesExpanded }
@@ -256,7 +260,8 @@ fun ArticleCompose(board: Board, article: Note) {
                     DropdownMenu(
                         expanded = relatedNotesExpanded,
                         onDismissRequest = { relatedNotesExpanded = false },
-                        containerColor = Colors.veryLightTeal
+                        containerColor = Colors.veryLightTeal,
+                        modifier = Modifier.heightIn(max = 187.dp)
                     ) {
                         relatedNotes?.forEach { currNote ->
                             DropdownMenuItem(
@@ -266,7 +271,6 @@ fun ArticleCompose(board: Board, article: Note) {
                                     changeSelectedBlock(selectedBlock)
                                     relatedNotesExpanded = false
                                     ScreenManager.push(navigator, ArticleScreen(board, currNote))
-                                    println("We pushed $currNote which has id ${currNote.id}")
                                 }
                             )
                         }
@@ -274,7 +278,7 @@ fun ArticleCompose(board: Board, article: Note) {
                 }
             }
 
-            if (article.relatedNotes.size > 0) {
+            if (article.relatedNotes.isNotEmpty()) {
                 RelatedNotesDropDownMenu()
             }
 
@@ -297,8 +301,6 @@ fun ArticleCompose(board: Board, article: Note) {
                     articleViewModel.contentBlocksList, // itemsIndexed iterates over this collection
                     key = { index: Int, block: ContentBlock -> block.id } // Jetpack Compose uses keys to track recompositions
                 ) { index: Int, block: ContentBlock ->
-                    {} // honestly I'm not sure what this does, but it's needed
-
                     BlockFrame(
                         article = article,
                         blockIndex = index,
@@ -349,11 +351,7 @@ fun BlockFrame(
 ) {
     var block by remember { mutableStateOf(articleViewModel.contentBlocksList[blockIndex]) }
 
-    val backgroundColor = if (isSelected) Colors.lightTeal.copy(
-        red = Colors.lightTeal.red * 0.9f,
-        blue = Colors.lightTeal.blue * 0.9f,
-        green = Colors.lightTeal.green * 0.9f
-    ) else Colors.lightTeal
+    val backgroundColor = if (isSelected) Colors.lightTeal.times(0.92f) else Colors.lightTeal
 
     Box(
         modifier = Modifier
@@ -481,20 +479,24 @@ fun BlockFrame(
                     }
 
                     if (block.blockType == BlockType.CANVAS) {
-                        EditableCanvas(
-                            block = block,
-                            onCanvasUpdate = { paths, height ->
-                                articleModel.saveBlock(
-                                    blockIndex,
-                                    pathsContent = paths,
-                                    canvasHeight = height,
-                                    gluedAbove = gluedAbove,
-                                    gluedBelow = gluedBelow,
-                                    article = article,
-                                    board = board
-                                )
-                            }
-                        )
+                        Box(
+                            modifier = Modifier.clipToBounds()
+                        ) {
+                            EditableCanvas(
+                                block = block,
+                                onCanvasUpdate = { paths, height ->
+                                    articleModel.saveBlock(
+                                        blockIndex,
+                                        pathsContent = paths,
+                                        canvasHeight = height,
+                                        gluedAbove = gluedAbove,
+                                        gluedBelow = gluedBelow,
+                                        article = article,
+                                        board = board
+                                    )
+                                }
+                            )
+                        }
                     }
 
 
