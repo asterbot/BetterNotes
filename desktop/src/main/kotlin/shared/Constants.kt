@@ -17,6 +17,18 @@ object Colors {
     val errorColor: Color = Color(0xFFCF0000)
 }
 
+val tagColors = listOf(
+    Colors.veryLightTeal,
+    Colors.lightTeal,
+    Colors.medTeal,
+    Colors.darkTeal,
+    Colors.black,
+    Colors.white,
+    Colors.lightGrey,
+    Colors.darkGrey,
+    Colors.errorColor,
+)
+
 @Composable
 fun textButtonColours(): ButtonColors {
     return ButtonDefaults.buttonColors(
