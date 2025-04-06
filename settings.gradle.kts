@@ -13,6 +13,8 @@ pluginManagement {
     }
 }
 
+// also check this out - if i stage and commit this, it should show in git status
+
 rootProject.name = "cs-346-project"
 include("desktop")
 include(":fdg_layout")
