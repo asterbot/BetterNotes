@@ -1,11 +1,9 @@
 package individual_board.view
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.OutlinedTextField
@@ -457,7 +455,7 @@ fun IndividualBoardView(
             }
         ) {
             FdgLayoutView(
-                graphViewModel = fdgLayoutViewModel,
+                fdgLayoutViewModel = fdgLayoutViewModel,
                 onNodeClick = { note ->
                     individualBoardModel.updateNoteAccessed(note, board)
                     ScreenManager.push(navigator, ArticleScreen(board, note))

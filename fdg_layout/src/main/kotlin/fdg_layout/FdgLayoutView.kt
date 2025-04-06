@@ -28,12 +28,12 @@ internal fun Float.pxToDp(): Dp {
 
 @Composable
 fun <NodeDataType> FdgLayoutView(
-    graphViewModel: FdgLayoutViewModel<NodeDataType>,
+    fdgLayoutViewModel: FdgLayoutViewModel<NodeDataType>,
     onNodeClick: (NodeDataType) -> Unit,
     getLabel: (NodeDataType) -> String,
     getColor: (NodeDataType) -> Color
 ) {
-    var graph by remember { mutableStateOf(graphViewModel) }
+    var graph by remember { mutableStateOf(fdgLayoutViewModel) }
 
     BoxWithConstraints(
         modifier = Modifier
