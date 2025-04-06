@@ -127,9 +127,13 @@ fun ArticleCompose(board: Board, article: Note) {
         changeSelectedBlock(selectedBlock)
     }
 
-    fun selectAtIndex(index: Int) { selectedBlock = index } // used with inserting blocks
+    fun selectAtIndex(index: Int?) { selectedBlock = index } // used with inserting blocks
 
     val menuButtonFuncs: Map<String, (Int) -> Unit> = mapOf(
+        "Set Selected Block to Null" to {
+            selectedBlock = null
+            changeSelectedBlock(selectedBlock)
+        },
         "Toggle Glue Above" to { index ->
             articleModel.toggleGlueUpwards(index, article, board)
         },
@@ -376,7 +380,7 @@ fun BlockFrame(
     menuButtonFuncs: Map<String, (Int) -> Unit>,
     isSelected: Boolean,
     onBlockClick: () -> Unit,
-    selectAtIndex: (Int) -> Unit,
+    selectAtIndex: (Int?) -> Unit,
     board: Board,
     gluedAbove: Boolean,
     gluedBelow: Boolean,
@@ -431,7 +435,8 @@ fun BlockFrame(
                 modifier = Modifier
                     .background(backgroundColor)
                     .padding(horizontal=5.dp)
-                    .clip(RoundedCornerShape(5.dp)),
+                    .clip(RoundedCornerShape(5.dp))
+                    .defaultMinSize(minHeight = 15.dp)
             ) {
 
                 if (isSelected) {
@@ -542,21 +547,49 @@ fun BlockFrame(
                         addGraph(graphMST)
                     }
 
-                    if (block.blockType == BlockType.CANVAS) {
-                            EditableCanvas(
-                                block = block,
-                                onCanvasUpdate = { bList: MutableList<Byte>, height: Int ->
-                                    articleModel.saveBlock(
-                                        blockIndex,
-                                        bList = bList,
-                                        canvasHeight = height,
-                                        gluedAbove = gluedAbove,
-                                        gluedBelow = gluedBelow,
-                                        article = article,
-                                        board = board
-                                    )
+                    if (block.blockType == BlockType.CANVAS && isSelected) {
+                        EditableCanvas(
+                            block = block,
+                            onCanvasUpdate = { bList: MutableList<Byte>, height: Int ->
+                                articleModel.saveBlock(
+                                    blockIndex,
+                                    bList = bList,
+                                    canvasHeight = height,
+                                    gluedAbove = gluedAbove,
+                                    gluedBelow = gluedBelow,
+                                    article = article,
+                                    board = board
+                                )
+                                selectAtIndex(null)
+                            }
+                        )
+                    }
+
+                    if (block.blockType == BlockType.CANVAS && !isSelected) {
+                        val canvasBlock = block as CanvasBlock
+                        val paths: MutableList<PathData> = bytesToPaths(canvasBlock.bList.toByteArray())
+                        Box(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal=12.dp)
+                        ) {
+                            Canvas(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(canvasBlock.canvasHeight.dp)
+                                    .background(Color.White)
+                                    .clipToBounds()
+                            ) {
+                                paths.forEach { path ->
+                                    for (i in 0 until path.points.size - 1) {
+                                        drawLine(
+                                            color = path.color,
+                                            start = path.points[i],
+                                            end = path.points[i + 1],
+                                            strokeWidth = path.strokeWidth
+                                        )
+                                    }
                                 }
-                            )
+                            }
+                        }
                     }
 
                     if (block.blockType == BlockType.MEDIA) {
@@ -743,403 +776,48 @@ fun addMedia(block: ContentBlock, isSelected: Boolean = true, onMediaUpdate: (Mu
         }
     }
     Column(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // filePath == null && imageBytes.isEmpty()
         if (isSelected) {
             TextButton(
-                modifier = Modifier.align(Alignment.CenterHorizontally),
                 colors = textButtonColours(),
                 onClick = { launcher.launch() },
             ) {
-                Text("Pick a file")
+                Text(if (imageBytes.isEmpty()) "Pick a file" else "Change file")
             }
         }
-    }
 
-    if (imageBytes.isNotEmpty()) {
-        onMediaUpdate(imageBytes)
+        if (imageBytes.isNotEmpty()) {
+            onMediaUpdate(imageBytes)
 //        val imageBitmap = makeFromEncoded(imageBytes.toByteArray()).toComposeImageBitmap()
-        val imageBitmap = loadImageFromBytes(imageBytes.toByteArray())
+            val imageBitmap = loadImageFromBytes(imageBytes.toByteArray())
 
-        if (imageBitmap != null) {
-            Image(
-                bitmap = imageBitmap,
-                contentDescription = "everyone's favorite bird",
-                modifier = Modifier.fillMaxSize()
-                    .pointerInput(Unit) {
-                        detectTapGestures(
-                            onDoubleTap = {
-                                cropImage()
-                                println("crop mode :)")
-                            }
-                        )
-                    }
-            )
+            if (imageBitmap != null) {
+                Image(
+                    bitmap = imageBitmap,
+                    contentDescription = "everyone's favorite bird",
+                    modifier = Modifier
+                        .pointerInput(Unit) {
+                            detectTapGestures(
+                                onDoubleTap = {
+                                    cropImage()
+                                    println("crop mode :)")
+                                }
+                            )
+                        }
+                )
+            }
+        } else {
+            println("No file to display")
         }
-    } else {
-        println("No file to display")
     }
 }
 
-// original version with path and canvas
-//@Composable
-//fun EditableCanvas(
-//    block: ContentBlock,
-//    onCanvasUpdate: (MutableList<Path>, Int) -> Unit
-//) {
-//
-//    var startPaths: MutableList<Path> = when (block.blockType) {
-//        BlockType.CANVAS -> { (block as CanvasBlock).paths }
-//        else -> mutableListOf()
-//    }
-//
-//    val paths = remember { mutableStateListOf<Path>().apply { addAll(startPaths) } }
-//    var currentPath by remember { mutableStateOf(Path()) }
-//    var isDrawing by remember { mutableStateOf(false) }
-//    var isOutsideBox by remember { mutableStateOf(false) }
-//    var isErasing by remember { mutableStateOf(false) }
-//
-//    var canvasHeight by remember { mutableStateOf((block as CanvasBlock).canvasHeight) }
-//    val resizeThreshold = LocalDensity.current.run { 30 }
-//    var isResizing by remember {mutableStateOf(false)}
-//
-//    Box(
-//        modifier = Modifier
-//            .fillMaxWidth()
-//            .height(canvasHeight.dp)
-//            .background(Color.White)
-//            .pointerInput(Unit) {
-//                detectDragGestures(
-//                    onDragStart = { offset ->
-//                        val boxHeight = size.height.toFloat()
-//                        val isNearBottomEdge = offset.y in (boxHeight - resizeThreshold)..boxHeight
-//                        if (isNearBottomEdge) {
-//                            isResizing = true
-//                            isDrawing = false
-//                            println("DEBUG: RESIZING CANVAS")
-//                        }
-//                        else {
-//                            isDrawing = true
-//                            isOutsideBox = false
-//
-//                            if (isErasing) {
-//                                // Erase paths near the cursor
-//                                paths.removeAll { path -> isPointNearPath(offset, path) }
-//                            } else {
-//                                currentPath = Path().apply { moveTo(offset.x, offset.y) }
-//                            }
-//                        }
-//                    },
-//                    onDrag = { change, _ ->
-//                        if (isResizing) {
-//                            val newHeight = max(50, (canvasHeight + 0.5*change.positionChange().y).toInt())
-//                            canvasHeight = newHeight
-//                        }
-//                        else {
-//                            val boxWidth = size.width
-//                            val boxHeight = size.height
-//
-//                            val isInside = change.position.x in 0f..boxWidth.toFloat() &&
-//                                    change.position.y in 0f..boxHeight.toFloat()
-//
-//                            if (isInside) {
-//                                if (isErasing) {
-//                                    // Remove paths near the cursor position
-//                                    paths.removeAll { path -> isPointNearPath(change.position, path) }
-//                                } else {
-//                                    if (isOutsideBox) {
-//                                        currentPath = Path().apply { moveTo(change.position.x, change.position.y) }
-//                                        isOutsideBox = false
-//                                    } else {
-//                                        currentPath = Path().apply {
-//                                            addPath(currentPath)
-//                                            lineTo(change.position.x, change.position.y)
-//                                        }
-//                                    }
-//                                }
-//                            } else {
-//                                if (!isOutsideBox && !isErasing) {
-//                                    paths.add(currentPath)
-//                                    onCanvasUpdate(paths, canvasHeight)
-//                                    currentPath = Path()
-//                                    isOutsideBox = true
-//                                }
-//                            }
-//                        }
-//                    },
-//                    onDragEnd = {
-//                        if (!isOutsideBox && !isErasing) {
-//                            paths.add(currentPath)
-//                            onCanvasUpdate(paths, canvasHeight)
-//                        }
-//                        isDrawing = false
-//                        isResizing = false
-//                        currentPath = Path()
-//                    }
-//                )
-//            }
-//    ) {
-//        TextButton(
-//            colors = textButtonColours(),
-//            onClick = { isErasing = !isErasing },
-//        ) { Text(if (!isErasing) "Erase" else "Draw") }
-//
-//        // drawing the existing path
-//        Canvas(
-//            modifier = Modifier.fillMaxSize()
-//        ) {
-//            paths.forEach { path ->
-//                drawPath(
-//                    path = path,
-//                    color = Color.Black,
-//                    style = Stroke(width = 2f)
-//                )
-//            }
-//
-//            // drawing the dragging path
-//            if (isDrawing && !isErasing) {
-//                drawPath(
-//                    path = currentPath,
-//                    color = Color.Black,
-//                    style = Stroke(width = 2f)
-//                )
-//            }
-//        }
-//        Box(
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .background(Colors.lightGrey)
-//                .align(Alignment.BottomEnd)
-//                .height((resizeThreshold / LocalDensity.current.density).dp)
-//
-//        ) {
-//            Column(
-//                modifier = Modifier.fillMaxSize(),
-//                horizontalAlignment = Alignment.CenterHorizontally,
-//                verticalArrangement = Arrangement.Center
-//            ) {
-//                Icon(
-//                    imageVector = Icons.Default.Menu,
-//                    contentDescription = "Canvas Height Slider",
-//                    modifier = Modifier.size(resizeThreshold.dp - 5.dp),
-//                    tint = Colors.darkGrey
-//                )
-//            }
-//        }
-//    }
-//}
-//
-//
-//fun isPointNearPath(point: Offset, path: Path, threshold: Float = 20f): Boolean {
-//    val pathBounds = path.getBounds()
-//    return (point.x in (pathBounds.left - threshold)..(pathBounds.right + threshold) &&
-//            point.y in (pathBounds.top - threshold)..(pathBounds.bottom + threshold))
-//}
-
-
-// lines are saved, best version yet
-// block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int) -> Unit
-//@Composable
-//fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int) -> Unit) {
-//
-//    val initialBytes = when (block.blockType) {
-//        BlockType.CANVAS -> (block as CanvasBlock).bList
-//        else -> mutableListOf()
-//    }
-//    var imageBytes by remember { mutableStateOf(initialBytes) }
-//
-//
-//    var paths by remember { mutableStateOf(mutableListOf<PathData>()) }
-//    var currentPath by remember { mutableStateOf(Path()) }
-//
-//
-//    var isDrawing by remember { mutableStateOf(false) }
-//    var isOutsideBox by remember { mutableStateOf(false) }
-//    var isErasing by remember { mutableStateOf(false) }
-//
-//    var canvasWidth by remember { mutableStateOf(0) }
-//    var canvasHeight by remember { mutableStateOf(100) }
-//    val resizeThreshold = LocalDensity.current.run { 30 }
-//    var isResizing by remember { mutableStateOf(false) }
-//
-//    // var bitmap by remember { mutableStateOf(byteListToImageBitmap(imageBytes)) } // Initialize bitmap
-//    var myColor by remember {mutableStateOf(Color.Black)}
-//    var myStroke by remember {mutableStateOf(5f) }
-//    var canvasPaint by remember { mutableStateOf(Paint().apply { color = myColor }) }
-//
-//
-//    // color wheel box
-//    val controller = rememberColorPickerController()
-//    Box(
-//        modifier = Modifier.fillMaxWidth().height(150.dp)
-//    ) {
-//        HsvColorPicker(
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .height(450.dp)
-//                .padding(10.dp),
-//            controller = controller,
-//            initialColor = Color.Black,
-//            onColorChanged = { colorEnvelope: ColorEnvelope ->
-//                // do something
-//                myColor = colorEnvelope.color
-//                println("color changed to $myColor!!")
-//            }
-//
-//        )
-//    }
-//
-//    Box(
-//        modifier = Modifier
-//            .fillMaxWidth()
-//            .height(canvasHeight.dp)
-//            .background(Color.White)
-//            .pointerInput(Unit) {
-//                detectDragGestures(
-//                    onDragStart = { offset ->
-//                        val boxHeight = size.height.toFloat()
-//                        val isNearBottomEdge = offset.y in (boxHeight - resizeThreshold)..boxHeight
-//                        if (isNearBottomEdge) {
-//                            isResizing = true
-//                            isDrawing = false
-//                            println("DEBUG: RESIZING CANVAS")
-//                        } else {
-//                            isDrawing = true
-//                            isOutsideBox = false
-//
-//                            if (isErasing) {
-//                                // Erase paths near the cursor
-//                                paths.removeAll { path -> isPointNearPath(offset, path) }
-//                            } else {
-//                                currentPath = Path().apply { moveTo(offset.x, offset.y) }
-//                            }
-//                        }
-//                    },
-//                    onDrag = { change, _ ->
-//                        if (isResizing) {
-//                            val newHeight = max(50, (canvasHeight + 0.5 * change.positionChange().y).toInt())
-//                            canvasHeight = newHeight
-//                        } else {
-//                            val boxWidth = size.width
-//                            val boxHeight = size.height
-//                            canvasWidth = boxWidth
-//
-//                            val isInside = change.position.x in 0f..boxWidth.toFloat() &&
-//                                    change.position.y in 0f..boxHeight.toFloat()
-//
-//                            if (isInside) {
-//                                if (isErasing) {
-//                                    // Remove paths near the cursor position
-//                                    paths.removeAll { path -> isPointNearPath(change.position, path) }
-//                                } else {
-//                                    if (isOutsideBox) {
-//                                        currentPath = Path().apply { moveTo(change.position.x, change.position.y) }
-//                                        isOutsideBox = false
-//                                    } else {
-//                                        currentPath = Path().apply {
-//                                            addPath(currentPath)
-//                                            lineTo(change.position.x, change.position.y)
-//                                        }
-//                                    }
-//                                }
-//                            } else {
-//                                if (!isOutsideBox && !isErasing) {
-//                                    paths.add(currentPath) // Add the completed path
-//                                    currentPath = Path()
-//                                    isOutsideBox = true
-//                                }
-//                            }
-//                        }
-//                    },
-//                    onDragEnd = {
-//                        if (!isOutsideBox && !isErasing) {
-//                            paths.add(currentPath) // Add the current path to the list when drag ends
-//                        }
-//                        isDrawing = false
-//                        isResizing = false
-//                        currentPath = Path()
-//                    }
-//                )
-//            }
-//    ) {
-//        TextButton(
-//            onClick = { isErasing = !isErasing },
-//        ) { Text(if (!isErasing) "Erase" else "Draw") }
-//
-//        var bitmap by remember { mutableStateOf(ImageBitmap(canvasWidth, canvasHeight)) } // Initialize bitmap
-//
-//        Canvas(
-//            modifier = Modifier.fillMaxSize()
-//        ) {
-//            val canvas = Canvas(bitmap) // Canvas to draw on the bitmap
-//            // Drawing the paths stored in the list (for persistence)
-//            paths.forEach { path ->
-//                // drawPath(path, color = Color(0xFF00FF00), style = Stroke(width = 4f))
-//                canvas.drawPath(path, canvasPaint)
-//            }
-//
-//            // Drawing the dragging path (on top of previous paths)
-//            if (isDrawing && !isErasing) {
-//                // drawPath(currentPath, color = myColor, style = Stroke(width = 4f))
-//                canvas.drawPath(currentPath, canvasPaint)
-//            }
-//            // imageBytes.addAll(imageBitmapToByteArray(bitmap).toMutableList())  // Convert the current image to bytes
-//            onCanvasUpdate(imageBytes, canvasHeight)
-//            val byteArrayOutputStream = ByteArrayOutputStream()
-//        }
-//    }
-//
-//    var isRendering by remember { mutableStateOf(false) }
-//    TextButton(
-//        onClick = {
-//            isRendering = !isRendering
-//        },
-//    ) { Text("Render") }
-//
-//    if (isRendering) {
-//        Image(
-//            bitmap = loadImageFromBytes(imageBytes.toByteArray())!!,
-//            contentDescription = "everyone's favorite bird",
-//            modifier = Modifier.fillMaxSize()
-//        )
-//    }
-//
-//    Box(
-//        modifier = Modifier
-//            .fillMaxWidth()
-//            .background(Color.LightGray)
-//            //.align(Alignment.BottomCenter)
-//            .height((resizeThreshold / LocalDensity.current.density).dp)
-//    ) {
-//        Column(
-//            modifier = Modifier.fillMaxSize(),
-//            horizontalAlignment = Alignment.CenterHorizontally,
-//            verticalArrangement = Arrangement.Center
-//        ) {
-//            Icon(
-//                imageVector = Icons.Default.Menu,
-//                contentDescription = "Canvas Height Slider",
-//                modifier = Modifier.size(resizeThreshold.dp - 5.dp),
-//                tint = Color.DarkGray
-//            )
-//        }
-//    }
-//}
-
-// Check if a point is near any path for erasing purposes
-//private fun isPointNearPath(point: Offset, path: Path, threshold: Float = 20f): Boolean {
-//    val pathBounds = path.getBounds()
-//    return (point.x in (pathBounds.left - threshold)..(pathBounds.right + threshold) &&
-//            point.y in (pathBounds.top - threshold)..(pathBounds.bottom + threshold))
-//}
-
 data class PathData(val points: List<Offset>, val color: Color, val strokeWidth: Float)
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int) -> Unit) {
-//    val drawingRepository = remember { DrawingRepository() }
-//    val scope = rememberCoroutineScope()
 
     var canvasHeight by remember { mutableStateOf((block as CanvasBlock).canvasHeight) }
     var selectedColor by remember { mutableStateOf(Color.Black) }
@@ -1151,334 +829,347 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int)
     var isResizing by remember { mutableStateOf(false) }
     val resizeThreshold = LocalDensity.current.run { 30 }
     var isGrid by remember { mutableStateOf(false) }
+    val focusRequester = remember { FocusRequester() } // Controls focus
 
     val initialBytes = when (block.blockType) {
         BlockType.CANVAS -> (block as CanvasBlock).bList
         else -> mutableListOf()
     }
     var paths by remember { mutableStateOf(bytesToPaths(initialBytes.toByteArray())) }
+
     var eraserSize = 20f
 
-    MaterialTheme {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal=12.dp)
-        ) {
-            Box(
-                modifier = Modifier.fillMaxWidth().background(Colors.lightGrey)
+    Column( // gives user "margin of safety" (i.e. they won't click out of the block if they accidentally miss a button by a little bit)
+        modifier = Modifier
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) { focusRequester.requestFocus() }
+            .padding(12.dp)
+    ) {
+        MaterialTheme {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .focusRequester(focusRequester)
             ) {
-                // Top control bar
-                Row(
-                    modifier = Modifier.align(Alignment.Center),
-                    horizontalArrangement = Arrangement.spacedBy(20.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+                Box(
+                    modifier = Modifier.fillMaxWidth().background(Colors.lightGrey)
+
                 ) {
-                    Column() {
-                        Row(
-                            modifier = Modifier.defaultMinSize(30.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Text("Current: ", fontSize = 14.sp)
-                            if (isErasing) {
-                                println("I WANNA ERASE")
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.Backspace,
-                                    contentDescription = "The best eraser icon I could find",
-                                    modifier = Modifier.fillMaxHeight(),
-                                    tint = Colors.darkGrey
-                                )
-                            } else {
-                                Icon(
-                                    imageVector = Icons.Filled.Draw,
-                                    contentDescription = "The best eraser icon I could find",
-                                    modifier = Modifier.fillMaxHeight(),
-                                    tint = Colors.darkGrey
-                                )
-                                Box(
-                                    modifier = Modifier.size(25.dp)
-                                ) {
+                    // Top control bar
+                    Row(
+                        modifier = Modifier.align(Alignment.Center),
+                        horizontalArrangement = Arrangement.spacedBy(20.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column() {
+                            Row(
+                                modifier = Modifier.defaultMinSize(30.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text("Current: ", fontSize = 14.sp)
+                                if (isErasing) {
+                                    println("I WANNA ERASE")
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.Backspace,
+                                        contentDescription = "The best eraser icon I could find",
+                                        modifier = Modifier.fillMaxHeight(),
+                                        tint = Colors.darkGrey
+                                    )
+                                } else {
+                                    Icon(
+                                        imageVector = Icons.Filled.Draw,
+                                        contentDescription = "The best eraser icon I could find",
+                                        modifier = Modifier.fillMaxHeight(),
+                                        tint = Colors.darkGrey
+                                    )
                                     Box(
-                                        modifier = Modifier
-                                            .size((strokeWidth + 3).pxToDp())
-                                            .clip(CircleShape)
-                                            .background(selectedColor.times(0.9f))
-                                            .align(Alignment.Center)
+                                        modifier = Modifier.size(25.dp)
                                     ) {
                                         Box(
                                             modifier = Modifier
-                                                .size(strokeWidth.pxToDp())
+                                                .size((strokeWidth + 3).pxToDp())
                                                 .clip(CircleShape)
-                                                .background(selectedColor)
+                                                .background(selectedColor.times(0.9f))
                                                 .align(Alignment.Center)
-                                        )
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(strokeWidth.pxToDp())
+                                                    .clip(CircleShape)
+                                                    .background(selectedColor)
+                                                    .align(Alignment.Center)
+                                            )
+                                        }
                                     }
                                 }
                             }
-                        }
-                        // Stroke width slider
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            // Stroke width slider
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
 
-                        ) {
-                            Text("Stroke: ", fontSize = 14.sp)
-                            Slider(
-                                value = strokeWidth,
-                                onValueChange = { strokeWidth = it },
-                                valueRange = 1f..20f,
-                                modifier = Modifier.width(150.dp),
-                                colors = SliderDefaults.colors(
-                                    thumbColor = Colors.darkTeal,
-                                    activeTrackColor = Colors.medTeal,
-                                    inactiveTrackColor = Colors.lightTeal
+                            ) {
+                                Text("Stroke: ", fontSize = 14.sp)
+                                Slider(
+                                    value = strokeWidth,
+                                    onValueChange = { strokeWidth = it },
+                                    valueRange = 1f..20f,
+                                    modifier = Modifier.width(150.dp),
+                                    colors = SliderDefaults.colors(
+                                        thumbColor = Colors.darkTeal,
+                                        activeTrackColor = Colors.medTeal,
+                                        inactiveTrackColor = Colors.lightTeal
+                                    )
                                 )
+                            }
+                        }
+
+                        val controller = rememberColorPickerController()
+                        Box(
+                            modifier = Modifier.size(100.dp).padding(10.dp)
+                        ) {
+                            HsvColorPicker(
+                                modifier = Modifier
+                                    .fillMaxSize(),
+                                controller = controller,
+                                initialColor = Color.Black,
+                                onColorChanged = { colorEnvelope: ColorEnvelope ->
+                                    selectedColor = colorEnvelope.color
+                                    println("color changed to $selectedColor!!")
+                                },
                             )
                         }
-                    }
-
-                    val controller = rememberColorPickerController()
-                    Box(
-                        modifier = Modifier.size(100.dp).padding(10.dp)
-                    ) {
-                        HsvColorPicker(
-                            modifier = Modifier
-                                .fillMaxSize(),
-                            controller = controller,
-                            initialColor = Color.Black,
-                            onColorChanged = { colorEnvelope: ColorEnvelope ->
-                                selectedColor = colorEnvelope.color
-                                println("color changed to $selectedColor!!")
-                            },
-                        )
-                    }
-                    Column {
-                        Row (
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        ) {
-                            TextButton(
-                                modifier = Modifier.defaultMinSize(minWidth=120.dp),
-                                colors = textButtonColours(),
-                                onClick = {isErasing = !isErasing}
+                        Column {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
                             ) {
-                                Text( if(isErasing) "Draw" else "Erase")
+                                TextButton(
+                                    modifier = Modifier.defaultMinSize(minWidth = 120.dp),
+                                    colors = textButtonColours(),
+                                    onClick = { isErasing = !isErasing }
+                                ) {
+                                    Text(if (isErasing) "Draw" else "Erase")
+                                }
+                                TextButton(
+                                    colors = textButtonColours(),
+                                    onClick = { onCanvasUpdate(canvasToBytes(paths).toMutableList(), canvasHeight) }
+                                ) {
+                                    Text("Save")
+                                }
                             }
                             TextButton(
+                                modifier = Modifier.defaultMinSize(minWidth = 120.dp),
                                 colors = textButtonColours(),
-                                onClick = { onCanvasUpdate(canvasToBytes(paths).toMutableList(), canvasHeight) }
+                                onClick = { isGrid = !isGrid }
                             ) {
-                                Text("Save")
+                                Text(if (!isGrid) "Show Grid" else "Hide Grid")
                             }
-                        }
-                        TextButton(
-                            modifier = Modifier.defaultMinSize(minWidth=120.dp),
-                            colors = textButtonColours(),
-                            onClick = { isGrid = !isGrid }
-                        ) {
-                            Text(if (!isGrid) "Show Grid" else "Hide Grid")
                         }
                     }
                 }
-            }
 
 
-            // Drawing canvas
-            Box(modifier = Modifier.fillMaxWidth().height(canvasHeight.dp).clipToBounds()) {
-                Canvas(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.White)
-                        .pointerInput(selectedColor, strokeWidth) {
-                            detectDragGestures(
-                                onDragStart = { offset ->
-                                    val boxHeight = size.height.toFloat()
-                                    val isNearBottomEdge = offset.y in (boxHeight - resizeThreshold)..boxHeight
-                                    if (isNearBottomEdge) {
-                                        isResizing = true
-                                        isDrawing = false
-                                        println("DEBUG: RESIZING CANVAS")
-                                    } else {
-                                        isDrawing = true
-                                        isOutsideBox = false
-
-                                        if (isErasing) {
-                                            paths.removeAll { pathData ->
-                                                pathData.points.any { point ->
-                                                    (point - offset).getDistance() < eraserSize
-                                                }
-                                            }
-                                            println("So tired")
+                // Drawing canvas
+                Box(modifier = Modifier.fillMaxWidth().height(canvasHeight.dp).clipToBounds()) {
+                    Canvas(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.White)
+                            .pointerInput(selectedColor, strokeWidth) {
+                                detectDragGestures(
+                                    onDragStart = { offset ->
+                                        val boxHeight = size.height.toFloat()
+                                        val isNearBottomEdge = offset.y in (boxHeight - resizeThreshold)..boxHeight
+                                        if (isNearBottomEdge) {
+                                            isResizing = true
+                                            isDrawing = false
+                                            println("DEBUG: RESIZING CANVAS")
                                         } else {
-                                            currentPath = listOf(offset)
-                                        }
-                                    }
-                                },
-                                onDrag = { change, _ ->
-                                    if (isResizing) {
-                                        val newHeight = max(50, (canvasHeight + 0.5 * change.positionChange().y).toInt())
-                                        canvasHeight = newHeight
-                                    } else {
-                                        val boxWidth = size.width
-                                        val boxHeight = size.height
-                                        val isInside = change.position.x in 0f..boxWidth.toFloat() &&
-                                                change.position.y in 0f..boxHeight.toFloat()
+                                            isDrawing = true
+                                            isOutsideBox = false
 
-                                        if (isInside) {
                                             if (isErasing) {
-
                                                 paths.removeAll { pathData ->
                                                     pathData.points.any { point ->
-                                                        (point - change.position).getDistance() < eraserSize
+                                                        (point - offset).getDistance() < eraserSize
                                                     }
                                                 }
-
-                                                println("wanna sleep")
+                                                println("So tired")
                                             } else {
-                                                currentPath = currentPath + change.position
+                                                currentPath = listOf(offset)
                                             }
+                                        }
+                                    },
+                                    onDrag = { change, _ ->
+                                        if (isResizing) {
+                                            val newHeight =
+                                                max(50, (canvasHeight + 0.5 * change.positionChange().y).toInt())
+                                            canvasHeight = newHeight
                                         } else {
+                                            val boxWidth = size.width
+                                            val boxHeight = size.height
+                                            val isInside = change.position.x in 0f..boxWidth.toFloat() &&
+                                                    change.position.y in 0f..boxHeight.toFloat()
+
+                                            if (isInside) {
+                                                if (isErasing) {
+
+                                                    paths.removeAll { pathData ->
+                                                        pathData.points.any { point ->
+                                                            (point - change.position).getDistance() < eraserSize
+                                                        }
+                                                    }
+
+                                                    println("wanna sleep")
+                                                } else {
+                                                    currentPath = currentPath + change.position
+                                                }
+                                            } else {
+                                                paths = paths.toMutableList().apply {
+                                                    add(PathData(currentPath, selectedColor, strokeWidth))
+                                                }
+                                                currentPath = emptyList()
+                                            }
+                                        }
+                                    },
+                                    onDragEnd = {
+                                        if (isResizing) {
+                                            onCanvasUpdate(canvasToBytes(paths).toMutableList(), canvasHeight)
+                                        }
+                                        isDrawing = false
+                                        isResizing = false
+                                        if (!isErasing) {
                                             paths = paths.toMutableList().apply {
                                                 add(PathData(currentPath, selectedColor, strokeWidth))
                                             }
                                             currentPath = emptyList()
                                         }
                                     }
-                                },
-                                onDragEnd = {
-                                    if (isResizing) {
-                                        onCanvasUpdate(canvasToBytes(paths).toMutableList(), canvasHeight)
-                                    }
-                                    isDrawing = false
-                                    isResizing = false
-                                    if (!isErasing) {
-                                        paths = paths.toMutableList().apply {
-                                            add(PathData(currentPath, selectedColor, strokeWidth))
-                                        }
-                                        currentPath = emptyList()
-                                    }
-                                }
-                            )
-                        }
-                ) {
-                    // Draw all saved paths
-                    paths.forEach { path ->
-                        for (i in 0 until path.points.size - 1) {
+                                )
+                            }
+                    ) {
+                        // Draw all saved paths
+                        paths.forEach { path ->
+                            for (i in 0 until path.points.size - 1) {
                                 drawLine(
                                     color = path.color,
                                     start = path.points[i],
                                     end = path.points[i + 1],
                                     strokeWidth = path.strokeWidth
                                 )
+                            }
                         }
-                    }
 
-                    if (isGrid) {
-                        for (i in 0..size.width.toInt() step 20) {
-                            drawLine(
-                                color = Colors.lightGrey,
-                                start = Offset(i.toFloat(),0f),
-                                end = Offset(i.toFloat(),size.height),
-                                strokeWidth = 1f
-                            )
+                        if (isGrid) {
+                            for (i in 0..size.width.toInt() step 20) {
+                                drawLine(
+                                    color = Colors.lightGrey,
+                                    start = Offset(i.toFloat(), 0f),
+                                    end = Offset(i.toFloat(), size.height),
+                                    strokeWidth = 1f
+                                )
+                            }
+                            for (j in 0..size.height.toInt() step 20) {
+                                drawLine(
+                                    color = Colors.lightGrey,
+                                    start = Offset(0f, j.toFloat()),
+                                    end = Offset(size.width, j.toFloat()),
+                                    strokeWidth = 1f
+                                )
+                            }
                         }
-                        for (j in 0..size.height.toInt() step 20) {
-                            drawLine(
-                                color = Colors.lightGrey,
-                                start = Offset(0f, j.toFloat()),
-                                end = Offset(size.width, j.toFloat()),
-                                strokeWidth = 1f
-                            )
-                        }
-                    }
 
-                    // Draw current path
-                    for (i in 0 until currentPath.size - 1) {
+                        // Draw current path
+                        for (i in 0 until currentPath.size - 1) {
                             drawLine(
-                            color = selectedColor,
-                            start = currentPath[i],
-                            end = currentPath[i + 1],
-                            strokeWidth = strokeWidth
+                                color = selectedColor,
+                                start = currentPath[i],
+                                end = currentPath[i + 1],
+                                strokeWidth = strokeWidth
                             )
+                        }
                     }
-                }
-                Box(
-                    modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Colors.lightGrey)
-                    .align(Alignment.BottomCenter)
-                    .height((resizeThreshold / LocalDensity.current.density).dp)
-                ) {
-                    Column(
-                        modifier = Modifier.fillMaxSize(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Colors.lightGrey)
+                            .align(Alignment.BottomCenter)
+                            .height((resizeThreshold / LocalDensity.current.density).dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Menu,
-                            contentDescription = "Canvas Height Slider",
-                            modifier = Modifier.size(resizeThreshold.dp - 5.dp),
-                            tint = Colors.darkGrey
-                        )
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Menu,
+                                contentDescription = "Canvas Height Slider",
+                                modifier = Modifier.size(resizeThreshold.dp - 5.dp),
+                                tint = Colors.darkGrey
+                            )
+                        }
                     }
                 }
+
+                // Bottom action buttons
+                //            Row(
+                //                modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                //                horizontalArrangement = Arrangement.SpaceBetween
+                //            ) {
+                //                Button(
+                //                    onClick = { showDrawingsList = !showDrawingsList },
+                //                    modifier = Modifier.padding(end = 8.dp)
+                //                ) {
+                //                    Text(if (showDrawingsList) "Hide Drawings" else "Show Drawings")
+                //                }
+                //
+                //                Row {
+                //                    Button(
+                //                        onClick = { paths = mutableListOf() },
+                //                        modifier = Modifier.padding(end = 8.dp)
+                //                    ) {
+                //                        Icon(Icons.Default.Clear, contentDescription = "Clear")
+                //                        Spacer(Modifier.width(4.dp))
+                //                        Text("Clear")
+                //                    }
+
+                //                    Button(
+                //                        onClick = {
+                //                            scope.launch {
+                //                                // Convert canvas to bytes
+                //                                val bytes = canvasToBytes(paths, canvasWidth, canvasHeight)
+                //
+                //                                // Create or update drawing
+                //                                val drawing = Drawing(
+                //                                    id = currentDrawingId ?: UUID.randomUUID().toString(),
+                //                                    name = currentDrawingName,
+                //                                    width = canvasWidth,
+                //                                    height = canvasHeight,
+                //                                    imageData = bytes
+                //                                )
+                //
+                //                                // Save to MongoDB
+                //                                drawingRepository.saveDrawing(drawing)
+                //
+                //                                // Update current drawing ID
+                //                                currentDrawingId = drawing.id
+                //
+                //                                // Refresh drawings list
+                //                                drawings = drawingRepository.getAllDrawings()
+                //                            }
+                //                        },
+                //                        modifier = Modifier.padding(end = 8.dp)
+                //                    ) {
+                //                        Icon(Icons.Default.Save, contentDescription = "Save")
+                //                        Spacer(Modifier.width(4.dp))
+                //                        Text("Save")
+                //                    }
+                //                }
+                //            }
             }
-
-            // Bottom action buttons
-//            Row(
-//                modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-//                horizontalArrangement = Arrangement.SpaceBetween
-//            ) {
-//                Button(
-//                    onClick = { showDrawingsList = !showDrawingsList },
-//                    modifier = Modifier.padding(end = 8.dp)
-//                ) {
-//                    Text(if (showDrawingsList) "Hide Drawings" else "Show Drawings")
-//                }
-//
-//                Row {
-//                    Button(
-//                        onClick = { paths = mutableListOf() },
-//                        modifier = Modifier.padding(end = 8.dp)
-//                    ) {
-//                        Icon(Icons.Default.Clear, contentDescription = "Clear")
-//                        Spacer(Modifier.width(4.dp))
-//                        Text("Clear")
-//                    }
-
-//                    Button(
-//                        onClick = {
-//                            scope.launch {
-//                                // Convert canvas to bytes
-//                                val bytes = canvasToBytes(paths, canvasWidth, canvasHeight)
-//
-//                                // Create or update drawing
-//                                val drawing = Drawing(
-//                                    id = currentDrawingId ?: UUID.randomUUID().toString(),
-//                                    name = currentDrawingName,
-//                                    width = canvasWidth,
-//                                    height = canvasHeight,
-//                                    imageData = bytes
-//                                )
-//
-//                                // Save to MongoDB
-//                                drawingRepository.saveDrawing(drawing)
-//
-//                                // Update current drawing ID
-//                                currentDrawingId = drawing.id
-//
-//                                // Refresh drawings list
-//                                drawings = drawingRepository.getAllDrawings()
-//                            }
-//                        },
-//                        modifier = Modifier.padding(end = 8.dp)
-//                    ) {
-//                        Icon(Icons.Default.Save, contentDescription = "Save")
-//                        Spacer(Modifier.width(4.dp))
-//                        Text("Save")
-//                    }
-//                }
-//            }
         }
     }
 }
@@ -1560,26 +1251,6 @@ fun isPointNearPath(point: Offset, path: Path, threshold: Float = 20f): Boolean 
 
     return paths
 }
-
-// Extension function to render bitmap from Drawing
-//@Composable
-//fun DrawingPreview(drawing: Drawing, modifier: Modifier = Modifier) {
-//    Canvas(modifier = modifier) {
-//        val paths = bytesToPaths(drawing.imageData, drawing.width, drawing.height)
-//
-//        // Draw all paths
-//        paths.forEach { path ->
-//            for (i in 0 until path.points.size - 1) {
-//                drawLine(
-//                    color = path.color,
-//                    start = path.points[i],
-//                    end = path.points[i + 1],
-//                    strokeWidth = path.strokeWidth
-//                )
-//            }
-//        }
-//    }
-//}
 
 @Composable
 fun EditableTextBox(
