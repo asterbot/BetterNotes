@@ -1082,14 +1082,16 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int)
                             }
                         }
 
-                        // Draw current path
-                        for (i in 0 until currentPath.size - 1) {
-                            drawLine(
-                                color = selectedColor,
-                                start = currentPath[i],
-                                end = currentPath[i + 1],
-                                strokeWidth = strokeWidth
-                            )
+                        if (isDrawing) {
+                            // Draw current path
+                            for (i in 0 until currentPath.size - 1) {
+                                drawLine(
+                                    color = selectedColor,
+                                    start = currentPath[i],
+                                    end = currentPath[i + 1],
+                                    strokeWidth = strokeWidth
+                                )
+                            }
                         }
                     }
                     Box(
