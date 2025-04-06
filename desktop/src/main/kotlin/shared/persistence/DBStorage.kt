@@ -15,6 +15,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.flow.firstOrNull
 import login.entities.User
+import org.bson.BsonDocument
 import org.bson.BsonInt64
 import org.bson.Document
 import org.bson.types.ObjectId
@@ -24,14 +25,12 @@ import shared.ConnectionStatus
 import shared.loginModel
 import java.time.Instant
 
-class DBStorage() :IPersistence {
+class DBStorage(private var databaseName: String = "cs346-users-db") :IPersistence {
     // Call connect() before using DB
 
     private val dotenv = dotenv()
 
     private val connectionString = dotenv["CONNECTION_STRING"]
-
-    private val databaseName = "cs346-users-db"
 
     private val uri = connectionString
 
@@ -96,6 +95,12 @@ class DBStorage() :IPersistence {
             return false
         }
 
+    }
+
+    override suspend fun clearDB(){
+        boardsCollection.deleteMany(BsonDocument())
+        notesCollection.deleteMany(BsonDocument())
+        contentBlockCollection.deleteMany(BsonDocument())
     }
 
     override suspend fun pingDB(): Boolean {
@@ -207,14 +212,13 @@ class DBStorage() :IPersistence {
 
     override fun addBoard(board: Board) {
         board.userId = loginModel.currentUser
-        val job = coroutineScope.launch {
+        runBlocking {
             boardsCollection.insertOne(board)
         }
-        channel.trySend(job)
     }
 
     override fun deleteBoard(boardId: ObjectId, noteIds: List<ObjectId>) {
-        val job = coroutineScope.launch {
+        runBlocking {
             // Delete all the notes associated with the board
             noteIds.forEach {
                 deleteNote(it, boardId)
@@ -222,11 +226,10 @@ class DBStorage() :IPersistence {
 
             boardsCollection.deleteOne(Filters.eq(boardId))
         }
-        channel.trySend(job)
     }
 
     override fun updateBoard(boardId: ObjectId, name: String, desc: String, notes: List<ObjectId>) {
-        val job = coroutineScope.launch {
+        runBlocking {
             boardsCollection.updateOne(
                 Filters.eq(boardId),
                 Updates.combine(
@@ -238,7 +241,6 @@ class DBStorage() :IPersistence {
                 )
             )
         }
-        channel.trySend(job)
     }
 
     // This is specifically for updating the datetimeAccessed field
