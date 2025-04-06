@@ -161,7 +161,7 @@ fun NavButtons(
 
     Row(
         modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(2.dp)
     ) {
         // "Home" Button
         IconButton(
@@ -201,6 +201,19 @@ fun NavButtons(
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                 contentDescription = "Forward Button",
+                modifier = Modifier.size(25.dp)
+            )
+        }
+        // Refresh button
+        IconButton(
+            onClick = {
+                initializeModels()
+            },
+            colors = iconButtonColours()
+        ) {
+            Icon(
+                imageVector = Icons.Default.Refresh,
+                contentDescription = "Refresh",
                 modifier = Modifier.size(25.dp)
             )
         }
