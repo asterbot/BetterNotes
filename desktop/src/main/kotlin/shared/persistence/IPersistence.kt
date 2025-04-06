@@ -10,6 +10,9 @@ interface IPersistence {
     // Connects and returns whether it was successful
     fun connect(): Boolean
 
+    // Clears the entire database except for users
+    suspend fun clearDB()
+
     // Pings DB to check if connection is active or not, and updates global state
     suspend fun pingDB(): Boolean
 
