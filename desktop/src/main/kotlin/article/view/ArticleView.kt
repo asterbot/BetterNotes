@@ -550,7 +550,7 @@ fun BlockFrame(
                     if (block.blockType == BlockType.CANVAS && isSelected) {
                         EditableCanvas(
                             block = block,
-                            onCanvasUpdate = { bList: MutableList<Byte>, height: Int ->
+                            onCanvasUpdate = { bList: MutableList<Byte>, height: Int, moveIndex: Int? ->
                                 articleModel.saveBlock(
                                     blockIndex,
                                     bList = bList,
@@ -560,7 +560,9 @@ fun BlockFrame(
                                     article = article,
                                     board = board
                                 )
-                                selectAtIndex(null)
+                                if (moveIndex != -1) {
+                                    selectAtIndex(moveIndex)
+                                }
                             }
                         )
                     }
@@ -817,7 +819,7 @@ fun addMedia(block: ContentBlock, isSelected: Boolean = true, onMediaUpdate: (Mu
 
 data class PathData(val points: List<Offset>, val color: Color, val strokeWidth: Float)
 @Composable
-fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int) -> Unit) {
+fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int, Int?) -> Unit) {
 
     var canvasHeight by remember { mutableStateOf((block as CanvasBlock).canvasHeight) }
     var selectedColor by remember { mutableStateOf(Color.Black) }
@@ -955,7 +957,9 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int)
                                 }
                                 TextButton(
                                     colors = textButtonColours(),
-                                    onClick = { onCanvasUpdate(canvasToBytes(paths).toMutableList(), canvasHeight) }
+                                    onClick = {
+                                        onCanvasUpdate(canvasToBytes(paths).toMutableList(), canvasHeight, null)
+                                    }
                                 ) {
                                     Text("Save")
                                 }
@@ -1037,7 +1041,7 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int)
                                     },
                                     onDragEnd = {
                                         if (isResizing) {
-                                            onCanvasUpdate(canvasToBytes(paths).toMutableList(), canvasHeight)
+                                            onCanvasUpdate(canvasToBytes(paths).toMutableList(), canvasHeight, -1)
                                         }
                                         isDrawing = false
                                         isResizing = false
