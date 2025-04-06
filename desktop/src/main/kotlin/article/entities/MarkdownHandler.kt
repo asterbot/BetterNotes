@@ -1,7 +1,6 @@
 package article.entities
 
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.Text
@@ -10,9 +9,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.intellij.markdown.MarkdownElementTypes
@@ -141,7 +140,7 @@ class MarkdownHandler(private var rawString: String) {
                     }
 
                     MarkdownElementTypes.CODE_SPAN -> {
-                        val newStyles = activeStyles + SpanStyle(fontFamily = FontFamily.Monospace)
+                        val newStyles = activeStyles + SpanStyle(fontFamily = FontFamily.Monospace, fontWeight = FontWeight.W200)
                         current.children.forEach { recurse(it, newStyles) }
                     }
 
