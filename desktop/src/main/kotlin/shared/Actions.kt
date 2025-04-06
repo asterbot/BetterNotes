@@ -77,33 +77,17 @@ fun ActionMenu(
 
 @Composable
 fun AddNoteMenu(
-    onAddSection: () -> Unit,
     onAddArticle: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var expanded by remember { mutableStateOf(false) }
     Box(
         modifier = modifier
     ) {
         FloatingActionButton(
-            onClick = { expanded = !expanded },
+            onClick = { onAddArticle() },
             containerColor = Colors.lightTeal
         ) {
             Icon(Icons.Default.Add, contentDescription = "Add", tint = Colors.darkGrey)
-        }
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            containerColor = Colors.veryLightTeal
-        ) {
-            DropdownMenuItem(
-                text = { Text("Add Section") },
-                onClick = { onAddSection(); expanded = false },
-            )
-            DropdownMenuItem(
-                text = { Text("Add Article") },
-                onClick = { onAddArticle(); expanded = false },
-            )
         }
     }
 }

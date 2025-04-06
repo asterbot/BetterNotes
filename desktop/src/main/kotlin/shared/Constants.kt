@@ -17,6 +17,16 @@ object Colors {
     val errorColor: Color = Color(0xFFCF0000)
 }
 
+val tagColorMap = mapOf<String,Color>(
+    "default" to Colors.medTeal,
+    "red" to Color(0xffe05050),
+    "green" to Color(0xff50e050),
+    "blue" to Color(0xff5050e0),
+    "yellow" to Color(0xffe0e050),
+    "magenta" to Color(0xffe050e0),
+    "cyan" to Color(0xff50e0e0),
+)
+
 @Composable
 fun textButtonColours(): ButtonColors {
     return ButtonDefaults.buttonColors(

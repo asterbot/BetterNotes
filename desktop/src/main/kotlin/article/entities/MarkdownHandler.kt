@@ -1,12 +1,14 @@
 package article.entities
 
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -60,7 +62,6 @@ class MarkdownHandler(private var rawString: String) {
 
 
         val t = extractStyledText(node)
-        if (t == "") return // do this if there is nothing to render
 
         when (node.type) {
             // For all headings (h1, h2, h3, ...)
@@ -72,32 +73,10 @@ class MarkdownHandler(private var rawString: String) {
                 )
             }
 
-            MarkdownElementTypes.PARAGRAPH->{
-                Row{
-                    node.children.forEach { renderMarkdownNode(it) }
-                }
-
-            }
-
-            MarkdownElementTypes.STRONG -> {
-                Text(
-                    text = t.trim('*'),
-                    fontWeight = FontWeight.Bold,
-                )
-            }
-
-            MarkdownElementTypes.EMPH -> {
-                Text(
-                    text = t.trim('*'),
-                    fontStyle = FontStyle.Italic
-                )
-            }
-
-            MarkdownElementTypes.CODE_SPAN ->{
-                Text(
-                    text = t.trim('`'),
-                    fontFamily = FontFamily.Monospace
-                )
+            MarkdownElementTypes.PARAGRAPH -> {
+                // Ensure all styles are applied and a SINGLE Text composable is rendered
+                val annotatedText = extractStyledText(node)
+                Text(text = annotatedText)
             }
 
             MarkdownTokenTypes.EOL -> {}
@@ -121,18 +100,56 @@ class MarkdownHandler(private var rawString: String) {
         rootNode = MarkdownParser(flavour).buildMarkdownTreeFromString(rawString)
     }
 
-    private fun extractStyledText(node: ASTNode): String{
-        if (node.type == MarkdownTokenTypes.TEXT || node.type == MarkdownElementTypes.CODE_SPAN) {
-            return extractRawText(node)
+
+    // So there's a thing called AnnotatedStrings which if you pass into a Text composable,
+    //   the styles will apply where intended with the Text composable rendering as a single one
+    //   instead of what we did before (where it rendered a new composable per style)
+    // This function just returns an AnnotatedString which has the correct styles applied (after checking the AST)
+    // Documentation: https://developer.android.com/reference/kotlin/androidx/compose/ui/text/SpanStyle
+
+    private fun extractStyledText(node: ASTNode): AnnotatedString {
+        fun AnnotatedString.Builder.appendStyledText(node: ASTNode, styles: List<SpanStyle>) {
+            val text = extractRawText(node)
+            if (text.isBlank()) return
+            val start = this.length
+            append(text)
+            styles.forEach { style ->
+                addStyle(style, start, start + text.length)
+            }
         }
-        else if (node.type == MarkdownTokenTypes.WHITE_SPACE) {
-            return " "
-        }
-        else if (node.type == MarkdownTokenTypes.EMPH) {
-            return "*"
-        }
-        else {
-            return node.children.joinToString("") { extractStyledText(it) }.trim()
+        return buildAnnotatedString {
+            fun recurse(current: ASTNode, activeStyles: List<SpanStyle>) {
+                // activeStyles keeps track of all the styles applied
+                when (current.type) {
+                    MarkdownTokenTypes.TEXT -> {
+                        appendStyledText(current, activeStyles)
+                    }
+
+                    MarkdownTokenTypes.WHITE_SPACE -> {
+                        append(" ")
+                    }
+
+                    MarkdownElementTypes.STRONG -> {
+                        val newStyles = activeStyles + SpanStyle(fontWeight = FontWeight.Bold)
+                        current.children.forEach { recurse(it, newStyles) }
+                    }
+
+                    MarkdownElementTypes.EMPH -> {
+                        val newStyles = activeStyles + SpanStyle(fontStyle = FontStyle.Italic)
+                        current.children.forEach { recurse(it, newStyles) }
+                    }
+
+                    MarkdownElementTypes.CODE_SPAN -> {
+                        val newStyles = activeStyles + SpanStyle(fontFamily = FontFamily.Monospace, fontWeight = FontWeight.W200)
+                        current.children.forEach { recurse(it, newStyles) }
+                    }
+
+                    else -> {
+                        current.children.forEach { recurse(it, activeStyles) }
+                    }
+                }
+            }
+            recurse(node, emptyList())
         }
     }
 

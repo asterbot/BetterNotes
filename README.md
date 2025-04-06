@@ -2,14 +2,8 @@
 
 https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/releases
 
-## Demo 2 Release
 
-Wiki: https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/Releases/v0.2.0
-
-
-## Demo 1 Release
-
-Wiki: https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/Releases/v0.1.0
+![image](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/raw/main/desktop/src/main/resources/betternotes_logo.png?ref_type=heads)
 
 
 ## Design Proposal

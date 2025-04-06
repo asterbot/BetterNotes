@@ -3,8 +3,10 @@ package shared
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.icons.Icons
@@ -13,6 +15,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.input.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -69,6 +75,11 @@ fun AddBoardDialog(
     onDismissRequest: () -> Unit,
     onConfirmation: (boardName: String, boardDesc: String) -> Unit
 ) {
+    val boardTitleFocusRequester = remember { FocusRequester() }
+    LaunchedEffect(Unit) {
+        boardTitleFocusRequester.requestFocus()
+    }
+
     var boardName by remember { mutableStateOf(TextFieldValue("")) }
     var boardDesc by remember { mutableStateOf(TextFieldValue("")) }
 
@@ -87,7 +98,7 @@ fun AddBoardDialog(
                         isError = newText.text.isBlank()
                     },
                     label = { Text("Board Name", color = Colors.darkGrey) },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().focusRequester(boardTitleFocusRequester),
                     isError = isError,
                     colors = textFieldColours()
                 )
@@ -141,16 +152,47 @@ fun AddBoardDialog(
     )
 }
 
+@Composable
+fun ColorBox(tag: String, color: Color, isSelected: Boolean, onClick: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .padding(8.dp)
+            .clickable { onClick() },
+        verticalArrangement = Arrangement.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .size(20.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(color)
+                .border(
+                    width = if (isSelected) 2.dp else 0.dp,
+                    color = Color.Black,
+                    shape = RoundedCornerShape(8.dp)
+                )
+        )
+    }
+}
+
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AddNoteDialog(
     type: String,
     onDismissRequest: () -> Unit,
-    onConfirmation: (noteName: String, noteDesc: String, relatedNotes: List<Note>) -> Unit,
+    onConfirmation: (noteName: String, noteDesc: String, relatedNotes: List<Note>, tag: String) -> Unit,
     onGetOtherNotes: (String) -> List<Note>
 ) {
+    val noteTitleFocusRequester = remember { FocusRequester() }
+    LaunchedEffect(Unit) {
+        noteTitleFocusRequester.requestFocus()
+    }
+
     var noteTitle by remember { mutableStateOf(TextFieldValue("")) }
     var noteDesc by remember { mutableStateOf(TextFieldValue("")) }
+    var colors = tagColorMap.keys.toList()
+    var selectedColor by remember { mutableStateOf<String?>("default") }
+
 
     // related notes
     var query by remember { mutableStateOf("") }
@@ -178,7 +220,7 @@ fun AddNoteDialog(
                         isError = newText.text.isBlank()
                     },
                     label = { Text("Note Title", color = Colors.darkGrey) },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().focusRequester(noteTitleFocusRequester),
                     isError = isError,
                     colors = textFieldColours()
                 )
@@ -193,6 +235,23 @@ fun AddNoteDialog(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
+                Text("Add Tag:", color = Colors.darkGrey)
+
+
+                LazyRow(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    contentPadding = PaddingValues(horizontal = 8.dp)
+                ) {
+                    items(colors) { tag ->
+                        val color = tagColorMap[tag]
+                        ColorBox(tag, color!!, isSelected = tag == selectedColor) {
+                            selectedColor = tag
+                        }
+                    }
+                }
+
+
+                Spacer(modifier = Modifier.height(8.dp))
                 val suggestionListState = rememberLazyListState()
 
                 TextField(
@@ -283,7 +342,8 @@ fun AddNoteDialog(
                         onConfirmation(
                             noteTitle.text,
                             noteDesc.text,
-                            relatedNotes
+                            relatedNotes,
+                            selectedColor!!
                         )
                         noteTitle = TextFieldValue("")
                         noteDesc = TextFieldValue("")
@@ -395,16 +455,18 @@ fun EditBoardDialog(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun EditNoteDialog(
-    type: String?,
     onDismissRequest: () -> Unit,
-    onConfirmation: (noteTitle: String, noteDesc: String, relatedNotes: List<Note>) -> Unit,
+    onConfirmation: (noteTitle: String, noteDesc: String, relatedNotes: List<Note>, tagColor: String) -> Unit,
     noteTitle: String,
     noteDesc: String,
     initialRelatedNotes: List<Note>,
-    onGetOtherNotes: (String) -> List<Note>
+    onGetOtherNotes: (String) -> List<Note>,
+    noteColor: String,
 ) {
     var newNoteTitle by remember { mutableStateOf(TextFieldValue(noteTitle)) }
     var newNoteDesc by remember { mutableStateOf(TextFieldValue(noteDesc)) }
+    var colors = tagColorMap.keys.toList()
+    var selectedColor by remember { mutableStateOf<String?>(noteColor) }
 
     var query by remember { mutableStateOf("") }
     var suggestions by remember { mutableStateOf(emptyList<Note>()) }
@@ -421,7 +483,7 @@ fun EditNoteDialog(
 
     AlertDialog(
         icon = { Icons.Default.Edit },
-        title = { Text(text = "Edit ${type}") },
+        title = { Text(text = "Edit note") },
         text = {
             Column(modifier = Modifier.padding(16.dp)) {
                 // Title field
@@ -447,6 +509,21 @@ fun EditNoteDialog(
                     colors = textFieldColours()
                 )
                 Spacer(modifier = Modifier.height(8.dp))
+
+                Text("Change Tag:", color = Colors.darkGrey)
+
+
+                LazyRow(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    contentPadding = PaddingValues(horizontal = 8.dp)
+                ) {
+                    items(colors) { tag ->
+                        val color = tagColorMap[tag]
+                        ColorBox(tag, color!!, isSelected = tag == selectedColor) {
+                            selectedColor = tag
+                        }
+                    }
+                }
 
                 val suggestionListState = rememberLazyListState()
 
@@ -540,7 +617,8 @@ fun EditNoteDialog(
                         onConfirmation(
                             newNoteTitle.text,
                             newNoteDesc.text,
-                            relatedNotes
+                            relatedNotes,
+                            selectedColor!!
                         )
                         newNoteTitle = TextFieldValue("")
                         newNoteDesc = TextFieldValue("")

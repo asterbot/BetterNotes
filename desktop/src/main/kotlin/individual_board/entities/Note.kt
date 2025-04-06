@@ -17,7 +17,8 @@ data class Note @OptIn(ExperimentalSerializationApi::class) constructor(
     @Contextual var id: ObjectId,
     var title: String,
     var desc: String = "",
-    var type: String? = "section", // options: "article", "section"
+//    var type: String? = "section", // options: "article", "section"
+    var tag: String = "default",
     @Contextual var contentBlocks: List<@Serializable(with = ObjectIdSerializer::class) ObjectId> = mutableListOf(),
     @Contextual var relatedNotes: List<@Serializable(with = ObjectIdSerializer::class) ObjectId> = mutableListOf(),
     var datetimeCreated: String = Instant.now().toString(),

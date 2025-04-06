@@ -1,6 +1,5 @@
 package shared.persistence
 
-import androidx.compose.ui.graphics.Path
 import article.entities.ContentBlock
 import boards.entities.Board
 import individual_board.entities.Note
@@ -118,12 +117,14 @@ class Update(override val persistence: IPersistence, val objToUpdate: Any,
             is Note -> {
                 assert(fields.containsKey("title"))
                 assert(fields.containsKey("desc"))
-                    persistence.updateNote(objToUpdate.id, (fields["title"] as String), (fields["desc"] as String), (fields["relatedNotes"] as List<ObjectId>), await = true)
+                assert(fields.containsKey("tag"))
+                    persistence.updateNote(objToUpdate.id, (fields["title"] as String), (fields["desc"] as String),
+                        (fields["relatedNotes"] as List<ObjectId>), (fields["tag"] as String) ,await = true)
             }
 
             is ContentBlock -> {
                 assert(fields.containsKey("text"))
-                assert(fields.containsKey("pathsContent"))
+                assert(fields.containsKey("canvasHeight"))
                 assert(fields.containsKey("language"))
                 assert(fields.containsKey("article"))
                 assert(fields.containsKey("boardId"))
@@ -133,7 +134,7 @@ class Update(override val persistence: IPersistence, val objToUpdate: Any,
                     // If it is newly inserted, do not update here too!
                     persistence.updateContentBlock(objToUpdate,
                         fields["text"] as String,
-                        fields["pathsContent"] as MutableList<Path>,
+                        fields["canvasHeight"] as Int,
                         fields["bList"] as MutableList<Byte>,
                         fields["language"] as String,
                         fields["gluedAbove"] as Boolean,

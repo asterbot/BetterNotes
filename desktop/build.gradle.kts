@@ -7,6 +7,7 @@ plugins {
     kotlin("plugin.serialization") version "1.9.0"
 }
 
+
 group = "ca.uwaterloo"
 version = "0.10"
 
@@ -76,16 +77,6 @@ dependencies {
     implementation("com.github.skydoves:colorpicker-compose:1.1.2")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.7.3")
 
-    // Lets-Plot Kotlin API
-    implementation("org.jetbrains.lets-plot:lets-plot-kotlin-kernel:4.9.3")
-
-    // Lets-Plot Multiplatform
-    implementation("org.jetbrains.lets-plot:lets-plot-common:4.5.2")
-    implementation("org.jetbrains.lets-plot:platf-awt:4.5.2")
-
-    // Lets-Plot Skia Frontend
-    implementation("org.jetbrains.lets-plot:lets-plot-compose:2.1.1")
-
     testImplementation(kotlin("test"))
 }
 
@@ -115,9 +106,8 @@ compose.desktop {
             macOS {
                 iconFile.set(project.file("src/main/resources/betternotes_logo.icns"))
             }
-
             windows {
-                iconFile.set(project.file("src/main/resources/betternotes_logo.ico"))
+                iconFile.set(project.file("src/main/resources/betternotes_logo.png"))
             }
         }
     }

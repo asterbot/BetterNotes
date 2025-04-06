@@ -1,5 +1,4 @@
 package article.model
-import androidx.compose.ui.graphics.Path
 import article.entities.*
 import boards.entities.Board
 import individual_board.entities.Note
@@ -404,7 +403,7 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
     }
 
     // TODO: later (expand to other ContentBlock types)
-    fun saveBlock(index: Int, stringContent: String = "", pathsContent: MutableList<Path> = mutableListOf(), canvasHeight: Int = 0, bList: MutableList<Byte> = mutableListOf(),
+    fun saveBlock(index: Int, stringContent: String = "", canvasHeight: Int = 0, bList: MutableList<Byte> = mutableListOf(),
                   language: String = "kotlin", gluedAbove: Boolean, gluedBelow: Boolean, article: Note, board: Board) {
         println("I'M IN HERE")
         contentBlockDict[article.id]?.let { contentBlocks ->
@@ -431,15 +430,15 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
                 block.gluedBelow = gluedBelow
 
                 if (ConnectionManager.isConnected) {
-                    persistence.updateContentBlock(block, stringContent, pathsContent, bList, language, gluedAbove, gluedBelow, article, board.id)
+                    persistence.updateContentBlock(block, stringContent, canvasHeight, bList, language, gluedAbove, gluedBelow, article, board.id)
                 }
                 else {
                     dbQueue.addToQueue(
                         Update(persistence, block, mutableMapOf(
                         "text" to stringContent,
-                        "pathsContent" to pathsContent,
-                        "bList" to bList,
                         "language" to language,
+                        "canvasHeight" to canvasHeight,
+                        "bList" to bList,
                         "gluedAbove" to gluedAbove,
                         "gluedBelow" to gluedBelow,
                         "article" to article,

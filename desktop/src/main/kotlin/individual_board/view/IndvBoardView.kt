@@ -1,13 +1,11 @@
 package individual_board.view
-import androidx.compose.foundation.VerticalScrollbar
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.rememberScrollbarAdapter
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.OutlinedTextField
@@ -22,10 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.isCtrlPressed
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.*
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -66,7 +61,8 @@ fun NoteButton(
     note: Note,
     board: Board,
     onDelete: (Note) -> Unit,
-    onEdit: (Note) -> Unit
+    onEdit: (Note) -> Unit,
+    containerColor: Color? = tagColorMap["default"]
 ) {
     val navigator = LocalNavigator.currentOrThrow
     Box (
@@ -75,16 +71,13 @@ fun NoteButton(
         Button(
             onClick = {
                 println("DEBUG: Clicked ${note.title}")
-                if (note.type=="article") {
-                    individualBoardModel.updateNoteAccessed(note, board)
-                    ScreenManager.push(navigator, ArticleScreen(board, note))
-                }
+                individualBoardModel.updateNoteAccessed(note, board)
+                ScreenManager.push(navigator, ArticleScreen(board, note))
             },
             modifier = Modifier.fillMaxSize(),
             shape = RoundedCornerShape(10.dp),
             colors = ButtonDefaults.buttonColors(
-                // TODO: change colours based on tags? later
-                containerColor = Colors.medTeal
+                containerColor = containerColor!!
             )
         ) {
             Column(
@@ -207,17 +200,16 @@ fun IndividualBoardView(
         searchFocusRequester.requestFocus()
     }
 
-    val openAddSectionDialog = remember { mutableStateOf(false) }
     val openAddArticleDialog = remember { mutableStateOf(false) }
     val noteToEdit = remember { mutableStateOf<Note?>(null) }
     val noteToDelete = remember { mutableStateOf<Note?>(null) }
 
-    fun addNote(title: String, desc: String, type: String, relatedNotes: List<Note>){
+    fun addNote(title: String, desc: String, type: String, relatedNotes: List<Note>, tagColor: String){
         var relatedNotesIds = mutableListOf<ObjectId>()
         for (note in relatedNotes){
             relatedNotesIds.add(note.id)
         }
-        individualBoardModel.addNote(Note(ObjectId(), title, desc, type, relatedNotes = relatedNotesIds), board)
+        individualBoardModel.addNote(Note(ObjectId(), title, desc, relatedNotes = relatedNotesIds, tag = tagColor), board)
         fdgLayoutModel.initializeGraph {
             initializeNotesByNoteListBuilder(this, noteList.noteList)
         }
@@ -230,12 +222,12 @@ fun IndividualBoardView(
         }
     }
 
-    fun editNote(note:Note, title: String, desc: String, relatedNotes: List<Note>){
+    fun editNote(note: Note, title: String, desc: String, relatedNotes: List<Note>, tagColor: String){
         var relatedNotesIds = mutableListOf<ObjectId>()
         for (note in relatedNotes){
             relatedNotesIds.add(note.id)
         }
-        individualBoardModel.updateNote(note, board.id, title, desc, relatedNotesIds)
+        individualBoardModel.updateNote(note, board.id, title, desc, relatedNotesIds, tagColor)
         fdgLayoutModel.initializeGraph {
             initializeNotesByNoteListBuilder(this, noteList.noteList)
         }
@@ -273,166 +265,171 @@ fun IndividualBoardView(
                     ) {
                         Icon(Icons.Default.Close, contentDescription = "Close drawer")
                     }
-                    Column(
-                        modifier = Modifier.fillMaxSize(),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = board.name,
-                            textAlign = TextAlign.Center,
-                            style = MaterialTheme.typography.h4,
-                            modifier = Modifier.fillMaxWidth(0.8f)
-                                .padding(8.dp),
-                        )
-
-                        Text(
-                            text = board.desc,
-                            textAlign = TextAlign.Center,
-                            style = MaterialTheme.typography.body1,
-                            modifier = Modifier.fillMaxWidth(0.8f)
-                                .padding(8.dp),
-                        )
-
-                        TextButton(
-                            onClick = { ScreenManager.push(navigator, BoardViewScreen()) },
-                            modifier = Modifier.padding(2.dp),
-                            colors = textButtonColours()
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        Column(
+                            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Text("Back to All Boards")
-                        }
+                            Text(
+                                text = board.name,
+                                textAlign = TextAlign.Center,
+                                style = MaterialTheme.typography.h4,
+                                modifier = Modifier.fillMaxWidth(0.8f)
+                                    .padding(8.dp),
+                            )
 
+                            Text(
+                                text = board.desc,
+                                textAlign = TextAlign.Center,
+                                style = MaterialTheme.typography.body1,
+                                modifier = Modifier.fillMaxWidth(0.8f)
+                                    .padding(8.dp),
+                            )
 
-                        // Search notes
-                        OutlinedTextField(
-                            value = query,
-                            onValueChange = { newQuery -> query = newQuery },
-                            label = { Text("Search notes") },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Default.Search,
-                                    contentDescription = "Search",
-                                    tint = Colors.medTeal
-                                )
-                            },
-                            shape = RoundedCornerShape(16.dp),
-                            modifier = Modifier
-                                .fillMaxWidth(0.8f)
-                                .padding(8.dp)
-                                .focusRequester(searchFocusRequester)
-                            ,
-                            colors = outlinedTextFieldColours()
-                        )
-                        // Sorting
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            Text("Sort by: ", modifier = Modifier.padding(end = 8.dp))
-
-                            Box {
-                                Text(
-                                    text = selectedSort,
-                                    modifier = Modifier
-                                        .background(Color.LightGray, shape = RoundedCornerShape(4.dp))
-                                        .padding(8.dp)
-                                        .clickable {
-                                            expandedSort = true
-                                        }
-                                )
-                                DropdownMenu(
-                                    expanded = expandedSort,
-                                    onDismissRequest = { expandedSort = false },
-                                    containerColor = Colors.veryLightTeal
-                                ) {
-                                    sortOptions.forEach { option ->
-                                        DropdownMenuItem(
-                                            text = { Text(option) },
-                                            onClick = {
-                                                selectedSort = option
-                                                expandedSort = false
-                                                applySorting(selectedSort, reverseOrder)
-                                            }
-                                        )
-                                    }
-                                }
+                            TextButton(
+                                onClick = { ScreenManager.push(navigator, BoardViewScreen()) },
+                                modifier = Modifier.padding(2.dp),
+                                colors = textButtonColours()
+                            ) {
+                                Text("Back to All Boards")
                             }
 
-                            Spacer(modifier = Modifier.width(16.dp))
 
-                            Text("Reverse: ")
-
-                            Switch(
-                                checked = reverseOrder,
-                                onCheckedChange = {
-                                    reverseOrder = it
-                                    applySorting(selectedSort, reverseOrder)
+                            // Search notes
+                            OutlinedTextField(
+                                value = query,
+                                onValueChange = { newQuery -> query = newQuery },
+                                label = { Text("Search notes") },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.Search,
+                                        contentDescription = "Search",
+                                        tint = Colors.medTeal
+                                    )
                                 },
-                                colors = switchColours()
+                                shape = RoundedCornerShape(16.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth(0.8f)
+                                    .padding(8.dp)
+                                    .focusRequester(searchFocusRequester)
+                                ,
+                                colors = outlinedTextFieldColours()
                             )
-                        }
-
-
-                        BoxWithConstraints(
-                            Modifier.fillMaxSize()
-                                .padding(15.dp)
-                                .background(Colors.lightGrey.times(1.03f).copy(red = Colors.lightGrey.red))
-                                .weight(1f)
-                        ) {
-                            val maxWidthDp = maxWidth
-                            val columnWidth = 300.dp // adjust to whatever size makes sense for your grid items
-                            val columns = (maxWidthDp / columnWidth).toInt().coerceAtLeast(1)
-
-                            val state = rememberLazyGridState()
-                            LazyVerticalGrid(
-                                modifier = Modifier.fillMaxSize(),
-                                contentPadding = PaddingValues(10.dp),
-                                state = state,
-                                columns = GridCells.Fixed(columns),
+                            // Sorting
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
                             ) {
-                                if (noteList.noteList.isEmpty() || filteredNotes.isEmpty())
-                                    item(span = { GridItemSpan(maxLineSpan) }) {
-                                    Column(
-                                            modifier = Modifier.padding(top=15.dp),
-                                            horizontalAlignment = Alignment.CenterHorizontally,
-                                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                                        ) {
+                                Text("Sort by: ", modifier = Modifier.padding(end = 8.dp))
+
+                                Box {
+                                    Text(
+                                        text = selectedSort,
+                                        modifier = Modifier
+                                            .background(Color.LightGray, shape = RoundedCornerShape(4.dp))
+                                            .padding(8.dp)
+                                            .clickable {
+                                                expandedSort = true
+                                            }
+                                    )
+                                    DropdownMenu(
+                                        expanded = expandedSort,
+                                        onDismissRequest = { expandedSort = false },
+                                        containerColor = Colors.veryLightTeal
+                                    ) {
+                                        sortOptions.forEach { option ->
+                                            DropdownMenuItem(
+                                                text = { Text(option) },
+                                                onClick = {
+                                                    selectedSort = option
+                                                    expandedSort = false
+                                                    applySorting(selectedSort, reverseOrder)
+                                                }
+                                            )
+                                        }
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.width(16.dp))
+
+                                Text("Reverse: ")
+
+                                Switch(
+                                    checked = reverseOrder,
+                                    onCheckedChange = {
+                                        reverseOrder = it
+                                        applySorting(selectedSort, reverseOrder)
+                                    },
+                                    colors = switchColours()
+                                )
+                            }
+
+
+                            BoxWithConstraints(
+                                Modifier.fillMaxWidth()
+                                    .padding(15.dp)
+                                    .background(Colors.lightGrey.times(1.03f).copy(red = Colors.lightGrey.red))
+                                    .height(600.dp)
+                            ) {
+                                val maxWidthDp = maxWidth
+                                val columnWidth = 300.dp // adjust to whatever size makes sense for your grid items
+                                val columns = (maxWidthDp / columnWidth).toInt().coerceAtLeast(1)
+
+                                val state = rememberLazyGridState()
+
+                                if (noteList.noteList.isEmpty() || filteredNotes.isEmpty()) {
+                                    Box(
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentAlignment = Alignment.Center
+                                    ) {
                                         Text(
                                             text = "No notes available",
                                             fontSize = 20.sp,
-                                            modifier = Modifier.padding(vertical = 30.dp),
+                                            modifier = Modifier.padding(vertical=30.dp),
                                             textAlign = TextAlign.Center
                                         )
                                     }
                                 }
                                 else {
-                                    for (note in filteredNotes) {
-                                        item {
-                                            NoteButton(
-                                                note = note,
-                                                board = board,
-                                                onDelete = { noteToDelete.value = note },
-                                                onEdit = { noteToEdit.value = note }
-                                            )
+                                    LazyVerticalGrid(
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentPadding = PaddingValues(10.dp),
+                                        state = state,
+                                        columns = GridCells.Fixed(columns),
+                                    ) {
+                                        for (note in filteredNotes) {
+                                            item {
+                                                NoteButton(
+                                                    note = note,
+                                                    board = board,
+                                                    onDelete = { noteToDelete.value = note },
+                                                    onEdit = { noteToEdit.value = note },
+                                                    containerColor = if (tagColorMap.containsKey(note.tag)) tagColorMap[note.tag]
+                                                    else tagColorMap["default"]  // 2nd case shouldn't happen, but just in case
+                                                )
+                                            }
                                         }
+
                                     }
+                                    VerticalScrollbar(
+                                        modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
+                                        adapter = rememberScrollbarAdapter(scrollState = state)
+                                    )
                                 }
                             }
-                            VerticalScrollbar(
-                                modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
-                                adapter = rememberScrollbarAdapter(scrollState = state)
-                            )
 
-                            AddNoteMenu(
-                                onAddSection = { openAddSectionDialog.value = true },
-                                onAddArticle = { openAddArticleDialog.value = true },
-                                modifier = Modifier
-                                    .align(Alignment.BottomEnd) // bottom-right pos
-                                    .padding(16.dp)
-                            )
+
                         }
+
+                        AddNoteMenu(
+                            onAddArticle = { openAddArticleDialog.value = true },
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd) // bottom-right pos
+                                .padding(horizontal = 32.dp, vertical = 16.dp)
+                        )
                     }
                 }
             },
@@ -451,6 +448,10 @@ fun IndividualBoardView(
                         }
                         true
                     }
+                    (it.isCtrlPressed && it.key == Key.N) -> {
+                        openAddArticleDialog.value = true
+                        true
+                    }
                     else -> false
                 }
             }
@@ -458,13 +459,11 @@ fun IndividualBoardView(
             FdgLayoutView(
                 graphViewModel = fdgLayoutViewModel,
                 onNodeClick = { note ->
-                    if (note.type=="article") {
-                        individualBoardModel.updateNoteAccessed(note, board)
-                        ScreenManager.push(navigator, ArticleScreen(board, note))
-                    }
+                    individualBoardModel.updateNoteAccessed(note, board)
+                    ScreenManager.push(navigator, ArticleScreen(board, note))
                 },
                 getLabel = { node -> node.title },
-                getColor = { node -> Colors.darkTeal },
+                getColor = { node -> if (tagColorMap.containsKey(node.tag)) tagColorMap[node.tag]!! else tagColorMap["default"]!! },
             )
             IconButton(
                 onClick = {
@@ -483,10 +482,10 @@ fun IndividualBoardView(
         when {
             openAddArticleDialog.value -> {
                 AddNoteDialog(
-                    type = "Article",
+                    type = "Note",
                     onDismissRequest = { openAddArticleDialog.value = false },
-                    onConfirmation = { title, desc, relatedNotes ->
-                        addNote(title, desc, "article", relatedNotes)
+                    onConfirmation = { title, desc, relatedNotes, tagColor ->
+                        addNote(title, desc, "article", relatedNotes, tagColor)
                         openAddArticleDialog.value = false
                         println("relatedNotes: $relatedNotes")
                     },
@@ -494,34 +493,17 @@ fun IndividualBoardView(
                         noteList.noteList.filter {
                             it.title.contains(query, ignoreCase = true)
                         }
-                    }
-                )
-            }
-
-            openAddSectionDialog.value -> {
-                AddNoteDialog(
-                    type = "Section",
-                    onDismissRequest = { openAddSectionDialog.value = false },
-                    onConfirmation = { title, desc, relatedNotes ->
-                        addNote(title, desc, "section", relatedNotes)
-                        openAddSectionDialog.value = false
                     },
-                    onGetOtherNotes = { query ->
-                        noteList.noteList.filter {
-                            it.title.contains(query, ignoreCase = true)
-                        }
-                    }
                 )
             }
 
             noteToEdit.value != null -> {
                 EditNoteDialog(
-                    type = noteToEdit.value!!.type,
                     noteTitle = noteToEdit.value?.title ?: "",
                     noteDesc = noteToEdit.value?.desc ?: "",
                     onDismissRequest = { noteToEdit.value = null },
-                    onConfirmation = { title, desc, relatedNotes ->
-                        editNote(noteToEdit.value as Note, title, desc, relatedNotes)
+                    onConfirmation = { title, desc, relatedNotes, tagColor ->
+                        editNote(noteToEdit.value as Note, title, desc, relatedNotes, tagColor)
                         noteToEdit.value = null
                     },
                     initialRelatedNotes = noteList.noteList.filter { note ->
@@ -531,7 +513,8 @@ fun IndividualBoardView(
                         noteList.noteList.filter {
                             it.title.contains(query, ignoreCase = true) && it.id != noteToEdit.value?.id
                         }
-                    }
+                    },
+                    noteColor = noteToEdit.value?.tag!!
                 )
             }
 
