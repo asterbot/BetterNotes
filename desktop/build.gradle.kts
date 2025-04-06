@@ -7,6 +7,7 @@ plugins {
     kotlin("plugin.serialization") version "1.9.0"
 }
 
+
 group = "ca.uwaterloo"
 version = "0.10"
 
@@ -105,9 +106,8 @@ compose.desktop {
             macOS {
                 iconFile.set(project.file("src/main/resources/betternotes_logo.icns"))
             }
-
             windows {
-                iconFile.set(project.file("src/main/resources/betternotes_logo.ico"))
+                iconFile.set(project.file("src/main/resources/betternotes_logo.png"))
             }
         }
     }

@@ -16,3 +16,4 @@ pluginManagement {
 rootProject.name = "cs-346-project"
 include("desktop")
 include(":fdg_layout")
+//include(":fdg_layout_sample")
