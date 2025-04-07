@@ -166,4 +166,168 @@ class ArticleModelTest {
         }
     }
 
+    /* delete content blocks */
+
+    @Test
+    fun deleteSingleUngluedBlock() {
+        val contentBlocks = articleModel.contentBlockDict[article.id]
+        val oldCBCount: Int? = contentBlocks?.size
+        articleModel.addBlock(0, "DOWN", BlockType.PLAINTEXT, article, board, await=true)
+        articleModel.deleteBlock(0, article, board, await=true)
+        if (oldCBCount != null) {
+            assertEquals(oldCBCount, contentBlocks.size) // check local model
+            assertEquals(oldCBCount, mockDB.readContentBlocks()[article.id]?.size) // get remote DB
+        }
+    }
+
+    @Test
+    fun deleteGluedBlockInMiddle() {
+        val contentBlocks = articleModel.contentBlockDict[article.id]
+        val oldCBCount: Int? = contentBlocks?.size
+        articleModel.addBlock(0, "DOWN", BlockType.PLAINTEXT, article, board, await=true)
+        articleModel.addBlock(0, "DOWN", BlockType.PLAINTEXT, article, board, await=true)
+        articleModel.addBlock(0, "DOWN", BlockType.PLAINTEXT, article, board, await=true)
+        articleModel.deleteBlock(1, article, board, await=true)
+        if (oldCBCount != null) {
+            assertEquals(oldCBCount+2, contentBlocks.size) // check local model
+            assertEquals(oldCBCount+2, mockDB.readContentBlocks()[article.id]?.size) // get remote DB
+            assertEquals(true, contentBlocks[0].gluedBelow)
+            assertEquals(true, contentBlocks[1].gluedAbove)
+        }
+    }
+
+    @Test
+    fun deleteGluedBlockAtEnd() {
+        val contentBlocks = articleModel.contentBlockDict[article.id]
+        val oldCBCount: Int? = contentBlocks?.size
+        articleModel.addBlock(0, "DOWN", BlockType.PLAINTEXT, article, board, await=true)
+        articleModel.addBlock(0, "DOWN", BlockType.PLAINTEXT, article, board, await=true)
+        articleModel.addBlock(0, "DOWN", BlockType.PLAINTEXT, article, board, await=true)
+        articleModel.deleteBlock(2, article, board, await=true)
+        if (oldCBCount != null) {
+            assertEquals(oldCBCount+2, contentBlocks.size) // check local model
+            assertEquals(oldCBCount+2, mockDB.readContentBlocks()[article.id]?.size) // get remote DB
+            assertEquals(true, contentBlocks[1].gluedAbove)
+            assertEquals(false, contentBlocks[1].gluedBelow)
+
+        }
+    }
+
+    /* toggling glue between blocks */
+
+    @Test
+    fun toggleGlueDownwards() {
+        val contentBlocks = articleModel.contentBlockDict[article.id]
+        val oldCBCount: Int? = contentBlocks?.size
+        articleModel.addBlock(0, "DOWN", BlockType.PLAINTEXT, article, board, await=true)
+        articleModel.addBlock(0, "DOWN", BlockType.PLAINTEXT, article, board, await=true)
+        articleModel.toggleGlueDownwards(0, article, board, await=true)
+        if (oldCBCount != null) {
+            assertEquals(oldCBCount + 2, contentBlocks.size) // check local model
+            assertEquals(oldCBCount + 2, mockDB.readContentBlocks()[article.id]?.size) // get remote DB
+            assertEquals(false, contentBlocks[0].gluedBelow)
+            assertEquals(false, contentBlocks[1].gluedAbove)
+        }
+    }
+
+    @Test
+    fun toggleGlueUpwards() {
+        val contentBlocks = articleModel.contentBlockDict[article.id]
+        val oldCBCount: Int? = contentBlocks?.size
+        articleModel.addBlock(0, "DOWN", BlockType.PLAINTEXT, article, board, await=true)
+        articleModel.addBlock(0, "DOWN", BlockType.PLAINTEXT, article, board, await=true)
+        articleModel.toggleGlueUpwards(1, article, board, await=true)
+        if (oldCBCount != null) {
+            assertEquals(oldCBCount + 2, contentBlocks.size) // check local model
+            assertEquals(oldCBCount + 2, mockDB.readContentBlocks()[article.id]?.size) // get remote DB
+            assertEquals(false, contentBlocks[0].gluedBelow)
+            assertEquals(false, contentBlocks[1].gluedAbove)
+        }
+    }
+
+    /* move content blocks up and down */
+
+    @Test
+    fun moveSingleBlockUp() {
+        val contentBlocks = articleModel.contentBlockDict[article.id]
+        val oldCBCount: Int? = contentBlocks?.size
+        for (i in 1..3) {
+            articleModel.addBlock(0, "DOWN", BlockType.PLAINTEXT, article, board, await=true)
+        }
+        articleModel.moveBlockUp(1, article, board, await=true)
+        if (oldCBCount != null) {
+            assertEquals(oldCBCount + 3, contentBlocks.size) // check local model
+            assertEquals(oldCBCount + 3, mockDB.readContentBlocks()[article.id]?.size) // get remote DB
+            assertEquals(false, contentBlocks[0].gluedAbove)
+            assertEquals(true, contentBlocks[0].gluedBelow)
+            assertEquals(true, contentBlocks[1].gluedAbove)
+            assertEquals(true, contentBlocks[1].gluedBelow)
+        }
+    }
+
+    @Test
+    fun moveSingleBlockDown() {
+        val contentBlocks = articleModel.contentBlockDict[article.id]
+        val oldCBCount: Int? = contentBlocks?.size
+        for (i in 1..3) {
+            articleModel.addBlock(0, "DOWN", BlockType.PLAINTEXT, article, board, await=true)
+        }
+        articleModel.moveBlockDown(1, article, board, await=true)
+        if (oldCBCount != null) {
+            assertEquals(oldCBCount + 3, contentBlocks.size) // check local model
+            assertEquals(oldCBCount + 3, mockDB.readContentBlocks()[article.id]?.size) // get remote DB
+            assertEquals(true, contentBlocks[1].gluedAbove)
+            assertEquals(true, contentBlocks[1].gluedBelow)
+            assertEquals(true, contentBlocks[2].gluedAbove)
+            assertEquals(false, contentBlocks[2].gluedBelow)
+        }
+    }
+
+    @Test
+    fun moveGluedBlockUp() {
+        val contentBlocks = articleModel.contentBlockDict[article.id]
+        val oldCBCount: Int? = contentBlocks?.size
+        for (i in 1..6) {
+            articleModel.addBlock(0, "DOWN", BlockType.PLAINTEXT, article, board, await=true)
+        }
+        articleModel.toggleGlueDownwards(0, article, board, await=true)
+        articleModel.toggleGlueDownwards(3, article, board, await=true)
+        articleModel.moveBlockUp(4, article, board, await=true)
+        if (oldCBCount != null) {
+            assertEquals(oldCBCount + 6, contentBlocks.size) // check local model
+            assertEquals(oldCBCount + 6, mockDB.readContentBlocks()[article.id]?.size) // get remote DB
+            assertEquals(true, contentBlocks[2].gluedAbove)
+            assertEquals(false, contentBlocks[2].gluedBelow)
+            assertEquals(false, contentBlocks[3].gluedAbove)
+            assertEquals(true, contentBlocks[3].gluedBelow)
+            assertEquals(true, contentBlocks[4].gluedAbove)
+            assertEquals(true, contentBlocks[4].gluedBelow)
+        }
+    }
+
+    @Test
+    fun moveGluedBlockDown() {
+        val contentBlocks = articleModel.contentBlockDict[article.id]
+        val oldCBCount: Int? = contentBlocks?.size
+        for (i in 1..6) {
+            articleModel.addBlock(0, "DOWN", BlockType.PLAINTEXT, article, board, await=true)
+        }
+        articleModel.toggleGlueDownwards(0, article, board, await=true)
+        articleModel.toggleGlueDownwards(3, article, board, await=true)
+        articleModel.moveBlockDown(0, article, board, await=true)
+        if (oldCBCount != null) {
+            assertEquals(oldCBCount + 6, contentBlocks.size) // check local model
+            assertEquals(oldCBCount + 6, mockDB.readContentBlocks()[article.id]?.size) // get remote DB
+            assertEquals(false, contentBlocks[0].gluedAbove)
+            assertEquals(true, contentBlocks[0].gluedBelow)
+            assertEquals(true, contentBlocks[1].gluedAbove)
+            assertEquals(true, contentBlocks[1].gluedBelow)
+            assertEquals(true, contentBlocks[2].gluedAbove)
+            assertEquals(false, contentBlocks[2].gluedBelow)
+            assertEquals(false, contentBlocks[3].gluedAbove)
+            assertEquals(false, contentBlocks[3].gluedBelow)
+        }
+    }
+
+
 }
