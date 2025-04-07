@@ -1,6 +1,8 @@
 package article.model
 
 import article.entities.BlockType
+import article.entities.MarkdownBlock
+import article.entities.TextBlock
 import boards.entities.Board
 import boards.model.BoardModel
 import individual_board.entities.Note
@@ -58,6 +60,8 @@ class ArticleModelTest {
         assertEquals(0, articleModel.contentBlockDict[article.id]?.size)
     }
 
+    /* add content blocks */
+
     @Test
     fun addFirstCB() {
         val oldCBCount: Int? = articleModel.contentBlockDict[article.id]?.size
@@ -86,6 +90,7 @@ class ArticleModelTest {
         assertEquals(false, (contentBlocks?.get(2)?.gluedBelow))
     }
 
+    @Test
     fun addCBInMiddleGlued() {
         val contentBlocks = articleModel.contentBlockDict[article.id]
         val oldCBCount: Int? = contentBlocks?.size
@@ -102,4 +107,63 @@ class ArticleModelTest {
         assertEquals(true, (contentBlocks?.get(0)?.gluedBelow) == (contentBlocks?.get(1)?.gluedAbove))
         assertEquals(true, (contentBlocks?.get(1)?.gluedBelow) == (contentBlocks?.get(2)?.gluedAbove))
     }
+
+    @Test
+    fun addCBInMiddleNotGlued() {
+        val contentBlocks = articleModel.contentBlockDict[article.id]
+        val oldCBCount: Int? = contentBlocks?.size
+        // add content block in middle
+        articleModel.addBlock(0, "DOWN", BlockType.PLAINTEXT, article, board, await=true)
+        articleModel.addBlock(0, "DOWN", BlockType.PLAINTEXT, article, board, await=true)
+        articleModel.toggleGlueUpwards(1, article, board, await=true) // split blocks
+        articleModel.addBlock(1, "UP", BlockType.PLAINTEXT, article, board, await=true)
+        articleModel.addBlock(0, "DOWN", BlockType.PLAINTEXT, article, board, await=true)
+        if (oldCBCount != null) {
+            assertEquals(oldCBCount + 4, contentBlocks.size) // check local model
+            assertEquals(oldCBCount + 4, mockDB.readContentBlocks()[article.id]?.size) // get remote DB
+            assertEquals(true, contentBlocks[1].gluedAbove)
+            assertEquals(false, contentBlocks[1].gluedBelow)
+            assertEquals(false, contentBlocks[2].gluedAbove)
+            assertEquals(true, contentBlocks[2].gluedBelow)
+        }
+    }
+
+    /* duplicate content blocks */
+
+    @Test
+    fun dupCBAtBottom() {
+        val contentBlocks = articleModel.contentBlockDict[article.id]
+        val oldCBCount: Int? = contentBlocks?.size
+        articleModel.addBlock(0, "DOWN", BlockType.PLAINTEXT, article, board, await=true)
+        (contentBlocks?.get(0) as TextBlock).text = "Hello World!"
+        articleModel.duplicateBlock(0, article, board, await=true)
+        if (oldCBCount != null) {
+            assertEquals(oldCBCount + 2, contentBlocks.size) // check local model
+            assertEquals(oldCBCount + 2, mockDB.readContentBlocks()[article.id]?.size) // get remote DB
+            assertEquals(true, contentBlocks[1].gluedAbove)
+            assertEquals(false, contentBlocks[1].gluedBelow)
+            assertEquals(true, contentBlocks[0].blockType == contentBlocks[1].blockType)
+            assertEquals(true, (contentBlocks[0] as TextBlock).text == (contentBlocks[1] as TextBlock).text)
+        }
+    }
+
+    @Test
+    fun dupCBInMiddle() {
+        val contentBlocks = articleModel.contentBlockDict[article.id]
+        val oldCBCount: Int? = contentBlocks?.size
+        articleModel.addBlock(0, "DOWN", BlockType.PLAINTEXT, article, board, await=true)
+        articleModel.addBlock(0, "UP", BlockType.MARKDOWN, article, board, await=true)
+        (contentBlocks?.get(0) as MarkdownBlock).text = "Hello World!"
+        articleModel.duplicateBlock(0, article, board, await=true)
+        if (oldCBCount != null) {
+            assertEquals(oldCBCount + 3, contentBlocks.size) // check local model
+            assertEquals(oldCBCount + 3, mockDB.readContentBlocks()[article.id]?.size) // get remote DB
+            assertEquals(true, contentBlocks[1].gluedAbove)
+            assertEquals(true, contentBlocks[1].gluedBelow)
+            assertEquals(BlockType.MARKDOWN, contentBlocks[1].blockType)
+            assertEquals(true, contentBlocks[0].blockType == contentBlocks[1].blockType)
+            assertEquals(true, (contentBlocks[0] as MarkdownBlock).text == (contentBlocks[1] as MarkdownBlock).text)
+        }
+    }
+
 }

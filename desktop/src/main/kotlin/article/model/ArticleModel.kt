@@ -396,7 +396,6 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
         }
     }
 
-    // TODO: later (expand to other ContentBlock types)
     fun saveBlock(index: Int, stringContent: String = "", canvasHeight: Int = 0, bList: MutableList<Byte> = mutableListOf(),
                   language: String = "kotlin", gluedAbove: Boolean, gluedBelow: Boolean, article: Note, board: Board, await: Boolean=false) {
         println("I'M IN HERE")
