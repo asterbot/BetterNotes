@@ -6,9 +6,12 @@ A desktop note-taking app specialized for Math and Computer Science notes.
 ![image](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/raw/main/desktop/src/main/resources/betternotes_logo.png?ref_type=heads)
 
 ## Project Description
-For students in high school or university who take notes virtually
-for Math and Computer Science courses (intended users), Better Notes makes
-adding content in special formats and organizing structure easier (solved problem).
+BetterNotes is a note-taking platform designed for students in math and computer science courses who take notes virtually. 
+It supports a wide range of content formats—including Markdown, code blocks, math equations, media, graphs, and free-form 
+canvases—making it easy to capture complex ideas. 
+To help students stay organized, BetterNotes presents their notes in a structured, 
+mind map–like view that reflects the flow and hierarchy of their thoughts.
+
 
 ## Video/Screenshots
 Embed a video or series of screenshots that demonstrates using your
