@@ -1,6 +1,6 @@
 # BetterNotes
 
-_A note-taking app that is not just good, but better._
+_A note-taking app that is not just good, but **better**._
 
 A desktop note-taking app specialized for Math and Computer Science notes.
 
