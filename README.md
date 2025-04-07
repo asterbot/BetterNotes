@@ -70,10 +70,11 @@ and have executables for all of the following
 * [Meeting minutes](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/meeting-minutes)
 
 ## Releases
-* [v1.0.0](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/Releases/%7Bv1.0.0%7D)
-* [v0.1.0](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/Releases/v0.1.0)
-* [v0.2.0](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/Releases/v0.2.0)
+* [v1.1.0](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/Releases/v1.1.0)
+* [v1.0.0](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/Releases/v1.0.0)
 * [v0.3.0](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/Releases/v0.3.0)
+* [v0.2.0](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/Releases/v0.2.0)
+* [v0.1.0](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/Releases/v0.1.0)
 
 ## Additional Information
 
