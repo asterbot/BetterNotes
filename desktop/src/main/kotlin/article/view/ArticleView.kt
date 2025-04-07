@@ -216,45 +216,45 @@ fun ArticleCompose(board: Board, article: Note) {
                     }
                 ) { Text("Back to ${board.name} Board") }
 
-                Button(
-                    colors = textButtonColours(),
-                    onClick = {
-                        println("DEBUG (THE BLOCKS):")
-                        // println("FROM MODEL: ${articleModel.contentBlockDict}")
-                        println("FROM MODEL:")
-                        articleModel.contentBlockDict[article.id]?.let {articleContentBlocks ->
-                            for (contentBlock in articleContentBlocks) {
-                                println("-----------------------------------------------")
-                                println("Glued Above? ${contentBlock.gluedAbove}")
-                                if (contentBlock.blockType == BlockType.CANVAS) {
-                                    println()
-                                    println("\tCANVAS HAS ${(contentBlock as CanvasBlock).bList.size} PATHS")
-                                } else if (contentBlock.blockType == BlockType.MEDIA) {
-                                    println("\tMEDIA HAS ${((contentBlock as MediaBlock).bList.size)} BYTE ARRAY")
-                                }
-                                else {
-                                    println("\t$contentBlock")
-                                }
-                                println("Glued Below? ${contentBlock.gluedBelow}")
-                            }
-                        }
-                        // println("FROM VIEWMODEL: ${contentBlocksList.contentBlocksList}")
-                        println("FROM VIEWMODEL:")
-                        for (contentBlock in articleViewModel.contentBlocksList) {
-                            println("Glued Above? ${contentBlock.gluedAbove}")
-                            if (contentBlock.blockType == BlockType.CANVAS) {
-                                println("\tCANVAS HAS ${(contentBlock as CanvasBlock).bList.size} PATHS")
-                            } else if (contentBlock.blockType == BlockType.MEDIA) {
-                                println("\tMEDIA HAS ${((contentBlock as MediaBlock).bList.size)} BYTE ARRAY")
-                            }
-                            else {
-                                println("\t$contentBlock")
-                            }
-                            println("Glued Below? ${contentBlock.gluedBelow}")
-                        }
-                        debugState = !debugState
-                    }
-                ) { Text(text = "DEBUG") }
+//                Button(
+//                    colors = textButtonColours(),
+//                    onClick = {
+//                        println("DEBUG (THE BLOCKS):")
+//                        // println("FROM MODEL: ${articleModel.contentBlockDict}")
+//                        println("FROM MODEL:")
+//                        articleModel.contentBlockDict[article.id]?.let {articleContentBlocks ->
+//                            for (contentBlock in articleContentBlocks) {
+//                                println("-----------------------------------------------")
+//                                println("Glued Above? ${contentBlock.gluedAbove}")
+//                                if (contentBlock.blockType == BlockType.CANVAS) {
+//                                    println()
+//                                    println("\tCANVAS HAS ${(contentBlock as CanvasBlock).bList.size} PATHS")
+//                                } else if (contentBlock.blockType == BlockType.MEDIA) {
+//                                    println("\tMEDIA HAS ${((contentBlock as MediaBlock).bList.size)} BYTE ARRAY")
+//                                }
+//                                else {
+//                                    println("\t$contentBlock")
+//                                }
+//                                println("Glued Below? ${contentBlock.gluedBelow}")
+//                            }
+//                        }
+//                        // println("FROM VIEWMODEL: ${contentBlocksList.contentBlocksList}")
+//                        println("FROM VIEWMODEL:")
+//                        for (contentBlock in articleViewModel.contentBlocksList) {
+//                            println("Glued Above? ${contentBlock.gluedAbove}")
+//                            if (contentBlock.blockType == BlockType.CANVAS) {
+//                                println("\tCANVAS HAS ${(contentBlock as CanvasBlock).bList.size} PATHS")
+//                            } else if (contentBlock.blockType == BlockType.MEDIA) {
+//                                println("\tMEDIA HAS ${((contentBlock as MediaBlock).bList.size)} BYTE ARRAY")
+//                            }
+//                            else {
+//                                println("\t$contentBlock")
+//                            }
+//                            println("Glued Below? ${contentBlock.gluedBelow}")
+//                        }
+//                        debugState = !debugState
+//                    }
+//                ) { Text(text = "DEBUG") }
             }
 
             // code for dropdown menu, linking to other boards
