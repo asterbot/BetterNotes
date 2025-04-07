@@ -3,7 +3,6 @@ package article.view
 import LatexRenderer
 import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.*
@@ -687,7 +686,7 @@ fun addGraph(
                 Canvas(modifier = Modifier.fillMaxSize()) {
                     // Axis
                     val xAxisY = size.height * (yMax / (yMax - yMin))
-                    val yAxisX = size.width * (-xMin / (xMax - xMin))
+                    val yAxisX = size.width * (xMax / (xMax - xMin))
                     drawLine(
                         Color.Gray,
                         Offset(0f, size.height - xAxisY.toFloat()),
@@ -720,7 +719,7 @@ fun addGraph(
                         drawPath(path, Color.Blue, style = Stroke(width = 3f))
                     }
 
-                    // Grid
+                    // Dynamic Math Grid
                     val gridColor = Color.LightGray.copy(alpha = 0.5f)
                     val gridStep = 1.0
 
@@ -806,7 +805,7 @@ fun addMedia(block: ContentBlock, isSelected: Boolean = true, onMediaUpdate: (Mu
             if (imageBitmap != null) {
                 Image(
                     bitmap = imageBitmap,
-                    contentDescription = "everyone's favorite bird"
+                    contentDescription = "loaded image"
                 )
             }
         } else {
@@ -831,6 +830,8 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int,
     var isGrid by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() } // Controls focus
     var firstOpened by remember { mutableStateOf(true) }
+    var gridMark by remember { mutableStateOf<List<Offset>>(emptyList()) }
+    val gridPaths = remember { mutableStateListOf<PathData>() }
 
     val initialBytes = when (block.blockType) {
         BlockType.CANVAS -> (block as CanvasBlock).bList
@@ -1080,26 +1081,6 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int,
                             }
                         }
 
-                        // draw grid lines
-                        if (isGrid) {
-                            for (i in 0..size.width.toInt() step 20) {
-                                drawLine(
-                                    color = Colors.lightGrey,
-                                    start = Offset(i.toFloat(), 0f),
-                                    end = Offset(i.toFloat(), size.height),
-                                    strokeWidth = 1f
-                                )
-                            }
-                            for (j in 0..size.height.toInt() step 20) {
-                                drawLine(
-                                    color = Colors.lightGrey,
-                                    start = Offset(0f, j.toFloat()),
-                                    end = Offset(size.width, j.toFloat()),
-                                    strokeWidth = 1f
-                                )
-                            }
-                        }
-
                         // draw cursor path if user is in drawing mode
                         if (isDrawing) {
                             // Draw current path
@@ -1111,6 +1092,28 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int,
                                     strokeWidth = strokeWidth
                                 )
                             }
+                        }
+                    }
+                    Canvas(modifier = Modifier.fillMaxSize()) {
+                        // draw fixed grid like graph paper
+                        if (isGrid) {
+                            for (i in 0..size.width.toInt() step 40) {
+                                gridMark = gridMark + Offset(i.toFloat(), 0f) + Offset(i.toFloat(), size.height)
+                                paths.add(PathData(gridMark, Colors.lightGrey, 2f))
+                                gridPaths.add(PathData(gridMark, Colors.lightGrey, 2f))
+                                gridMark = emptyList()
+                            }
+                            for (j in 0..size.height.toInt() step 40) {
+                                gridMark = gridMark + Offset(0f, j.toFloat()) + Offset(size.width, j.toFloat())
+                                paths.add(PathData(gridMark, Colors.lightGrey, 2f))
+                                gridPaths.add(PathData(gridMark, Colors.lightGrey, 2f))
+                                gridMark = emptyList()
+                            }
+                        }
+                    }
+                    if (!isGrid) {
+                        paths.removeAll { pathData ->
+                            gridPaths.contains(pathData)
                         }
                     }
                     Box(
