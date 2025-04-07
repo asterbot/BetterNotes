@@ -13,7 +13,7 @@ adding content in special formats and organizing structure easier (solved proble
 ## Video/Screenshots
 Embed a video or series of screenshots that demonstrates using your
 application (maximum 1 minute in length).
-
+![image](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/raw/main/desktop/src/main/resources/login.png)
 ## Getting Started
 Instructions on how to install and launch your project. If you have any
 additional instructions that the TA needs, please put them here
