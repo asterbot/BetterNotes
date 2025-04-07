@@ -24,6 +24,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -470,7 +471,25 @@ fun BlockFrame(
                         if (isSelected) {
                             EditableTextBox(
                                 block = block,
-                                onTextChange = { currEditedText.value = it }
+                                onTextChange = { editedText ->
+                                    if (block.blockType == BlockType.CODE) {
+                                        articleModel.saveBlock(
+                                            blockIndex, stringContent = editedText, language = (block as CodeBlock).language,
+                                            gluedAbove = block.gluedAbove, gluedBelow = block.gluedBelow,
+                                            article = article, board = board
+                                        )
+                                    } else {
+                                        articleModel.saveBlock(
+                                            blockIndex,
+                                            stringContent = editedText,
+                                            gluedAbove = block.gluedAbove,
+                                            gluedBelow = block.gluedBelow,
+                                            article = article,
+                                            board = board
+                                        )
+                                    }
+                                    selectAtIndex(blockIndex)
+                                }
                             )
                         }
                     }
@@ -550,7 +569,7 @@ fun BlockFrame(
                     if (block.blockType == BlockType.CANVAS && isSelected) {
                         EditableCanvas(
                             block = block,
-                            onCanvasUpdate = { bList: MutableList<Byte>, height: Int ->
+                            onCanvasUpdate = { bList: MutableList<Byte>, height: Int, toIndex: Int? ->
                                 articleModel.saveBlock(
                                     blockIndex,
                                     bList = bList,
@@ -560,7 +579,9 @@ fun BlockFrame(
                                     article = article,
                                     board = board
                                 )
-                                selectAtIndex(null)
+                                if (toIndex != -1) {
+                                    selectAtIndex(blockIndex)
+                                }
                             }
                         )
                     }
@@ -817,7 +838,7 @@ fun addMedia(block: ContentBlock, isSelected: Boolean = true, onMediaUpdate: (Mu
 
 data class PathData(val points: List<Offset>, val color: Color, val strokeWidth: Float)
 @Composable
-fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int) -> Unit) {
+fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int, Int?) -> Unit) {
 
     var canvasHeight by remember { mutableStateOf((block as CanvasBlock).canvasHeight) }
     var selectedColor by remember { mutableStateOf(Color.Black) }
@@ -830,6 +851,7 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int)
     val resizeThreshold = LocalDensity.current.run { 30 }
     var isGrid by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() } // Controls focus
+    var firstOpened by remember { mutableStateOf(true) }
 
     val initialBytes = when (block.blockType) {
         BlockType.CANVAS -> (block as CanvasBlock).bList
@@ -841,10 +863,25 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int)
 
     Column( // gives user "margin of safety" (i.e. they won't click out of the block if they accidentally miss a button by a little bit)
         modifier = Modifier
+            .focusRequester(focusRequester)
+            .onFocusEvent { state ->
+                if (!state.hasFocus) {
+                    if (firstOpened) {
+                        firstOpened = false
+                        println("That's one warning...")
+                    } else {
+                        onCanvasUpdate(canvasToBytes(paths).toMutableList(), canvasHeight, null)
+                        println("Closing this instant")
+                    }
+                }
+            }
+            .focusable()
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null
-            ) { focusRequester.requestFocus() }
+            ) {
+                focusRequester.requestFocus()
+            }
             .padding(12.dp)
     ) {
         MaterialTheme {
@@ -955,7 +992,7 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int)
                                 }
                                 TextButton(
                                     colors = textButtonColours(),
-                                    onClick = { onCanvasUpdate(canvasToBytes(paths).toMutableList(), canvasHeight) }
+                                    onClick = { onCanvasUpdate(canvasToBytes(paths).toMutableList(), canvasHeight, null) }
                                 ) {
                                     Text("Save")
                                 }
@@ -1037,7 +1074,7 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int)
                                     },
                                     onDragEnd = {
                                         if (isResizing) {
-                                            onCanvasUpdate(canvasToBytes(paths).toMutableList(), canvasHeight)
+                                            onCanvasUpdate(canvasToBytes(paths).toMutableList(), canvasHeight, -1)
                                         }
                                         isDrawing = false
                                         isResizing = false
@@ -1280,8 +1317,23 @@ fun EditableTextBox(
         else -> TextStyle.Default
     }
 
+    var firstOpened by remember { mutableStateOf(true) }
+
     Column(
         modifier = Modifier
+            .focusRequester(focusRequester)
+            .onFocusEvent { state ->
+                if (!state.hasFocus) {
+                    if (firstOpened) {
+                        firstOpened = false
+                        println("That's one warning...")
+                    } else {
+                        onTextChange(textFieldValue)
+                        println("Closing this instant")
+                    }
+                }
+            }
+            .focusable()
             .clickable(
                 interactionSource = remember { MutableInteractionSource() }, // Prevents ripple effect
                 indication = null
@@ -1293,7 +1345,6 @@ fun EditableTextBox(
             value = textFieldValue,
             onValueChange = {
                 textFieldValue = it
-                onTextChange(it)
             },
             modifier = Modifier
                 .background(if (block.blockType == BlockType.CODE) Colors.black else Colors.white)
