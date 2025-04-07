@@ -47,3 +47,10 @@ Release Page: https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/releases
 * [v0.1.0](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/Releases/v0.1.0)
 * [v0.2.0](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/Releases/v0.2.0)
 * [v0.3.0](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/Releases/v0.3.0)
+
+## Additional Information
+
+### FDGLayout Module
+
+As part of our app development, we created a force-directed graph layout module. The .jar file is located [here](fdg_layout/jar)
+with a sample usage example in the [fdg_layout_sample](fdg_layout_sample) directory of this repository. 
