@@ -1,7 +1,9 @@
-# BETTER NOTES
+# BetterNotes
 
-## Title
+_A note-taking app that is not just good, but better._
+
 A desktop note-taking app specialized for Math and Computer Science notes.
+
 
 ![image](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/raw/main/desktop/src/main/resources/betternotes_logo.png?ref_type=heads)
 
