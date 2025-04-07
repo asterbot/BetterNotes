@@ -31,7 +31,7 @@ val boardViewModel = BoardViewModel(boardModel)
 val individualBoardModel = IndividualBoardModel(dbStorage)
 lateinit var individualBoardViewModel: IndividualBoardViewModel
 
-val articleModel = ArticleModel(dbStorage)
+var articleModel = ArticleModel(dbStorage)
 lateinit var articleViewModel: ArticleViewModel
 
 val loginModel = LoginModel(dbStorage)

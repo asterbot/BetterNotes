@@ -4,7 +4,10 @@ import article.entities.ContentBlock
 import kotlin.test.*
 import boards.entities.*
 import individual_board.entities.Note
+import kotlinx.coroutines.runBlocking
+import login.entities.User
 import org.bson.types.ObjectId
+import shared.persistence.DBStorage
 import shared.persistence.IPersistence
 
 class BoardModelTest() {
@@ -14,32 +17,27 @@ class BoardModelTest() {
 
     @BeforeTest
     fun setup() {
-        mockDB = object : IPersistence {
-            override fun connect(): Boolean {return false}
-            override fun readBoards(): List<Board> = mutableListOf()
-            override fun addBoard(board: Board) {}
-            override fun deleteBoard(boardId: ObjectId, noteIds: List<ObjectId>) {}
-            override fun updateBoard(boardId: ObjectId, name: String, desc: String, notes: List<ObjectId>) {}
-            override fun updateBoardAccessed(boardId: ObjectId) {}
-            override fun readNotes(): MutableMap<ObjectId, MutableList<Note>> {return mutableMapOf()}
-            override fun addNote(board: Board, note: Note) {}
-            override fun deleteNote(noteId: ObjectId, boardId: ObjectId) {}
-            override fun updateNote(noteId: ObjectId, title: String, desc: String) {}
-            override fun updateNoteAccessed(noteId: ObjectId, boardId: ObjectId) {}
-            override fun readContentBlocks(): MutableMap<ObjectId, MutableList<ContentBlock>> {return mutableMapOf()}
-            override fun insertContentBlock(article: Note, contentBlock: ContentBlock, index: Int, boardId: ObjectId) {}
-            override fun addContentBlock(article: Note, contentBlock: ContentBlock, boardId: ObjectId) {}
-            override fun duplicateContentBlock(article: Note, contentBlock: ContentBlock, index: Int, boardId: ObjectId){}
-            override fun swapContentBlocks(article: Note, index1: Int, index2: Int, boardId: ObjectId) {}
-            override fun deleteContentBlock(article: Note, contentBlockId: ObjectId, boardId: ObjectId) {}
-            override fun updateContentBlock(block: ContentBlock, text: String, pathsContent: MutableList<Path>, language: String, article: Note, boardId: ObjectId) {}
-        }
+        mockDB = DBStorage("cs346-test-db")
 
         boardModel = BoardModel(mockDB)
+
+        // Clear the DB before starting
+        runBlocking {
+            mockDB.clearDB()
+        }
+
+        // Add sample data
+        val board1 = Board(ObjectId(), name="name1", desc="desc2")
+        val board2 = Board(ObjectId(), name="name2", desc="desc2")
         boardModel.boardList = mutableListOf(
-            Board(ObjectId(), name="name1", desc="desc2"),
-            Board(ObjectId(), name="name2", desc="desc2"),
+            board1,
+            board2,
         )
+
+        mockDB.addBoard(board1)
+        mockDB.addBoard(board2)
+
+        // New board to test with
         board = Board(ObjectId(), name="name3", desc="desc3")
     }
 
@@ -48,6 +46,7 @@ class BoardModelTest() {
         val oldCount = boardModel.boardList.size
         boardModel.add(board)
         assertEquals(oldCount + 1, boardModel.boardList.size)
+        assertEquals(oldCount + 1, mockDB.readBoards().size)
     }
 
     @Test
@@ -56,6 +55,7 @@ class BoardModelTest() {
         val oldCount = boardModel.boardList.size
         boardModel.del(board)
         assertEquals(oldCount - 1, boardModel.boardList.size)
+        assertEquals(oldCount - 1, mockDB.readBoards().size)
     }
 
     @Test
@@ -66,5 +66,22 @@ class BoardModelTest() {
         assertEquals(oldCount, boardModel.boardList.size)
         assertEquals("newName", boardModel.boardList[2].name)
         assertEquals("newDesc", boardModel.boardList[2].desc)
+        assertEquals("newName", mockDB.readBoards()[2].name)
+        assertEquals("newDesc", mockDB.readBoards()[2].desc)
+    }
+
+    @Test
+    fun sort() {
+        val board1 = Board(ObjectId(), name="name1", desc="desc2")
+        val board2 = Board(ObjectId(), name="name2", desc="desc2")
+        boardModel.add(board1)
+        boardModel.add(board2)
+
+        boardModel.sortByTitle(false)
+
+        assertEquals(boardModel.boardList[0].name, "name1")
+
+        boardModel.sortByTitle(true)
+        assertEquals(boardModel.boardList[0].name, "name2")
     }
 }
