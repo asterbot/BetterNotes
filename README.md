@@ -44,6 +44,8 @@ You may log in with the following account which has been created, or you can cre
 - Username: `sample_user`
 - Password: `sample_password`
 
+This user contains *demo* data to demonstrate the various features our app has to offer!
+
 We currently support:
 - Linux (Debian)
 - MacOS
