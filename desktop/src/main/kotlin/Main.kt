@@ -1,6 +1,3 @@
-
-
-// Filekit (delete "core" from import and don't use $verison in dependency)
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
@@ -35,7 +32,6 @@ fun main() {
         println("Mongo DB connection error")
         ConnectionManager.updateConnection(ConnectionStatus.DISCONNECTED)
     }
-
 
     // Initialize FileKit
     FileKit.init(appId = "cs-346-project")
