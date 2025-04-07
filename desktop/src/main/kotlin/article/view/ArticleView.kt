@@ -3,7 +3,6 @@ package article.view
 import LatexRenderer
 import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.*
@@ -18,6 +17,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
@@ -612,7 +612,7 @@ fun addGraph(
                     result.add(Pair(x, y))
 
                 } catch (e: Exception) {
-                    // ckip points where evaluation fails
+                    // Skip
                 }
             }
             result
@@ -637,7 +637,7 @@ fun addGraph(
                 Canvas(modifier = Modifier.fillMaxSize()) {
                     // Axis
                     val xAxisY = size.height * (yMax / (yMax - yMin))
-                    val yAxisX = size.width * (-xMin / (xMax - xMin))
+                    val yAxisX = size.width * (xMax / (xMax - xMin))
                     drawLine(
                         Color.Gray,
                         Offset(0f, size.height - xAxisY.toFloat()),
@@ -651,7 +651,7 @@ fun addGraph(
                         strokeWidth = 2f
                     )
 
-                    // plot the function
+                    // Function
                     if (points.size >= 2) {
                         val path = Path()
                         var firstPoint = true
@@ -670,7 +670,7 @@ fun addGraph(
                         drawPath(path, Color.Blue, style = Stroke(width = 3f))
                     }
 
-                    // draw the grid
+                    // Dynamic Math Grid
                     val gridColor = Color.LightGray.copy(alpha = 0.5f)
                     val gridStep = 1.0
 
@@ -716,7 +716,7 @@ fun loadImageFromBytes(imageBytes: ByteArray): ImageBitmap? {
 
 @Composable
 fun addMedia(block: ContentBlock, isSelected: Boolean = true, onMediaUpdate: (MutableList<Byte>) -> Unit) {
-    // initialize byte list from the block
+    // Initialize the byte list from what is already stored in the block
     val initialBytes = when (block.blockType) {
         BlockType.MEDIA -> (block as MediaBlock).bList
         else -> mutableListOf()
@@ -756,15 +756,7 @@ fun addMedia(block: ContentBlock, isSelected: Boolean = true, onMediaUpdate: (Mu
             if (imageBitmap != null) {
                 Image(
                     bitmap = imageBitmap,
-                    contentDescription = "everyone's favorite bird",
-                    modifier = Modifier
-                        .pointerInput(Unit) {
-                            detectTapGestures(
-                                onDoubleTap = {
-                                    // println("crop mode :)")
-                                }
-                            )
-                        }
+                    contentDescription = "loaded image"
                 )
             }
         } else {
@@ -787,8 +779,10 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int,
     var isResizing by remember { mutableStateOf(false) }
     val resizeThreshold = LocalDensity.current.run { 30 }
     var isGrid by remember { mutableStateOf(false) }
-    val focusRequester = remember { FocusRequester() } // controls focus
+    val focusRequester = remember { FocusRequester() } // Controls focus
     var firstOpened by remember { mutableStateOf(true) }
+    var gridMark by remember { mutableStateOf<List<Offset>>(emptyList()) }
+    val gridPaths = remember { mutableStateListOf<PathData>() }
 
     val initialBytes = when (block.blockType) {
         BlockType.CANVAS -> (block as CanvasBlock).bList
@@ -900,6 +894,7 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int,
                             }
                         }
 
+                        // color picker
                         val controller = rememberColorPickerController()
                         Box(
                             modifier = Modifier.size(100.dp).padding(10.dp)
@@ -1035,28 +1030,9 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int,
                             }
                         }
 
-                        // draw grid
-                        if (isGrid) {
-                            for (i in 0..size.width.toInt() step 20) {
-                                drawLine(
-                                    color = Colors.lightGrey,
-                                    start = Offset(i.toFloat(), 0f),
-                                    end = Offset(i.toFloat(), size.height),
-                                    strokeWidth = 1f
-                                )
-                            }
-                            for (j in 0..size.height.toInt() step 20) {
-                                drawLine(
-                                    color = Colors.lightGrey,
-                                    start = Offset(0f, j.toFloat()),
-                                    end = Offset(size.width, j.toFloat()),
-                                    strokeWidth = 1f
-                                )
-                            }
-                        }
-
+                        // draw cursor path if user is in drawing mode
                         if (isDrawing) {
-                            // draw current path
+                            // Draw current path
                             for (i in 0 until currentPath.size - 1) {
                                 drawLine(
                                     color = selectedColor,
@@ -1065,6 +1041,28 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int,
                                     strokeWidth = strokeWidth
                                 )
                             }
+                        }
+                    }
+                    Canvas(modifier = Modifier.fillMaxSize()) {
+                        // draw fixed grid like graph paper
+                        if (isGrid) {
+                            for (i in 0..size.width.toInt() step 40) {
+                                gridMark = gridMark + Offset(i.toFloat(), 0f) + Offset(i.toFloat(), size.height)
+                                paths.add(PathData(gridMark, Colors.lightGrey, 2f))
+                                gridPaths.add(PathData(gridMark, Colors.lightGrey, 2f))
+                                gridMark = emptyList()
+                            }
+                            for (j in 0..size.height.toInt() step 40) {
+                                gridMark = gridMark + Offset(0f, j.toFloat()) + Offset(size.width, j.toFloat())
+                                paths.add(PathData(gridMark, Colors.lightGrey, 2f))
+                                gridPaths.add(PathData(gridMark, Colors.lightGrey, 2f))
+                                gridMark = emptyList()
+                            }
+                        }
+                    }
+                    if (!isGrid) {
+                        paths.removeAll { pathData ->
+                            gridPaths.contains(pathData)
                         }
                     }
                     Box(
@@ -1093,28 +1091,23 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int,
     }
 }
 
-// convert canvas paths to bytes for storage
 fun canvasToBytes(paths: List<PathData>): ByteArray {
     val pathData = ByteArrayOutputStream()
     val numPaths = paths.size
     pathData.write(ByteBuffer.allocate(4).putInt(numPaths).array())
 
     paths.forEach { path ->
-        // Color (4 floats: r, g, b, a)
         pathData.write(ByteBuffer.allocate(16)
             .putFloat(path.color.red)
             .putFloat(path.color.green)
             .putFloat(path.color.blue)
             .putFloat(path.color.alpha).array())
 
-        // stroke width (1 float)
         pathData.write(ByteBuffer.allocate(4).putFloat(path.strokeWidth).array())
 
-        // number of points
         val numPoints = path.points.size
         pathData.write(ByteBuffer.allocate(4).putInt(numPoints).array())
 
-        // points (each point is 2 floats: x, y)
         path.points.forEach { point ->
             pathData.write(ByteBuffer.allocate(8).putFloat(point.x).putFloat(point.y).array())
         }
@@ -1122,16 +1115,13 @@ fun canvasToBytes(paths: List<PathData>): ByteArray {
     return pathData.toByteArray()
 }
 
-// convert stored bytes back to paths for rendering
 fun bytesToPaths(bytes: ByteArray): MutableList<PathData> {
     val paths = mutableListOf<PathData>()
     val buffer = ByteBuffer.wrap(bytes)
 
     try {
-        // number of paths
         val numPaths = buffer.getInt()
 
-        // read each path
         for (i in 0 until numPaths) {
 
             val red = buffer.getFloat()
@@ -1141,15 +1131,16 @@ fun bytesToPaths(bytes: ByteArray): MutableList<PathData> {
             val color = Color(red, green, blue, alpha)
 
             val strokeWidth = buffer.getFloat()
+
             val numPoints = buffer.getInt()
 
-            // points
             val points = mutableListOf<Offset>()
             for (j in 0 until numPoints) {
                 val x = buffer.getFloat()
                 val y = buffer.getFloat()
                 points.add(Offset(x, y))
             }
+
             paths.add(PathData(points, color, strokeWidth))
         }
     } catch (e: Exception) {
@@ -1212,7 +1203,6 @@ fun EditableTextBox(
             value = textFieldValue,
             onValueChange = {
                 textFieldValue = it
-                onTextChange(it)
             },
             modifier = Modifier
                 .background(if (block.blockType == BlockType.CODE) Colors.black else Colors.white)
