@@ -76,6 +76,8 @@ and have executables for all of the following
 * [v0.2.0](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/Releases/v0.2.0)
 * [v0.1.0](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/Releases/v0.1.0)
 
+Release assets found here: https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/releases
+
 ## Additional Information
 
 ### FDGLayout Module
