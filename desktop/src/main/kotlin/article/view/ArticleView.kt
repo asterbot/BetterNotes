@@ -662,7 +662,7 @@ fun addGraph(
                     result.add(Pair(x, y))
 
                 } catch (e: Exception) {
-                    // Skip points where evaluation fails
+                    // Skip
                 }
             }
             result
@@ -703,7 +703,7 @@ fun addGraph(
 
                     // Function
                     if (points.size >= 2) {
-                        val path = androidx.compose.ui.graphics.Path()
+                        val path = Path()
                         var firstPoint = true
 
                         for ((x, y) in points) {
@@ -753,19 +753,10 @@ fun addGraph(
     }
 }
 
-fun cropImage() {
-
-}
-
 fun loadImageFromBytes(imageBytes: ByteArray): ImageBitmap? {
     return try {
-        // Create an InputStream from the byte array
         val inputStream = ByteArrayInputStream(imageBytes)
-
-        // Use ImageIO to read the image
         val bufferedImage: BufferedImage = ImageIO.read(inputStream)
-
-        // Convert the BufferedImage to ImageBitmap (for Jetpack Compose)
         bufferedImage.toComposeImageBitmap()
     } catch (e: NullPointerException) {
         println("Error loading image: ${e.message}")
@@ -775,13 +766,12 @@ fun loadImageFromBytes(imageBytes: ByteArray): ImageBitmap? {
 
 @Composable
 fun addMedia(block: ContentBlock, isSelected: Boolean = true, onMediaUpdate: (MutableList<Byte>) -> Unit) {
-    // Initialize the byte list from the block
+    // Initialize the byte list from what is already stored in the block
     val initialBytes = when (block.blockType) {
         BlockType.MEDIA -> (block as MediaBlock).bList
         else -> mutableListOf()
     }
 
-    // Use remember to maintain state across recompositions
     var imageBytes by remember { mutableStateOf(initialBytes) }
     var filePath by remember { mutableStateOf<String?>(null) }
 
@@ -800,7 +790,6 @@ fun addMedia(block: ContentBlock, isSelected: Boolean = true, onMediaUpdate: (Mu
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // filePath == null && imageBytes.isEmpty()
         if (isSelected) {
             TextButton(
                 colors = textButtonColours(),
@@ -812,22 +801,12 @@ fun addMedia(block: ContentBlock, isSelected: Boolean = true, onMediaUpdate: (Mu
 
         if (imageBytes.isNotEmpty()) {
             onMediaUpdate(imageBytes)
-//        val imageBitmap = makeFromEncoded(imageBytes.toByteArray()).toComposeImageBitmap()
             val imageBitmap = loadImageFromBytes(imageBytes.toByteArray())
 
             if (imageBitmap != null) {
                 Image(
                     bitmap = imageBitmap,
-                    contentDescription = "everyone's favorite bird",
-                    modifier = Modifier
-                        .pointerInput(Unit) {
-                            detectTapGestures(
-                                onDoubleTap = {
-                                    cropImage()
-                                    println("crop mode :)")
-                                }
-                            )
-                        }
+                    contentDescription = "everyone's favorite bird"
                 )
             }
         } else {
@@ -964,6 +943,7 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int,
                             }
                         }
 
+                        // color picker
                         val controller = rememberColorPickerController()
                         Box(
                             modifier = Modifier.size(100.dp).padding(10.dp)
@@ -1100,6 +1080,7 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int,
                             }
                         }
 
+                        // draw grid lines
                         if (isGrid) {
                             for (i in 0..size.width.toInt() step 20) {
                                 drawLine(
@@ -1119,6 +1100,7 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int,
                             }
                         }
 
+                        // draw cursor path if user is in drawing mode
                         if (isDrawing) {
                             // Draw current path
                             for (i in 0 until currentPath.size - 1) {
@@ -1152,89 +1134,28 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int,
                         }
                     }
                 }
-
-                // Bottom action buttons
-                //            Row(
-                //                modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-                //                horizontalArrangement = Arrangement.SpaceBetween
-                //            ) {
-                //                Button(
-                //                    onClick = { showDrawingsList = !showDrawingsList },
-                //                    modifier = Modifier.padding(end = 8.dp)
-                //                ) {
-                //                    Text(if (showDrawingsList) "Hide Drawings" else "Show Drawings")
-                //                }
-                //
-                //                Row {
-                //                    Button(
-                //                        onClick = { paths = mutableListOf() },
-                //                        modifier = Modifier.padding(end = 8.dp)
-                //                    ) {
-                //                        Icon(Icons.Default.Clear, contentDescription = "Clear")
-                //                        Spacer(Modifier.width(4.dp))
-                //                        Text("Clear")
-                //                    }
-
-                //                    Button(
-                //                        onClick = {
-                //                            scope.launch {
-                //                                // Convert canvas to bytes
-                //                                val bytes = canvasToBytes(paths, canvasWidth, canvasHeight)
-                //
-                //                                // Create or update drawing
-                //                                val drawing = Drawing(
-                //                                    id = currentDrawingId ?: UUID.randomUUID().toString(),
-                //                                    name = currentDrawingName,
-                //                                    width = canvasWidth,
-                //                                    height = canvasHeight,
-                //                                    imageData = bytes
-                //                                )
-                //
-                //                                // Save to MongoDB
-                //                                drawingRepository.saveDrawing(drawing)
-                //
-                //                                // Update current drawing ID
-                //                                currentDrawingId = drawing.id
-                //
-                //                                // Refresh drawings list
-                //                                drawings = drawingRepository.getAllDrawings()
-                //                            }
-                //                        },
-                //                        modifier = Modifier.padding(end = 8.dp)
-                //                    ) {
-                //                        Icon(Icons.Default.Save, contentDescription = "Save")
-                //                        Spacer(Modifier.width(4.dp))
-                //                        Text("Save")
-                //                    }
-                //                }
-                //            }
             }
         }
     }
 }
-// Convert canvas paths to bytes for storage
+
 fun canvasToBytes(paths: List<PathData>): ByteArray {
-    // Instead of direct pixel manipulation, we'll serialize the path data
     val pathData = ByteArrayOutputStream()
     val numPaths = paths.size
     pathData.write(ByteBuffer.allocate(4).putInt(numPaths).array())
 
     paths.forEach { path ->
-        // Color (4 floats: r, g, b, a)
         pathData.write(ByteBuffer.allocate(16)
             .putFloat(path.color.red)
             .putFloat(path.color.green)
             .putFloat(path.color.blue)
             .putFloat(path.color.alpha).array())
 
-        // Stroke width (1 float)
         pathData.write(ByteBuffer.allocate(4).putFloat(path.strokeWidth).array())
 
-        // Number of points
         val numPoints = path.points.size
         pathData.write(ByteBuffer.allocate(4).putInt(numPoints).array())
 
-        // Points (each point is 2 floats: x, y)
         path.points.forEach { point ->
             pathData.write(ByteBuffer.allocate(8).putFloat(point.x).putFloat(point.y).array())
         }
@@ -1243,16 +1164,13 @@ fun canvasToBytes(paths: List<PathData>): ByteArray {
     return pathData.toByteArray()
 }
 
-// Convert stored bytes back to paths for rendering
 fun bytesToPaths(bytes: ByteArray): MutableList<PathData> {
     val paths = mutableListOf<PathData>()
     val buffer = ByteBuffer.wrap(bytes)
 
     try {
-        // Number of paths
         val numPaths = buffer.getInt()
 
-        // Read each path
         for (i in 0 until numPaths) {
             // Color
             val red = buffer.getFloat()
@@ -1261,13 +1179,10 @@ fun bytesToPaths(bytes: ByteArray): MutableList<PathData> {
             val alpha = buffer.getFloat()
             val color = Color(red, green, blue, alpha)
 
-            // Stroke width
             val strokeWidth = buffer.getFloat()
 
-            // Number of points
             val numPoints = buffer.getInt()
 
-            // Points
             val points = mutableListOf<Offset>()
             for (j in 0 until numPoints) {
                 val x = buffer.getFloat()
@@ -1275,19 +1190,11 @@ fun bytesToPaths(bytes: ByteArray): MutableList<PathData> {
                 points.add(Offset(x, y))
             }
 
-fun isPointNearPath(point: Offset, path: Path, threshold: Float = 20f): Boolean {
-    val pathBounds = path.getBounds()
-    return (point.x in (pathBounds.left - threshold)..(pathBounds.right + threshold) &&
-            point.y in (pathBounds.top - threshold)..(pathBounds.bottom + threshold))
-}
-
             paths.add(PathData(points, color, strokeWidth))
         }
     } catch (e: Exception) {
         println("Error reading path data: ${e.message}")
-        // Return empty paths on error
     }
-
     return paths
 }
 
