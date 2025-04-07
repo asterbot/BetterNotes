@@ -1345,6 +1345,7 @@ fun EditableTextBox(
             value = textFieldValue,
             onValueChange = {
                 textFieldValue = it
+                onTextChange(it)
             },
             modifier = Modifier
                 .background(if (block.blockType == BlockType.CODE) Colors.black else Colors.white)
