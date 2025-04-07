@@ -39,6 +39,7 @@ that they can connect to your database and so on).
 * [Meeting minutes](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/meeting-minutes)
 
 ## Releases
+Release Page: https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/releases
 * [v1.0.0](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/Releases/%7Bv1.0.0%7D)
 * [v0.1.0](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/Releases/v0.1.0)
 * [v0.2.0](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/Releases/v0.2.0)
