@@ -18,7 +18,7 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
     }
 
     fun initialize() {
-        // Called when there is a reconnection
+        // called when there is a reconnection
         if (ConnectionManager.isConnected) {
             contentBlockDict = persistence.readContentBlocks()
             notifySubscribers()
@@ -126,7 +126,7 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
             }
 
             if (ConnectionManager.isConnected) {
-                // update surrounding blocks' glue status (is possible)
+                // update surrounding blocks' glue status (if possible)
                 if (index - 1 >= 0) {
                     val updateBlock = contentBlocks[index - 1]
                     persistence.updateGlueStatus(updateBlock.id, updateBlock.gluedAbove, updateBlock.gluedBelow, article.id, board.id, await=await)
@@ -398,7 +398,6 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
 
     fun saveBlock(index: Int, stringContent: String = "", canvasHeight: Int = 0, bList: MutableList<Byte> = mutableListOf(),
                   language: String = "kotlin", gluedAbove: Boolean, gluedBelow: Boolean, article: Note, board: Board, await: Boolean=false) {
-        println("I'M IN HERE")
         contentBlockDict[article.id]?.let { contentBlocks ->
             if (index in 0..(contentBlocks.size - 1)) {
                 var block = contentBlocks[index]
@@ -411,13 +410,11 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
                 } else if (block is CanvasBlock) {
                     (block as CanvasBlock).bList = bList
                     (block as CanvasBlock).canvasHeight = canvasHeight
-
                 } else if (block is MathBlock) {
                     (block as MathBlock).text = stringContent
                 } else if (block is MediaBlock) {
                     (block as MediaBlock).bList = bList
                 }
-                // TODO: might need to fix for canvas? idk if it can handle it yet
 
                 block.gluedAbove = gluedAbove
                 block.gluedBelow = gluedBelow
@@ -427,16 +424,18 @@ class ArticleModel(val persistence: IPersistence) : IPublisher() {
                 }
                 else {
                     dbQueue.addToQueue(
-                        Update(persistence, block, mutableMapOf(
-                        "text" to stringContent,
-                        "language" to language,
-                        "canvasHeight" to canvasHeight,
-                        "bList" to bList,
-                        "gluedAbove" to gluedAbove,
-                        "gluedBelow" to gluedBelow,
-                        "article" to article,
-                        "boardId" to board.id
-                    ))
+                        Update(persistence, block,
+                            mutableMapOf(
+                                "text" to stringContent,
+                                "language" to language,
+                                "canvasHeight" to canvasHeight,
+                                "bList" to bList,
+                                "gluedAbove" to gluedAbove,
+                                "gluedBelow" to gluedBelow,
+                                "article" to article,
+                                "boardId" to board.id
+                            )
+                        )
                     )
                 }
             }

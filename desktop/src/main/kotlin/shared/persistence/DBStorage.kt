@@ -26,7 +26,7 @@ import shared.loginModel
 import java.time.Instant
 
 class DBStorage(private var databaseName: String = "cs346-users-db") :IPersistence {
-    // Call connect() before using DB
+    // call connect() before using DB
 
     private val dotenv = dotenv()
 
@@ -40,7 +40,7 @@ class DBStorage(private var databaseName: String = "cs346-users-db") :IPersisten
     private lateinit var boardsCollection: MongoCollection<Board>
     private lateinit var notesCollection: MongoCollection<Note>
 
-    // We need both collections since reading to polymorphic types requires de-serializing
+    // we need both collections since reading to polymorphic types requires de-serializing
     //   however adding can be done as is done for the other types
     private lateinit var contentBlocksDocumentCollection: MongoCollection<Document>
     private lateinit var contentBlockCollection: MongoCollection<ContentBlock>
@@ -48,10 +48,10 @@ class DBStorage(private var databaseName: String = "cs346-users-db") :IPersisten
     private lateinit var usersCollection: MongoCollection<User>
 
 
-    // To make everything run in a coroutine!
+    // to make everything run in a coroutine!
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
-    // This ensures mutual exclusion
+    // this ensures mutual exclusion
     //     i.e. a thread will finish running before starting a new one (BUT IN THE BACKGROUND)
     //     this is different from thread.join() which will force the foreground to wait for completion
     private val channel = Channel<Job>(capacity = Channel.UNLIMITED).apply {
@@ -134,7 +134,7 @@ class DBStorage(private var databaseName: String = "cs346-users-db") :IPersisten
             userData = usersCollection.find(Filters.eq(User::userName.name, username)).firstOrNull()
         }
         if (!BCrypt.checkpw(oldPassword, userData?.passwordHash)){
-            // Old password does not match!
+            // old password does not match!
             return false
         }
         runBlocking {
@@ -155,7 +155,7 @@ class DBStorage(private var databaseName: String = "cs346-users-db") :IPersisten
             userData = usersCollection.find(Filters.eq(User::userName.name, user.userName)).firstOrNull()
         }
         if (userData != null) {
-            // I won't let the user take dummy-user because that's our placeholder name :D
+            // i won't let the user take dummy-user because that's our placeholder name :D
             return false
         }
         runBlocking {
@@ -173,8 +173,7 @@ class DBStorage(private var databaseName: String = "cs346-users-db") :IPersisten
             // user not in DB
             return false;
         }
-
-        // Return whether password matches record in DB
+        // return whether password matches record in DB
         return BCrypt.checkpw(password, userData.passwordHash)
     }
 
@@ -184,7 +183,7 @@ class DBStorage(private var databaseName: String = "cs346-users-db") :IPersisten
             userData = usersCollection.find(Filters.eq(User::userName.name, username)).firstOrNull()
         }
         if (!BCrypt.checkpw(password, userData?.passwordHash)){
-            // Old password does not match!
+            // old password does not match!
             return false
         }
 
@@ -207,7 +206,6 @@ class DBStorage(private var databaseName: String = "cs346-users-db") :IPersisten
         return users
     }
 
-
     override fun readBoards(): List<Board> {
         val boards = mutableListOf<Board>()
 
@@ -216,7 +214,6 @@ class DBStorage(private var databaseName: String = "cs346-users-db") :IPersisten
                 boards.add(it)
             }
         }
-
         return boards
     }
 
@@ -229,11 +226,10 @@ class DBStorage(private var databaseName: String = "cs346-users-db") :IPersisten
 
     override fun deleteBoard(boardId: ObjectId, noteIds: List<ObjectId>) {
         runBlocking {
-            // Delete all the notes associated with the board
+            // delete all the notes associated with the board
             noteIds.forEach {
                 deleteNote(it, boardId)
             }
-
             boardsCollection.deleteOne(Filters.eq(boardId))
         }
     }
@@ -253,7 +249,7 @@ class DBStorage(private var databaseName: String = "cs346-users-db") :IPersisten
         }
     }
 
-    // This is specifically for updating the datetimeAccessed field
+    // this is specifically for updating the datetimeAccessed field
     override fun updateBoardAccessed(boardId: ObjectId,) {
         val job = coroutineScope.launch {
             boardsCollection.updateOne(
@@ -263,7 +259,6 @@ class DBStorage(private var databaseName: String = "cs346-users-db") :IPersisten
         }
         channel.trySend(job)
     }
-
 
     override fun readNotes(): MutableMap<ObjectId, MutableList<Note>> {
         val toRet: MutableMap<ObjectId, MutableList<Note>> = mutableMapOf()
@@ -297,7 +292,6 @@ class DBStorage(private var databaseName: String = "cs346-users-db") :IPersisten
                     Updates.set("datetimeAccessed", Instant.now().toString())
                 )
             )
-
         }
         channel.trySend(job)
         if (await) runBlocking { job.join() }
@@ -313,7 +307,6 @@ class DBStorage(private var databaseName: String = "cs346-users-db") :IPersisten
             }
 
             notesCollection.deleteOne(Filters.eq(noteId))
-
             // Remove the note's ObjectId from the board's notes array
             boardsCollection.updateOne(
                 Filters.eq(boardId),
@@ -418,14 +411,12 @@ class DBStorage(private var databaseName: String = "cs346-users-db") :IPersisten
                                 id = block.getObjectId("_id"),
                                 text = block.getString("text"),
                             )
-                            "MEDIA" ->{
+                            "MEDIA" -> {
                                 val bList = block["bList"] as? List<*>
                                 println(bList!!::class)
                                 val byteList = bList.mapNotNull {
                                     (it as? Number)?.toByte()
                                 }.toMutableList()
-
-
                                 MediaBlock(
                                     id = block.getObjectId("_id"),
                                     bList = byteList
@@ -459,10 +450,9 @@ class DBStorage(private var databaseName: String = "cs346-users-db") :IPersisten
         await: Boolean
     ) {
         val now = Instant.now().toString()
-
         val job = coroutineScope.launch {
 
-            // Update the content block in the content block collection
+            // update the content block in the content block collection
             contentBlocksDocumentCollection.updateOne(
                 Filters.eq(contentBlockId),
                 Updates.combine(
@@ -470,8 +460,7 @@ class DBStorage(private var databaseName: String = "cs346-users-db") :IPersisten
                     Updates.set("gluedBelow", gluedBelow)
                 )
             )
-
-            // Update the note's datetime fields
+            // update the note's datetime fields
             notesCollection.updateOne(
                 Filters.eq(articleId),
                 Updates.combine(
@@ -479,8 +468,7 @@ class DBStorage(private var databaseName: String = "cs346-users-db") :IPersisten
                     Updates.set("datetimeAccessed", now)
                 )
             )
-
-            // Update the board's datetime fields
+            // update the board's datetime fields
             boardsCollection.updateOne(
                 Filters.eq(boardId),
                 Updates.combine(
@@ -627,13 +615,9 @@ class DBStorage(private var databaseName: String = "cs346-users-db") :IPersisten
     ) {
         val now = Instant.now().toString()
 
-        println(block.id)
-        println("MADE IT HERE")
-        println(canvasHeight)
 
         val job = coroutineScope.launch {
-
-            // Update the content block in the content block collection
+            // update the content block in the content block collection
             contentBlocksDocumentCollection.updateOne(
                 Filters.eq(block.id),
                 Updates.combine(
@@ -645,8 +629,7 @@ class DBStorage(private var databaseName: String = "cs346-users-db") :IPersisten
                     Updates.set("gluedBelow", gluedBelow),
                 )
             )
-
-            // Update the note's datetime fields
+            // update the note's datetime fields
             notesCollection.updateOne(
                 Filters.eq(article.id),
                 Updates.combine(
@@ -654,8 +637,7 @@ class DBStorage(private var databaseName: String = "cs346-users-db") :IPersisten
                     Updates.set("datetimeAccessed", now)
                 )
             )
-
-            // Update the board's datetime fields
+            // update the board's datetime fields
             boardsCollection.updateOne(
                 Filters.eq(boardId),
                 Updates.combine(
@@ -664,7 +646,6 @@ class DBStorage(private var databaseName: String = "cs346-users-db") :IPersisten
                 )
             )
         }
-
         channel.trySend(job)
         if (await) runBlocking{ job.join() }
     }

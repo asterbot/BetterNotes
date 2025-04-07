@@ -18,7 +18,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.key.*
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.isCtrlPressed
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -53,7 +56,6 @@ internal fun Float.pxToDp(): Dp {
     return (this / LocalDensity.current.density).dp
 }
 
-
 @Composable
 fun NoteButton(
     note: Note,
@@ -68,7 +70,6 @@ fun NoteButton(
     ) {
         Button(
             onClick = {
-                println("DEBUG: Clicked ${note.title}")
                 individualBoardModel.updateNoteAccessed(note, board)
                 ScreenManager.push(navigator, ArticleScreen(board, note))
             },
@@ -157,7 +158,7 @@ fun IndividualBoardView(
         }
     }
 
-    // Sorting for notes
+    // sorting for notes
     var selectedSort by remember { mutableStateOf(individualBoardModel.currentSortType) }
     var reverseOrder by remember { mutableStateOf(individualBoardModel.currentIsReversed) }
     val sortOptions = listOf("Title", "Last Created", "Last Updated", "Last Accessed")
@@ -176,7 +177,7 @@ fun IndividualBoardView(
         applySorting(selectedSort, reverseOrder)
     }
 
-    // Searching / filtering for notes
+    // searching/filtering for notes
     var query by remember { mutableStateOf("") }
     val filteredNotes = if (query.isBlank()) {
         noteList.noteList
@@ -189,7 +190,7 @@ fun IndividualBoardView(
                                     relatedNote.id == relatedNoteId && relatedNote.title.contains(query, ignoreCase = true)
                                 }
                             }
-                            )
+                    )
         }
     }
 
@@ -418,10 +419,7 @@ fun IndividualBoardView(
                                     )
                                 }
                             }
-
-
                         }
-
                         AddNoteMenu(
                             onAddArticle = { openAddArticleDialog.value = true },
                             modifier = Modifier
@@ -485,7 +483,6 @@ fun IndividualBoardView(
                     onConfirmation = { title, desc, relatedNotes, tagColor ->
                         addNote(title, desc, "article", relatedNotes, tagColor)
                         openAddArticleDialog.value = false
-                        println("relatedNotes: $relatedNotes")
                     },
                     onGetOtherNotes = { query ->
                         noteList.noteList.filter {

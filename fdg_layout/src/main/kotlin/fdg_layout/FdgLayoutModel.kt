@@ -38,9 +38,9 @@ class FdgLayoutModel<NodeDataType>: IPublisher() {
         edges.clear()
         graphBuilder()
         println("Graph initialized with ${nodes.size} nodes and ${edges.size} edges")
-        println(nodes)
-        println(edges)
-        println("Dimensions: $canvasWidth x $canvasHeight")
+//        println(nodes)
+//        println(edges)
+//        println("Dimensions: $canvasWidth x $canvasHeight")
         notifySubscribers()
     }
 
@@ -53,7 +53,7 @@ class FdgLayoutModel<NodeDataType>: IPublisher() {
             node.pos.y = Random.nextFloat() * (startDisMultiplier * canvasHeight * 2) - (startDisMultiplier * canvasHeight)
         }
 
-        println("Width: $width, Height: $height")
+        // println("Width: $width, Height: $height")
         notifySubscribers()
     }
 

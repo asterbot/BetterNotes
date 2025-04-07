@@ -2,15 +2,15 @@ package individual_board.model
 
 import boards.entities.Board
 import boards.model.BoardModel
+import individual_board.entities.Note
 import kotlinx.coroutines.runBlocking
+import login.entities.User
 import org.bson.types.ObjectId
+import org.mindrot.jbcrypt.BCrypt
 import shared.persistence.DBStorage
 import shared.persistence.IPersistence
-import kotlin.test.*
-import individual_board.entities.*
-import login.entities.User
-import org.mindrot.jbcrypt.BCrypt
 import java.time.Instant
+import kotlin.test.*
 
 class IndividualBoardModelTest() {
     lateinit var mockDB: IPersistence
@@ -23,12 +23,12 @@ class IndividualBoardModelTest() {
         mockDB = DBStorage("cs346-test-db")
         indvBoardModel = IndvBoardModel(mockDB)
 
-        // Clear the DB before starting
+        // clear the DB before starting
         runBlocking {
             mockDB.clearDB()
         }
 
-        // Add dummy-user in DB if not there already
+        // add dummy-user in DB if not there already
         mockDB.addUser(User(ObjectId(), "dummy-user", BCrypt.hashpw("dummy-password", BCrypt.gensalt())))
 
         board = Board(ObjectId(), name="name1", desc="desc2")
@@ -158,31 +158,31 @@ class IndividualBoardModelTest() {
             datetimeAccessed = "2021-01-02T00:00:00Z"
         )
 
-        // Add the notes in an unsorted order.
+        // add the notes in an unsorted order
         indvBoardModel.noteDict[board.id] = mutableListOf(noteB, noteC, noteA)
 
-        // Sort by Title (alphabetical, case-insensitive).
+        // sort by title (alphabetical, case-insensitive)
         indvBoardModel.sortByTitle(board.id)
         val sortedByTitle = indvBoardModel.noteDict[board.id]!!
         assertEquals("a", sortedByTitle[0].title.lowercase())
         assertEquals("b", sortedByTitle[1].title.lowercase())
         assertEquals("c", sortedByTitle[2].title.lowercase())
 
-        // Sort by Last Created (descending).
+        // sort by Last Created (descending)
         indvBoardModel.sortByDatetimeCreated(board.id)
         val sortedByCreated = indvBoardModel.noteDict[board.id]!!
         assertEquals("2021-01-03T00:00:00Z", sortedByCreated[0].datetimeCreated)
         assertEquals("2021-01-02T00:00:00Z", sortedByCreated[1].datetimeCreated)
         assertEquals("2021-01-01T00:00:00Z", sortedByCreated[2].datetimeCreated)
 
-        // Sort by Last Updated (descending).
+        // sort by Last Updated (descending)
         indvBoardModel.sortByDatetimeUpdated(board.id)
         val sortedByUpdated = indvBoardModel.noteDict[board.id]!!
         assertEquals("2021-01-03T00:00:00Z", sortedByUpdated[0].datetimeUpdated)
         assertEquals("2021-01-02T00:00:00Z", sortedByUpdated[1].datetimeUpdated)
         assertEquals("2021-01-01T00:00:00Z", sortedByUpdated[2].datetimeUpdated)
 
-        // Sort by Last Accessed (descending).
+        // sort by Last Accessed (descending)
         indvBoardModel.sortByDatetimeAccessed(board.id)
         val sortedByAccessed = indvBoardModel.noteDict[board.id]!!
         assertEquals("2021-01-03T00:00:00Z", sortedByAccessed[0].datetimeAccessed)

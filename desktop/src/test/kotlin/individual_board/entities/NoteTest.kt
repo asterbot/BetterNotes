@@ -1,9 +1,7 @@
 package individual_board.entities
-import individual_board.entities.Note
 import org.bson.types.ObjectId
-import kotlin.test.*
 import java.time.Instant
-import individual_board.entities.removeNote
+import kotlin.test.*
 
 
 class NoteTest {
@@ -42,7 +40,7 @@ class NoteTest {
 
     @Test
     fun removeNoteTest() {
-        // Add two notes for testing removal.
+        // add two notes for testing removal
         noteList.add(note1)
         noteList.add(note2)
         val oldCount = noteList.size

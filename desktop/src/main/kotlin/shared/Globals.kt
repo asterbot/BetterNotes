@@ -12,15 +12,15 @@ import boards.view.BoardViewModel
 import boards.view.BoardViewScreen
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.Navigator
-import shared.persistence.DBQueue
-import shared.persistence.DBStorage
-import login.model.LoginModel
-import shared.persistence.Operation
-import individual_board.model.IndvBoardModel as IndividualBoardModel
-import individual_board.view.IndvBoardViewModel as IndividualBoardViewModel
 import fdg_layout.FdgLayoutModel
 import fdg_layout.FdgLayoutViewModel
 import individual_board.entities.Note
+import login.model.LoginModel
+import shared.persistence.DBQueue
+import shared.persistence.DBStorage
+import shared.persistence.Operation
+import individual_board.model.IndvBoardModel as IndividualBoardModel
+import individual_board.view.IndvBoardViewModel as IndividualBoardViewModel
 
 val dbStorage: DBStorage = DBStorage()
 val dbQueue: DBQueue = DBQueue()
@@ -35,9 +35,6 @@ var articleModel = ArticleModel(dbStorage)
 lateinit var articleViewModel: ArticleViewModel
 
 val loginModel = LoginModel(dbStorage)
-
-//val graphModel = GraphModel()
-//val graphViewModel = GraphViewModel(graphModel)
 
 val fdgLayoutModel = FdgLayoutModel<Note>()
 val fdgLayoutViewModel = FdgLayoutViewModel(fdgLayoutModel)
@@ -62,7 +59,7 @@ object LoginManager{
     }
 }
 
-// Managing connection status
+// managing connection status
 
 enum class ConnectionStatus{
     CONNECTED,          // The connection to the DB is successful
@@ -71,7 +68,7 @@ enum class ConnectionStatus{
 }
 
 object ConnectionManager{
-    // Maintains whether there is a DB connection or not
+    // maintains whether there is a DB connection or not
     var connection by mutableStateOf(ConnectionStatus.DISCONNECTED)
     var isConnected by mutableStateOf(false)
 
@@ -81,11 +78,11 @@ object ConnectionManager{
         isConnected = (connection == ConnectionStatus.CONNECTED)
 
         if (previousStatus == ConnectionStatus.CONNECTING && status == ConnectionStatus.CONNECTED){
-            // If you are going from disconnected -> connected, initialize all the models connections and sync DB
+            // if you are going from disconnected -> connected, initialize all the models connections and sync DB
 
             dbQueue.syncDB()
 
-            // These null-checks are needed
+            // these null-checks are needed
             boardModel?.initialize()
             individualBoardModel?.initialize()
             articleModel?.initialize()

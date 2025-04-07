@@ -1,5 +1,4 @@
 package article.entities
-
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
@@ -7,10 +6,7 @@ import kotlinx.serialization.Serializable
 import org.bson.codecs.kotlinx.ObjectIdSerializer
 import org.bson.types.ObjectId
 
-/* Articles */
-
 // Content Blocks
-
 enum class BlockType(
     val createDefaultBlock: () -> ContentBlock
     ) {
@@ -138,10 +134,3 @@ fun MutableList<ContentBlock>.removeContentBlock(element: ContentBlock): Boolean
     this.remove(element)
     return true
 }
-
-//private fun MutableList<Note>.reindex() {
-//    var count = 0
-//    for (note in this) {
-//        note.id = count++
-//    }
-//}

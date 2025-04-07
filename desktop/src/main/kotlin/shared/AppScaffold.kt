@@ -21,22 +21,17 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import individual_board.view.IndividualBoardScreen
 import login.view.LoginViewScreen
 
-
-/*
-Used for content which is meant to be sticky (i.e. shown regardless of which screen you're on)
-*/
+// used for content which is meant to be sticky (i.e. shown regardless of which screen you're on)
 
 @Composable
 fun AppScaffold(StartScreen: Screen) {
-    // This allows us to create "sticky" content (stays on all screens regardless of navigation)
+    // this allows us to create "sticky" content (stays on all screens regardless of navigation)
 
     val openAlertDialog = remember { mutableStateOf(false) }
-
     val loggedIn by derivedStateOf { LoginManager.loggedIn }
 
-    // Create the navigator with the starting screen
     Box(modifier = Modifier.fillMaxSize()) {
-        // The navigator goes in the background
+        // the navigator goes in the background
         Navigator(StartScreen) { _ ->
             // CurrentScreen will render the current screen from the navigator
             CurrentScreen()
@@ -61,11 +56,8 @@ fun AppScaffold(StartScreen: Screen) {
                 DBStatus()
             }
 
-
-
-            // This row stays on top of all screens
-
-            when{
+            // this row stays on top of all screens
+            when {
                 openAlertDialog.value -> {
                     AlertDialog(
                         icon = {
@@ -110,7 +102,6 @@ fun AppScaffold(StartScreen: Screen) {
 fun DBStatus(
     modifier: Modifier = Modifier
 ) {
-//    val connectionStatus by derivedStateOf { ConnectionManager.isConnected }
     val connectionStatus by derivedStateOf { ConnectionManager.connection }
     val isConnected by derivedStateOf { ConnectionManager.isConnected }
 
@@ -157,7 +148,6 @@ fun NavButtons(
             fdgLayoutModel.togglePhysics(false)
         }
     }
-
 
     Row(
         modifier = modifier,
@@ -254,13 +244,13 @@ fun userButton(modifier: Modifier = Modifier){
             onDismissRequest = { expanded = false },
             containerColor = Colors.veryLightTeal
         ) {
-            // Add the greeting item at the top of the dropdown
+            // add the greeting item at the top of the dropdown
             DropdownMenuItem(
                 text = { Text("Hi ${loginModel.currentUser}!", fontWeight = FontWeight.Bold,
                     color = LocalContentColor.current) },
-                onClick = { /* No action needed for greeting */ },
+                onClick = { /* no action needed for greeting */ },
                 enabled = false,
-                // Override the default colors to maintain full opacity when disabled
+                // override the default colors to maintain full opacity when disabled
                 colors = MenuDefaults.itemColors(
                     disabledTextColor = LocalContentColor.current,
                     disabledLeadingIconColor = LocalContentColor.current,
@@ -299,7 +289,7 @@ fun userButton(modifier: Modifier = Modifier){
         }
 
     }
-    when{
+    when {
         changePasswordDialog.value -> {
             ChangePasswordDialog(
                 onDismissRequest = { changePasswordDialog.value = false },
@@ -340,11 +330,11 @@ fun userButton(modifier: Modifier = Modifier){
                 onConfirmation = {
                     currentPassword ->
                         deleteAccountDialog.value = false
-                        if (dbStorage.deleteUser(currentPassword)){
+                        if (dbStorage.deleteUser(currentPassword)) {
                             LoginManager.logOut()
                             navigator.push(LoginViewScreen())
                         }
-                        else{
+                        else {
                             incorrectPasswordError.value = true
                         }
                  }

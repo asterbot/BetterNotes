@@ -20,7 +20,6 @@ fun pingDB(scope: CoroutineScope) { // this: CoroutineScope
     scope.launch {
         while (true) {
             delay(100L)
-//            println("Pinging DB")
             dbStorage.pingDB()
         }
     }

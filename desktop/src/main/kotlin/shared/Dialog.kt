@@ -16,9 +16,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -82,7 +82,6 @@ fun AddBoardDialog(
 
     var boardName by remember { mutableStateOf(TextFieldValue("")) }
     var boardDesc by remember { mutableStateOf(TextFieldValue("")) }
-
     var isError by remember { mutableStateOf(false) }
 
     AlertDialog(
@@ -90,7 +89,7 @@ fun AddBoardDialog(
         title = { Text(text = "Add Board") },
         text = {
             Column(modifier = Modifier.padding(16.dp)) {
-                // Input field for title
+                // input field for title
                 TextField(
                     value = boardName,
                     onValueChange = { newText ->
@@ -103,7 +102,7 @@ fun AddBoardDialog(
                     colors = textFieldColours()
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                // Input field for description
+                // input field for description
                 TextField(
                     value = boardDesc,
                     onValueChange = { boardDesc = it },
@@ -193,7 +192,6 @@ fun AddNoteDialog(
     var colors = tagColorMap.keys.toList()
     var selectedColor by remember { mutableStateOf<String?>("default") }
 
-
     // related notes
     var query by remember { mutableStateOf("") }
     var suggestions by remember { mutableStateOf(listOf<Note>()) }
@@ -212,7 +210,7 @@ fun AddNoteDialog(
         title = { Text(text = "Add ${type}") },
         text = {
             Column(modifier = Modifier.padding(16.dp)) {
-                // Input field for title
+                // input field for title
                 TextField(
                     value = noteTitle,
                     onValueChange = { newText ->
@@ -225,7 +223,7 @@ fun AddNoteDialog(
                     colors = textFieldColours()
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                // Input field for description
+                // input field for description
                 TextField(
                     value = noteDesc,
                     onValueChange = { noteDesc = it },
@@ -250,7 +248,6 @@ fun AddNoteDialog(
                     }
                 }
 
-
                 Spacer(modifier = Modifier.height(8.dp))
                 val suggestionListState = rememberLazyListState()
 
@@ -262,7 +259,7 @@ fun AddNoteDialog(
                     colors = textFieldColours()
                 )
 
-                // Make the height of the suggestions block dynamic
+                // make the height of the suggestions block dynamic
                 val suggestionsHeight = remember(suggestions.size) {
                     val itemHeight = 40
                     val totalHeight = minOf(suggestions.size * itemHeight, 2*itemHeight) // Cap at 2 blocks
@@ -272,7 +269,7 @@ fun AddNoteDialog(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(suggestionsHeight) // Use the calculated height
+                        .height(suggestionsHeight) // use the calculated height
                 ) {
                     LazyColumn(
                         state = suggestionListState,
@@ -286,11 +283,11 @@ fun AddNoteDialog(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable {
-                                        // Add the note if it's not already selected
+                                        // add the note if it's not already selected
                                         if (note !in relatedNotes) {
                                             relatedNotes = relatedNotes + note
                                         }
-                                        // Clear the query and suggestions once a selection is made
+                                        // clear the query and suggestions once a selection is made
                                         query = ""
                                         suggestions = suggestions.filter { it !in relatedNotes }
                                     }
@@ -304,7 +301,7 @@ fun AddNoteDialog(
                     )
                 }
                 Spacer(modifier = Modifier.height(8.dp))
-                // Display selected related notes as chips (or simple texts)
+                // display selected related notes as chips (or simple texts)
                 if (relatedNotes.isNotEmpty()) {
                     Text("Related Notes:", color=Colors.darkGrey)
                     FlowRow(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), horizontalArrangement = Arrangement.Start) {
@@ -389,7 +386,7 @@ fun EditBoardDialog(
         title = { Text(text = "Edit Board") },
         text = {
             Column(modifier = Modifier.padding(16.dp)) {
-                // Input field for title
+                // input field for title
                 TextField(
                     value = newBoardName,
                     onValueChange = { newText ->
@@ -402,7 +399,7 @@ fun EditBoardDialog(
                     colors = textFieldColours()
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                // Input field for description
+                // input field for description
                 TextField(
                     value = newBoardDesc,
                     onValueChange = { newBoardDesc = it },
@@ -474,11 +471,10 @@ fun EditNoteDialog(
 
     var isError by remember { mutableStateOf(false) }
 
-    // Update suggestions on query change
+    // update suggestions on query change
     LaunchedEffect(query) {
         suggestions = onGetOtherNotes(query)
     }
-
     suggestions = suggestions.filter { it !in relatedNotes }
 
     AlertDialog(
@@ -486,7 +482,7 @@ fun EditNoteDialog(
         title = { Text(text = "Edit note") },
         text = {
             Column(modifier = Modifier.padding(16.dp)) {
-                // Title field
+                // title field
                 TextField(
                     value = newNoteTitle,
                     onValueChange = { newText ->
@@ -535,7 +531,7 @@ fun EditNoteDialog(
                     colors = textFieldColours()
                 )
 
-                // Make the height of the suggestions block dynamic
+                // make the height of the suggestions block dynamic
                 val suggestionsHeight = remember(suggestions.size) {
                     val itemHeight = 40
                     val totalHeight = minOf(suggestions.size * itemHeight, 2*itemHeight) // Cap at 2 blocks
@@ -545,9 +541,9 @@ fun EditNoteDialog(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(suggestionsHeight) // Use the calculated height
+                        .height(suggestionsHeight) // use the calculated height
                 ) {
-                    // Suggestions list
+                    // suggestions list
                     LazyColumn(
                         state = suggestionListState,
                         modifier = Modifier
@@ -578,7 +574,7 @@ fun EditNoteDialog(
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
-                // Chips for current related notes
+                // chips for current related notes
                 if (relatedNotes.isNotEmpty()) {
                     Text("Related Notes:")
                     FlowRow(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), horizontalArrangement = Arrangement.Start) {
@@ -812,7 +808,7 @@ fun ChangePasswordDialog(
         title = { Text(text = "Change Password") },
         text = {
             Column(modifier = Modifier.padding(16.dp)) {
-                // Input field for title
+                // input field for title
                 OutlinedTextField(
                     value = oldPassword,
                     onValueChange = { oldPassword = it },
@@ -834,7 +830,7 @@ fun ChangePasswordDialog(
                     colors = outlinedTextFieldColours()
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                // Input field for description
+                // input field for description
                 OutlinedTextField(
                     value = newPassword,
                     onValueChange = { newPassword = it },
@@ -856,7 +852,7 @@ fun ChangePasswordDialog(
                     colors = outlinedTextFieldColours()
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                // Input field for description
+                // input field for description
                 OutlinedTextField(
                     value = confirmPassword,
                     onValueChange = { confirmPassword = it },
@@ -878,7 +874,7 @@ fun ChangePasswordDialog(
                     colors = outlinedTextFieldColours()
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                // Password verifier
+                // password verifier
                 PasswordCriteriaDisplay(newPassword.text)
             }
 
@@ -935,7 +931,7 @@ fun DeleteAccountDialog(
         title = { Text(text = "Delete Account") },
         text = {
             Column(modifier = Modifier.padding(16.dp)) {
-                // Input field for title
+                // input field for title
                 Text("This will delete EVERYTHING you own. Are you sure?", color = Colors.errorColor)
                 OutlinedTextField(
                     value = currentPassword,

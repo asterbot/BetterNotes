@@ -18,7 +18,6 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
@@ -96,7 +95,7 @@ fun ArticleCompose(board: Board, article: Note) {
     var debugState by remember { mutableStateOf(false) }
 
     fun changeSelectedBlock(selectedBlock: Int?) {
-        println("Moved from block $prevSelectedBlock to block $selectedBlock")
+        // println("Moved from block $prevSelectedBlock to block $selectedBlock")
         if (prevSelectedBlock != selectedBlock) {
             if (prevSelectedBlock != null && currEditedText.value != null) {
                 val currBlock = articleViewModel.contentBlocksList[prevSelectedBlock!!]
@@ -123,7 +122,7 @@ fun ArticleCompose(board: Board, article: Note) {
     }
 
     // detect when we change blocks (i.e, change focus)
-    // we will only push to the db when focus shifts, so that we don't spam the db with each character change
+    // we will only push to the db when focus shifts, so that we don't spam the DB with each character change
     LaunchedEffect(selectedBlock) {
         changeSelectedBlock(selectedBlock)
     }
@@ -203,7 +202,6 @@ fun ArticleCompose(board: Board, article: Note) {
             )
 
             // row containing any useful functionality (as buttons)
-            // so far, "return to previous course" and "DEBUG" buttons
             Row(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
@@ -215,46 +213,6 @@ fun ArticleCompose(board: Board, article: Note) {
                         ScreenManager.push(navigator, IndividualBoardScreen(board))
                     }
                 ) { Text("Back to ${board.name} Board") }
-
-//                Button(
-//                    colors = textButtonColours(),
-//                    onClick = {
-//                        println("DEBUG (THE BLOCKS):")
-//                        // println("FROM MODEL: ${articleModel.contentBlockDict}")
-//                        println("FROM MODEL:")
-//                        articleModel.contentBlockDict[article.id]?.let {articleContentBlocks ->
-//                            for (contentBlock in articleContentBlocks) {
-//                                println("-----------------------------------------------")
-//                                println("Glued Above? ${contentBlock.gluedAbove}")
-//                                if (contentBlock.blockType == BlockType.CANVAS) {
-//                                    println()
-//                                    println("\tCANVAS HAS ${(contentBlock as CanvasBlock).bList.size} PATHS")
-//                                } else if (contentBlock.blockType == BlockType.MEDIA) {
-//                                    println("\tMEDIA HAS ${((contentBlock as MediaBlock).bList.size)} BYTE ARRAY")
-//                                }
-//                                else {
-//                                    println("\t$contentBlock")
-//                                }
-//                                println("Glued Below? ${contentBlock.gluedBelow}")
-//                            }
-//                        }
-//                        // println("FROM VIEWMODEL: ${contentBlocksList.contentBlocksList}")
-//                        println("FROM VIEWMODEL:")
-//                        for (contentBlock in articleViewModel.contentBlocksList) {
-//                            println("Glued Above? ${contentBlock.gluedAbove}")
-//                            if (contentBlock.blockType == BlockType.CANVAS) {
-//                                println("\tCANVAS HAS ${(contentBlock as CanvasBlock).bList.size} PATHS")
-//                            } else if (contentBlock.blockType == BlockType.MEDIA) {
-//                                println("\tMEDIA HAS ${((contentBlock as MediaBlock).bList.size)} BYTE ARRAY")
-//                            }
-//                            else {
-//                                println("\t$contentBlock")
-//                            }
-//                            println("Glued Below? ${contentBlock.gluedBelow}")
-//                        }
-//                        debugState = !debugState
-//                    }
-//                ) { Text(text = "DEBUG") }
             }
 
             // code for dropdown menu, linking to other boards
@@ -349,15 +307,13 @@ fun ArticleCompose(board: Board, article: Note) {
                         onBlockClick = {
                             // if currently selected, deselect (else, select as normal)
                             selectedBlock = if (selectedBlock == index) null else index
-                            println("DEBUG: Selecting block at index $index")
+                            // println("DEBUG: Selecting block at index $index")
                         },
                         selectAtIndex = ::selectAtIndex,
                         board = board,
                         gluedAbove = block.gluedAbove,
                         gluedBelow = block.gluedBelow,
-                        numContentBlocks = articleViewModel.contentBlocksList.size,
-                        currEditedText = currEditedText,
-                        debugState = debugState
+                        numContentBlocks = articleViewModel.contentBlocksList.size
                     )
 
                     // visually disconnect blocks if not glued
@@ -385,9 +341,7 @@ fun BlockFrame(
     board: Board,
     gluedAbove: Boolean,
     gluedBelow: Boolean,
-    numContentBlocks: Int,
-    currEditedText: MutableState<String?>,
-    debugState: Boolean,
+    numContentBlocks: Int
 ) {
     var block by remember { mutableStateOf(articleViewModel.contentBlocksList[blockIndex]) }
 
@@ -429,7 +383,6 @@ fun BlockFrame(
                 }
             }
 
-
             GluedBlockBorder(gluedAbove, "Above")
 
             Box(
@@ -459,7 +412,6 @@ fun BlockFrame(
                         AddBlockFrameButton(article, blockIndex, "UP", selectAtIndex, board)
                     }
 
-                    // TODO: replace this with generalizable code for all ContentBlocks
                     if (block.blockType in
                         listOf(
                             BlockType.PLAINTEXT,
@@ -522,7 +474,6 @@ fun BlockFrame(
                             }
                         }
                     }
-
 
                     if (block.blockType == BlockType.MARKDOWN && !isSelected) {
                         val markdownHandler = MarkdownHandler((block as MarkdownBlock).text)
@@ -625,7 +576,6 @@ fun BlockFrame(
                             }
                         )
                     }
-
                     if (isSelected) {
                         AddBlockFrameButton(article, blockIndex, "DOWN", selectAtIndex, board)
                     }
@@ -645,7 +595,7 @@ fun addGraph(
     yMin: Double = -10.0,
     yMax: Double = 10.0
 ) {
-    // Create a general expression from the MST
+    // create a general expression from the MST
     val expression = mst.compileToExpression(Float64Field)
     var unrecognized = false
 
@@ -662,7 +612,7 @@ fun addGraph(
                     result.add(Pair(x, y))
 
                 } catch (e: Exception) {
-                    // Skip points where evaluation fails
+                    // ckip points where evaluation fails
                 }
             }
             result
@@ -701,9 +651,9 @@ fun addGraph(
                         strokeWidth = 2f
                     )
 
-                    // Function
+                    // plot the function
                     if (points.size >= 2) {
-                        val path = androidx.compose.ui.graphics.Path()
+                        val path = Path()
                         var firstPoint = true
 
                         for ((x, y) in points) {
@@ -720,7 +670,7 @@ fun addGraph(
                         drawPath(path, Color.Blue, style = Stroke(width = 3f))
                     }
 
-                    // Grid
+                    // draw the grid
                     val gridColor = Color.LightGray.copy(alpha = 0.5f)
                     val gridStep = 1.0
 
@@ -753,19 +703,10 @@ fun addGraph(
     }
 }
 
-fun cropImage() {
-
-}
-
 fun loadImageFromBytes(imageBytes: ByteArray): ImageBitmap? {
     return try {
-        // Create an InputStream from the byte array
         val inputStream = ByteArrayInputStream(imageBytes)
-
-        // Use ImageIO to read the image
         val bufferedImage: BufferedImage = ImageIO.read(inputStream)
-
-        // Convert the BufferedImage to ImageBitmap (for Jetpack Compose)
         bufferedImage.toComposeImageBitmap()
     } catch (e: NullPointerException) {
         println("Error loading image: ${e.message}")
@@ -775,13 +716,12 @@ fun loadImageFromBytes(imageBytes: ByteArray): ImageBitmap? {
 
 @Composable
 fun addMedia(block: ContentBlock, isSelected: Boolean = true, onMediaUpdate: (MutableList<Byte>) -> Unit) {
-    // Initialize the byte list from the block
+    // initialize byte list from the block
     val initialBytes = when (block.blockType) {
         BlockType.MEDIA -> (block as MediaBlock).bList
         else -> mutableListOf()
     }
 
-    // Use remember to maintain state across recompositions
     var imageBytes by remember { mutableStateOf(initialBytes) }
     var filePath by remember { mutableStateOf<String?>(null) }
 
@@ -800,7 +740,6 @@ fun addMedia(block: ContentBlock, isSelected: Boolean = true, onMediaUpdate: (Mu
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // filePath == null && imageBytes.isEmpty()
         if (isSelected) {
             TextButton(
                 colors = textButtonColours(),
@@ -812,7 +751,6 @@ fun addMedia(block: ContentBlock, isSelected: Boolean = true, onMediaUpdate: (Mu
 
         if (imageBytes.isNotEmpty()) {
             onMediaUpdate(imageBytes)
-//        val imageBitmap = makeFromEncoded(imageBytes.toByteArray()).toComposeImageBitmap()
             val imageBitmap = loadImageFromBytes(imageBytes.toByteArray())
 
             if (imageBitmap != null) {
@@ -823,8 +761,7 @@ fun addMedia(block: ContentBlock, isSelected: Boolean = true, onMediaUpdate: (Mu
                         .pointerInput(Unit) {
                             detectTapGestures(
                                 onDoubleTap = {
-                                    cropImage()
-                                    println("crop mode :)")
+                                    // println("crop mode :)")
                                 }
                             )
                         }
@@ -850,7 +787,7 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int,
     var isResizing by remember { mutableStateOf(false) }
     val resizeThreshold = LocalDensity.current.run { 30 }
     var isGrid by remember { mutableStateOf(false) }
-    val focusRequester = remember { FocusRequester() } // Controls focus
+    val focusRequester = remember { FocusRequester() } // controls focus
     var firstOpened by remember { mutableStateOf(true) }
 
     val initialBytes = when (block.blockType) {
@@ -868,10 +805,10 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int,
                 if (!state.hasFocus) {
                     if (firstOpened) {
                         firstOpened = false
-                        println("That's one warning...")
+                        // println("That's one warning...")
                     } else {
                         onCanvasUpdate(canvasToBytes(paths).toMutableList(), canvasHeight, null)
-                        println("Closing this instant")
+                        // println("Closing this instant")
                     }
                 }
             }
@@ -894,13 +831,13 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int,
                     modifier = Modifier.fillMaxWidth().background(Colors.lightGrey)
 
                 ) {
-                    // Top control bar
+                    // top control bar
                     Row(
                         modifier = Modifier.align(Alignment.Center),
                         horizontalArrangement = Arrangement.spacedBy(20.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Column() {
+                        Column {
                             Row(
                                 modifier = Modifier.defaultMinSize(30.dp),
                                 verticalAlignment = Alignment.CenterVertically,
@@ -908,7 +845,6 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int,
                             ) {
                                 Text("Current: ", fontSize = 14.sp)
                                 if (isErasing) {
-                                    println("I WANNA ERASE")
                                     Icon(
                                         imageVector = Icons.AutoMirrored.Filled.Backspace,
                                         contentDescription = "The best eraser icon I could find",
@@ -943,7 +879,7 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int,
                                     }
                                 }
                             }
-                            // Stroke width slider
+                            // stroke width slider
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -1008,8 +944,7 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int,
                     }
                 }
 
-
-                // Drawing canvas
+                // drawing canvas
                 Box(modifier = Modifier.fillMaxWidth().height(canvasHeight.dp).clipToBounds()) {
                     Canvas(
                         modifier = Modifier
@@ -1034,7 +969,7 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int,
                                                         (point - offset).getDistance() < eraserSize
                                                     }
                                                 }
-                                                println("So tired")
+                                                // println("So tired")
                                             } else {
                                                 currentPath = listOf(offset)
                                             }
@@ -1060,7 +995,7 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int,
                                                         }
                                                     }
 
-                                                    println("wanna sleep")
+                                                    // println("wanna sleep")
                                                 } else {
                                                     currentPath = currentPath + change.position
                                                 }
@@ -1088,7 +1023,7 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int,
                                 )
                             }
                     ) {
-                        // Draw all saved paths
+                        // draw all saved paths
                         paths.forEach { path ->
                             for (i in 0 until path.points.size - 1) {
                                 drawLine(
@@ -1100,6 +1035,7 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int,
                             }
                         }
 
+                        // draw grid
                         if (isGrid) {
                             for (i in 0..size.width.toInt() step 20) {
                                 drawLine(
@@ -1120,7 +1056,7 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int,
                         }
 
                         if (isDrawing) {
-                            // Draw current path
+                            // draw current path
                             for (i in 0 until currentPath.size - 1) {
                                 drawLine(
                                     color = selectedColor,
@@ -1152,69 +1088,13 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int,
                         }
                     }
                 }
-
-                // Bottom action buttons
-                //            Row(
-                //                modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-                //                horizontalArrangement = Arrangement.SpaceBetween
-                //            ) {
-                //                Button(
-                //                    onClick = { showDrawingsList = !showDrawingsList },
-                //                    modifier = Modifier.padding(end = 8.dp)
-                //                ) {
-                //                    Text(if (showDrawingsList) "Hide Drawings" else "Show Drawings")
-                //                }
-                //
-                //                Row {
-                //                    Button(
-                //                        onClick = { paths = mutableListOf() },
-                //                        modifier = Modifier.padding(end = 8.dp)
-                //                    ) {
-                //                        Icon(Icons.Default.Clear, contentDescription = "Clear")
-                //                        Spacer(Modifier.width(4.dp))
-                //                        Text("Clear")
-                //                    }
-
-                //                    Button(
-                //                        onClick = {
-                //                            scope.launch {
-                //                                // Convert canvas to bytes
-                //                                val bytes = canvasToBytes(paths, canvasWidth, canvasHeight)
-                //
-                //                                // Create or update drawing
-                //                                val drawing = Drawing(
-                //                                    id = currentDrawingId ?: UUID.randomUUID().toString(),
-                //                                    name = currentDrawingName,
-                //                                    width = canvasWidth,
-                //                                    height = canvasHeight,
-                //                                    imageData = bytes
-                //                                )
-                //
-                //                                // Save to MongoDB
-                //                                drawingRepository.saveDrawing(drawing)
-                //
-                //                                // Update current drawing ID
-                //                                currentDrawingId = drawing.id
-                //
-                //                                // Refresh drawings list
-                //                                drawings = drawingRepository.getAllDrawings()
-                //                            }
-                //                        },
-                //                        modifier = Modifier.padding(end = 8.dp)
-                //                    ) {
-                //                        Icon(Icons.Default.Save, contentDescription = "Save")
-                //                        Spacer(Modifier.width(4.dp))
-                //                        Text("Save")
-                //                    }
-                //                }
-                //            }
             }
         }
     }
 }
-// Convert canvas paths to bytes for storage
+
+// convert canvas paths to bytes for storage
 fun canvasToBytes(paths: List<PathData>): ByteArray {
-    // Instead of direct pixel manipulation, we'll serialize the path data
     val pathData = ByteArrayOutputStream()
     val numPaths = paths.size
     pathData.write(ByteBuffer.allocate(4).putInt(numPaths).array())
@@ -1227,67 +1107,54 @@ fun canvasToBytes(paths: List<PathData>): ByteArray {
             .putFloat(path.color.blue)
             .putFloat(path.color.alpha).array())
 
-        // Stroke width (1 float)
+        // stroke width (1 float)
         pathData.write(ByteBuffer.allocate(4).putFloat(path.strokeWidth).array())
 
-        // Number of points
+        // number of points
         val numPoints = path.points.size
         pathData.write(ByteBuffer.allocate(4).putInt(numPoints).array())
 
-        // Points (each point is 2 floats: x, y)
+        // points (each point is 2 floats: x, y)
         path.points.forEach { point ->
             pathData.write(ByteBuffer.allocate(8).putFloat(point.x).putFloat(point.y).array())
         }
     }
-
     return pathData.toByteArray()
 }
 
-// Convert stored bytes back to paths for rendering
+// convert stored bytes back to paths for rendering
 fun bytesToPaths(bytes: ByteArray): MutableList<PathData> {
     val paths = mutableListOf<PathData>()
     val buffer = ByteBuffer.wrap(bytes)
 
     try {
-        // Number of paths
+        // number of paths
         val numPaths = buffer.getInt()
 
-        // Read each path
+        // read each path
         for (i in 0 until numPaths) {
-            // Color
+
             val red = buffer.getFloat()
             val green = buffer.getFloat()
             val blue = buffer.getFloat()
             val alpha = buffer.getFloat()
             val color = Color(red, green, blue, alpha)
 
-            // Stroke width
             val strokeWidth = buffer.getFloat()
-
-            // Number of points
             val numPoints = buffer.getInt()
 
-            // Points
+            // points
             val points = mutableListOf<Offset>()
             for (j in 0 until numPoints) {
                 val x = buffer.getFloat()
                 val y = buffer.getFloat()
                 points.add(Offset(x, y))
             }
-
-fun isPointNearPath(point: Offset, path: Path, threshold: Float = 20f): Boolean {
-    val pathBounds = path.getBounds()
-    return (point.x in (pathBounds.left - threshold)..(pathBounds.right + threshold) &&
-            point.y in (pathBounds.top - threshold)..(pathBounds.bottom + threshold))
-}
-
             paths.add(PathData(points, color, strokeWidth))
         }
     } catch (e: Exception) {
         println("Error reading path data: ${e.message}")
-        // Return empty paths on error
     }
-
     return paths
 }
 
@@ -1306,7 +1173,7 @@ fun EditableTextBox(
     }
 
     var textFieldValue by remember { mutableStateOf<String>(startText) }
-    val focusRequester = remember { FocusRequester() } // Controls focus
+    val focusRequester = remember { FocusRequester() } // controls focus
 
     var textStyle = when (block.blockType) {
         BlockType.CODE -> TextStyle(
@@ -1326,18 +1193,18 @@ fun EditableTextBox(
                 if (!state.hasFocus) {
                     if (firstOpened) {
                         firstOpened = false
-                        println("That's one warning...")
+                        // println("That's one warning...")
                     } else {
                         onTextChange(textFieldValue)
-                        println("Closing this instant")
+                        // println("Closing this instant")
                     }
                 }
             }
             .focusable()
             .clickable(
-                interactionSource = remember { MutableInteractionSource() }, // Prevents ripple effect
+                interactionSource = remember { MutableInteractionSource() }, // prevents ripple effect
                 indication = null
-            ) { focusRequester.requestFocus() } // Ensure click brings focus
+            ) { focusRequester.requestFocus() } // ensures that click brings focus
             .padding(horizontal = 12.dp, vertical = 8.dp)
             .background(if (block.blockType == BlockType.CODE) Colors.black else Colors.white)
     ) {
@@ -1350,7 +1217,7 @@ fun EditableTextBox(
             modifier = Modifier
                 .background(if (block.blockType == BlockType.CODE) Colors.black else Colors.white)
                 .fillMaxWidth()
-                .focusRequester(focusRequester) // Attach focus requester to manage focus
+                .focusRequester(focusRequester) // attach focus requester to manage focus
                 .onKeyEvent { true }, // prevents weird visual glitch from happening
             textStyle = textStyle,
             cursorBrush = SolidColor(if (block.blockType == BlockType.CODE) Color.Green else Colors.black)
@@ -1511,7 +1378,6 @@ fun BlockFrameMenu(index: Int, buttonFuncs: Map<String, (Int) -> Unit>, numConte
 
 
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun AddBlockFrameButton(article: Note, index: Int, direction: String, selectAtIndex: (Int) -> Unit, board: Board) {
     // these buttons add a new (empty) ContentBlock above/below (depends on direction) the currently selected block
@@ -1536,8 +1402,6 @@ fun AddBlockFrameButton(article: Note, index: Int, direction: String, selectAtIn
                 modifier = Modifier.size(35.dp)
             )
         }
-
-        // Tooltip text that follows the mouse cursor
         if (isHovered) {
             Box(
                 modifier = Modifier
@@ -1563,8 +1427,6 @@ fun InsertBlockTypesMenu(article: Note, index: Int, direction: String, selectAtI
         "UP" -> index
         else -> index + 1 // the "DOWN" case
     }
-
-    println("DEBUG: CLICKED for index $index, direction $direction")
 
     Row(
         horizontalArrangement = Arrangement.spacedBy(5.dp),
