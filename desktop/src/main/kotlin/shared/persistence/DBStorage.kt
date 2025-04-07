@@ -15,6 +15,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.flow.firstOrNull
 import login.entities.User
+import org.bson.BsonDocument
 import org.bson.BsonInt64
 import org.bson.Document
 import org.bson.types.ObjectId
@@ -24,14 +25,12 @@ import shared.ConnectionStatus
 import shared.loginModel
 import java.time.Instant
 
-class DBStorage() :IPersistence {
-    // Call connect() before using DB
+class DBStorage(private var databaseName: String = "cs346-users-db") :IPersistence {
+    // call connect() before using DB
 
     private val dotenv = dotenv()
 
     private val connectionString = dotenv["CONNECTION_STRING"]
-
-    private val databaseName = "cs346-users-db"
 
     private val uri = connectionString
 
@@ -41,7 +40,7 @@ class DBStorage() :IPersistence {
     private lateinit var boardsCollection: MongoCollection<Board>
     private lateinit var notesCollection: MongoCollection<Note>
 
-    // We need both collections since reading to polymorphic types requires de-serializing
+    // we need both collections since reading to polymorphic types requires de-serializing
     //   however adding can be done as is done for the other types
     private lateinit var contentBlocksDocumentCollection: MongoCollection<Document>
     private lateinit var contentBlockCollection: MongoCollection<ContentBlock>
@@ -49,10 +48,10 @@ class DBStorage() :IPersistence {
     private lateinit var usersCollection: MongoCollection<User>
 
 
-    // To make everything run in a coroutine!
+    // to make everything run in a coroutine!
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
-    // This ensures mutual exclusion
+    // this ensures mutual exclusion
     //     i.e. a thread will finish running before starting a new one (BUT IN THE BACKGROUND)
     //     this is different from thread.join() which will force the foreground to wait for completion
     private val channel = Channel<Job>(capacity = Channel.UNLIMITED).apply {
@@ -98,6 +97,12 @@ class DBStorage() :IPersistence {
 
     }
 
+    override suspend fun clearDB(){
+        boardsCollection.deleteMany(BsonDocument())
+        notesCollection.deleteMany(BsonDocument())
+        contentBlockCollection.deleteMany(BsonDocument())
+    }
+
     override suspend fun pingDB(): Boolean {
         return try {
             // ping logic
@@ -123,18 +128,18 @@ class DBStorage() :IPersistence {
     }
 
 
-    override fun updatePassword(oldPassword: String, newPassword: String): Boolean {
+    override fun updatePassword(oldPassword: String, newPassword: String, username: String): Boolean {
         val userData: User?
         runBlocking {
-            userData = usersCollection.find(Filters.eq(User::userName.name, loginModel.currentUser)).firstOrNull()
+            userData = usersCollection.find(Filters.eq(User::userName.name, username)).firstOrNull()
         }
         if (!BCrypt.checkpw(oldPassword, userData?.passwordHash)){
-            // Old password does not match!
+            // old password does not match!
             return false
         }
         runBlocking {
             usersCollection.updateOne(
-                Filters.eq(User::userName.name, loginModel.currentUser),
+                Filters.eq(User::userName.name, username),
                 Updates.combine(
                     Updates.set("passwordHash", BCrypt.hashpw(newPassword, BCrypt.gensalt()))
                 )
@@ -149,8 +154,8 @@ class DBStorage() :IPersistence {
         runBlocking {
             userData = usersCollection.find(Filters.eq(User::userName.name, user.userName)).firstOrNull()
         }
-        if (userData != null || user.userName == "dummy-user") {
-            // I won't let the user take dummy-user because that's our placeholder name :D
+        if (userData != null) {
+            // i won't let the user take dummy-user because that's our placeholder name :D
             return false
         }
         runBlocking {
@@ -168,30 +173,38 @@ class DBStorage() :IPersistence {
             // user not in DB
             return false;
         }
-
-        // Return whether password matches record in DB
+        // return whether password matches record in DB
         return BCrypt.checkpw(password, userData.passwordHash)
     }
 
-    override fun deleteUser(password: String): Boolean {
+    override fun deleteUser(password: String, username:String): Boolean {
         val userData: User?
         runBlocking {
-            userData = usersCollection.find(Filters.eq(User::userName.name, loginModel.currentUser)).firstOrNull()
+            userData = usersCollection.find(Filters.eq(User::userName.name, username)).firstOrNull()
         }
         if (!BCrypt.checkpw(password, userData?.passwordHash)){
-            // Old password does not match!
+            // old password does not match!
             return false
         }
 
         runBlocking {
-            boardsCollection.deleteMany(Filters.eq(Board::userId.name, loginModel.currentUser))
-            notesCollection.deleteMany(Filters.eq(Note::userId.name, loginModel.currentUser))
-            contentBlockCollection.deleteMany(Filters.eq(Note::userId.name, loginModel.currentUser))
-            usersCollection.deleteOne(Filters.eq(User::userName.name, loginModel.currentUser))
+            boardsCollection.deleteMany(Filters.eq(Board::userId.name, username))
+            notesCollection.deleteMany(Filters.eq(Note::userId.name, username))
+            contentBlockCollection.deleteMany(Filters.eq(Note::userId.name, username))
+            usersCollection.deleteOne(Filters.eq(User::userName.name, username))
         }
         return true
     }
 
+    override fun readUsers(): List<User> {
+        val users = mutableListOf<User>()
+        runBlocking {
+            usersCollection.find().collect {
+                users.add(it)
+            }
+        }
+        return users
+    }
 
     override fun readBoards(): List<Board> {
         val boards = mutableListOf<Board>()
@@ -201,32 +214,28 @@ class DBStorage() :IPersistence {
                 boards.add(it)
             }
         }
-
         return boards
     }
 
     override fun addBoard(board: Board) {
         board.userId = loginModel.currentUser
-        val job = coroutineScope.launch {
+        runBlocking {
             boardsCollection.insertOne(board)
         }
-        channel.trySend(job)
     }
 
     override fun deleteBoard(boardId: ObjectId, noteIds: List<ObjectId>) {
-        val job = coroutineScope.launch {
-            // Delete all the notes associated with the board
+        runBlocking {
+            // delete all the notes associated with the board
             noteIds.forEach {
                 deleteNote(it, boardId)
             }
-
             boardsCollection.deleteOne(Filters.eq(boardId))
         }
-        channel.trySend(job)
     }
 
     override fun updateBoard(boardId: ObjectId, name: String, desc: String, notes: List<ObjectId>) {
-        val job = coroutineScope.launch {
+        runBlocking {
             boardsCollection.updateOne(
                 Filters.eq(boardId),
                 Updates.combine(
@@ -238,10 +247,9 @@ class DBStorage() :IPersistence {
                 )
             )
         }
-        channel.trySend(job)
     }
 
-    // This is specifically for updating the datetimeAccessed field
+    // this is specifically for updating the datetimeAccessed field
     override fun updateBoardAccessed(boardId: ObjectId,) {
         val job = coroutineScope.launch {
             boardsCollection.updateOne(
@@ -251,7 +259,6 @@ class DBStorage() :IPersistence {
         }
         channel.trySend(job)
     }
-
 
     override fun readNotes(): MutableMap<ObjectId, MutableList<Note>> {
         val toRet: MutableMap<ObjectId, MutableList<Note>> = mutableMapOf()
@@ -285,7 +292,6 @@ class DBStorage() :IPersistence {
                     Updates.set("datetimeAccessed", Instant.now().toString())
                 )
             )
-
         }
         channel.trySend(job)
         if (await) runBlocking { job.join() }
@@ -301,7 +307,6 @@ class DBStorage() :IPersistence {
             }
 
             notesCollection.deleteOne(Filters.eq(noteId))
-
             // Remove the note's ObjectId from the board's notes array
             boardsCollection.updateOne(
                 Filters.eq(boardId),
@@ -406,14 +411,12 @@ class DBStorage() :IPersistence {
                                 id = block.getObjectId("_id"),
                                 text = block.getString("text"),
                             )
-                            "MEDIA" ->{
+                            "MEDIA" -> {
                                 val bList = block["bList"] as? List<*>
                                 println(bList!!::class)
                                 val byteList = bList.mapNotNull {
                                     (it as? Number)?.toByte()
                                 }.toMutableList()
-
-
                                 MediaBlock(
                                     id = block.getObjectId("_id"),
                                     bList = byteList
@@ -447,10 +450,9 @@ class DBStorage() :IPersistence {
         await: Boolean
     ) {
         val now = Instant.now().toString()
-
         val job = coroutineScope.launch {
 
-            // Update the content block in the content block collection
+            // update the content block in the content block collection
             contentBlocksDocumentCollection.updateOne(
                 Filters.eq(contentBlockId),
                 Updates.combine(
@@ -458,8 +460,7 @@ class DBStorage() :IPersistence {
                     Updates.set("gluedBelow", gluedBelow)
                 )
             )
-
-            // Update the note's datetime fields
+            // update the note's datetime fields
             notesCollection.updateOne(
                 Filters.eq(articleId),
                 Updates.combine(
@@ -467,8 +468,7 @@ class DBStorage() :IPersistence {
                     Updates.set("datetimeAccessed", now)
                 )
             )
-
-            // Update the board's datetime fields
+            // update the board's datetime fields
             boardsCollection.updateOne(
                 Filters.eq(boardId),
                 Updates.combine(
@@ -615,13 +615,9 @@ class DBStorage() :IPersistence {
     ) {
         val now = Instant.now().toString()
 
-        println(block.id)
-        println("MADE IT HERE")
-        println(canvasHeight)
 
         val job = coroutineScope.launch {
-
-            // Update the content block in the content block collection
+            // update the content block in the content block collection
             contentBlocksDocumentCollection.updateOne(
                 Filters.eq(block.id),
                 Updates.combine(
@@ -633,8 +629,7 @@ class DBStorage() :IPersistence {
                     Updates.set("gluedBelow", gluedBelow),
                 )
             )
-
-            // Update the note's datetime fields
+            // update the note's datetime fields
             notesCollection.updateOne(
                 Filters.eq(article.id),
                 Updates.combine(
@@ -642,8 +637,7 @@ class DBStorage() :IPersistence {
                     Updates.set("datetimeAccessed", now)
                 )
             )
-
-            // Update the board's datetime fields
+            // update the board's datetime fields
             boardsCollection.updateOne(
                 Filters.eq(boardId),
                 Updates.combine(
@@ -652,7 +646,6 @@ class DBStorage() :IPersistence {
                 )
             )
         }
-
         channel.trySend(job)
         if (await) runBlocking{ job.join() }
     }

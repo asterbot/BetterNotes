@@ -1,9 +1,6 @@
 package fdg_layout
 
 import androidx.compose.runtime.*
-import fdg_layout.FdgLayoutModel
-import fdg_layout.Node
-import fdg_layout.Edge
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -13,6 +10,7 @@ import observer.ISubscriber
 class FdgLayoutViewModel<NodeDataType>(
     private val model: FdgLayoutModel<NodeDataType>
 ): ISubscriber {
+    // Yes this looks weird but it will not work the normal way
     var nodes by mutableStateOf(mutableStateListOf<Node<NodeDataType>>())
     var edges by mutableStateOf(mutableStateListOf<Edge>())
 
@@ -44,5 +42,4 @@ class FdgLayoutViewModel<NodeDataType>(
         nodes = model.nodes.toMutableStateList()
         edges = model.edges.toMutableStateList()
     }
-
 }

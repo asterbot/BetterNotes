@@ -11,15 +11,11 @@ import shared.persistence.Create
 import shared.persistence.Delete
 import shared.persistence.IPersistence
 import shared.persistence.Update
-import java.awt.Color
 import java.time.Instant
 
 class IndvBoardModel(val persistence: IPersistence) : IPublisher() {
     // maps board ID to list of notes
     var noteDict = mutableMapOf<ObjectId, MutableList<Note>>()
-
-//    var currentTags = mutableListOf<String>() // name of tags
-//    var tagsMap = mutableMapOf<String, Color>() // maps tags to colors
 
     var currentSortType: String = "Last Accessed"
     var currentIsReversed: Boolean = false
@@ -35,7 +31,7 @@ class IndvBoardModel(val persistence: IPersistence) : IPublisher() {
         if (currentIsReversed) noteList.reverse()
     }
 
-    // Public functions to sort notes for a given board.
+    // public functions to sort notes for a given board
     fun sortByTitle(boardId: ObjectId, reverse: Boolean = false) {
         currentSortType = "Title"
         currentIsReversed = reverse
@@ -77,7 +73,7 @@ class IndvBoardModel(val persistence: IPersistence) : IPublisher() {
     }
 
     fun initialize() {
-        // Called when there is a reconnection and/or login
+        // called when there is a reconnection and/or login
         persistence.connect()
         if (ConnectionManager.isConnected) {
             noteDict = persistence.readNotes()
@@ -85,9 +81,7 @@ class IndvBoardModel(val persistence: IPersistence) : IPublisher() {
         }
     }
 
-    /*
-    For all the functions below, first modify local data structures, then do same on DB and then notifySubscribers()
-    */
+    // for all the functions below, first modify local data structures, then do same on DB and then notifySubscribers()
 
     fun addNote(note: Note, board: Board) {
         noteDict[board.id]?.add(note)
@@ -124,7 +118,6 @@ class IndvBoardModel(val persistence: IPersistence) : IPublisher() {
         noteDict[board.id]?.let { notes ->
             sortNoteList(notes)
         }
-
         notifySubscribers()
     }
 
@@ -132,7 +125,7 @@ class IndvBoardModel(val persistence: IPersistence) : IPublisher() {
 
         val oldRelated = note.relatedNotes
 
-        // Update the note itself in local list
+        // update the note itself in local list
         noteDict[boardId]?.let { notes ->
             val index = notes.indexOfFirst { it.id == note.id }
             if (index != -1) {
@@ -141,20 +134,20 @@ class IndvBoardModel(val persistence: IPersistence) : IPublisher() {
             }
         }
 
-        // Ensure bidirectional relationships
-        // First: Add this note's ID to new related notes
+        // ensure bidirectional relationships
+        // first: add this note's ID to new related notes
         for (relatedId in relatedNotes) {
             val relatedNote = noteDict[boardId]?.find { it.id == relatedId }
             relatedNote?.let {
                 if (!it.relatedNotes.contains(note.id)) {
                     val updated = it.copy(relatedNotes = it.relatedNotes + note.id)
-                    // Update the note in the list
+                    // update the note in the list
                     val idx = noteDict[boardId]?.indexOfFirst { n -> n.id == relatedId }
                     if (idx != null && idx != -1) {
                         noteDict[boardId]?.set(idx, updated)
                     }
 
-                    // Persist the update if online
+                    // persist the update if online
                     if (ConnectionManager.isConnected) {
                         persistence.updateNote(relatedId, updated.title, updated.desc, updated.relatedNotes, tagColor)
                     } else {
@@ -164,7 +157,7 @@ class IndvBoardModel(val persistence: IPersistence) : IPublisher() {
             }
         }
 
-        // Second: Remove this note's ID from notes no longer related
+        // second: remove this note's ID from notes no longer related
         val removedRelations = oldRelated.filterNot { relatedNotes.contains(it) }
         for (removedId in removedRelations) {
             val removedNote = noteDict[boardId]?.find { it.id == removedId }
@@ -185,17 +178,15 @@ class IndvBoardModel(val persistence: IPersistence) : IPublisher() {
             }
         }
 
-        // Persist main note
+        // persist main note
         if (ConnectionManager.isConnected) {
             persistence.updateNote(note.id, title, desc, relatedNotes, tagColor)
         } else {
             dbQueue.addToQueue(Update(persistence, note, mutableMapOf("title" to title, "desc" to desc, "relatedNotes" to relatedNotes, "tag" to tagColor)))
         }
-
         noteDict[boardId]?.let { notes ->
             sortNoteList(notes)
         }
-
         notifySubscribers()
     }
 
@@ -236,11 +227,9 @@ class IndvBoardModel(val persistence: IPersistence) : IPublisher() {
         else{
             dbQueue.addToQueue(Delete(persistence, note, boardDependency = board))
         }
-
         noteDict[board.id]?.let { notes ->
             sortNoteList(notes)
         }
-
         notifySubscribers()
     }
 

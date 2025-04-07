@@ -10,7 +10,6 @@ data class Node<NodeDataType>(
 data class Edge(
     val id1: Int,
     val id2: Int,
-    val maxDist: Float = 0.1f // TODO: check if remains unused
 )
 
 data class Vec(var x: Float, var y: Float) {
@@ -42,7 +41,7 @@ data class Vec(var x: Float, var y: Float) {
     }
 
     fun lerp(target: Vec, alpha: Float) {
-        x = x + alpha * (target.x - x)
-        y = y + alpha * (target.y - y)
+        x += alpha * (target.x - x)
+        y += alpha * (target.y - y)
     }
 }

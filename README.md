@@ -1,14 +1,16 @@
-# BETTER NOTES
+# BetterNotes: A note-taking app that is not just good, but _better_.
 
-## Title
 A desktop note-taking app specialized for Math and Computer Science notes.
+
 
 ![image](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/raw/main/desktop/src/main/resources/betternotes_logo.png?ref_type=heads)
 
 ## Project Description
-For students in high school or university who take notes virtually
-for Math and Computer Science courses (intended users), Better Notes makes
-adding content in special formats and organizing structure easier (solved problem).
+BetterNotes is a note-taking platform designed for students in math and computer science courses who take notes virtually. 
+It supports a wide range of content formats—including Markdown, code blocks, math equations, media, graphs, and free-form 
+canvases—making it easy to capture complex ideas. 
+To help students stay organized, BetterNotes presents their notes in a structured, 
+mind map–like view that reflects the flow and hierarchy of their thoughts.
 
 ## Video/Screenshots
 Here are the different pages of BetterNotes!
@@ -31,7 +33,7 @@ For a detailed walk-through of the app, please see [User documentation](https://
 Find our latest release and install the executable for your Operating System.
 
 To run the project locally from source, you will need a [.env](https://uofwaterloo-my.sharepoint.com/:u:/r/personal/as5sodhi_uwaterloo_ca/Documents/CS346%20execs/.env?csf=1&web=1&e=yBzsIH) file.
- Place the file in the desktop folder in the root, and the project should be able to run.
+Place the file in the desktop folder in the root, and the project should be able to run.
 - The file may get downloaded with the name `env`, not `.env`, so please rename it appropriately if it gets downloaded with the wrong name.
 
 > PS: If the link to download the .env file does not work, please email as5sodhi@uwaterloo.ca.
@@ -72,3 +74,10 @@ and have executables for all of the following
 * [v0.1.0](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/Releases/v0.1.0)
 * [v0.2.0](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/Releases/v0.2.0)
 * [v0.3.0](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/Releases/v0.3.0)
+
+## Additional Information
+
+### FDGLayout Module
+
+As part of our app development, we created a force-directed graph layout module. The .jar file is located [here](fdg_layout/jar)
+with a sample usage example in the [fdg_layout_sample](fdg_layout_sample) directory of this repository. 

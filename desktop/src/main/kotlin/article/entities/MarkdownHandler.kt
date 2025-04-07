@@ -21,26 +21,22 @@ import org.intellij.markdown.flavours.commonmark.CommonMarkFlavourDescriptor
 import org.intellij.markdown.parser.MarkdownParser
 
 class MarkdownHandler(private var rawString: String) {
-    // Stores the parse tree for a given Markdown text
+    // stores the parse tree for a given Markdown text
     private val flavour = CommonMarkFlavourDescriptor()
-
-    // Parse the raw text and create tree
+    // parse the raw text and create tree
     private var rootNode: ASTNode = MarkdownParser(flavour).buildMarkdownTreeFromString(rawString)
-
 
     @Composable
     fun renderMarkdown() {
-        println(rawString)
-        // Renders markdown for ALL the nodes
+        // println(rawString)
+        // renders markdown for ALL the nodes
         Column(
             modifier = Modifier
                         .fillMaxSize()
                         .padding(16.dp)
         ) {
-            // renderMarkdownNode(rootNode)
-
             rootNode.children.forEach {node ->
-                println("------------------------")
+                println("------------------------") // for debugging
                 printASTNode(node)
                 renderMarkdownNode(node)
             }
@@ -49,8 +45,7 @@ class MarkdownHandler(private var rawString: String) {
 
     @Composable
     fun renderMarkdownNode(node: ASTNode){
-        // Renders markdown for an individual ASTNode
-
+        // renders markdown for an individual ASTNode
         val headingSizes = mapOf(
             MarkdownElementTypes.ATX_1 to 36.sp,
             MarkdownElementTypes.ATX_2 to 30.sp,
@@ -60,11 +55,10 @@ class MarkdownHandler(private var rawString: String) {
             MarkdownElementTypes.ATX_6 to 16.sp
         )
 
-
         val t = extractStyledText(node)
-
         when (node.type) {
-            // For all headings (h1, h2, h3, ...)
+
+            // for all headings (h1, h2, h3, ...)
             in headingSizes -> {
                 Text(
                     text=t,
@@ -74,25 +68,20 @@ class MarkdownHandler(private var rawString: String) {
             }
 
             MarkdownElementTypes.PARAGRAPH -> {
-                // Ensure all styles are applied and a SINGLE Text composable is rendered
+                // ensure all styles are applied and a SINGLE Text composable is rendered
                 val annotatedText = extractStyledText(node)
                 Text(text = annotatedText)
             }
 
             MarkdownTokenTypes.EOL -> {}
 
-            // Normal text
             else ->{
-                println("DEBUG TYPE: ${node.type}")
+                // println("DEBUG TYPE: ${node.type}")
                 Text(
                     text=t
                 )
             }
-
-
         }
-
-
     }
 
     fun updateText(newString: String){
@@ -100,12 +89,13 @@ class MarkdownHandler(private var rawString: String) {
         rootNode = MarkdownParser(flavour).buildMarkdownTreeFromString(rawString)
     }
 
-
-    // So there's a thing called AnnotatedStrings which if you pass into a Text composable,
-    //   the styles will apply where intended with the Text composable rendering as a single one
-    //   instead of what we did before (where it rendered a new composable per style)
-    // This function just returns an AnnotatedString which has the correct styles applied (after checking the AST)
-    // Documentation: https://developer.android.com/reference/kotlin/androidx/compose/ui/text/SpanStyle
+    /*
+    So there's a thing called AnnotatedStrings which if you pass into a Text composable,
+    the styles will apply where intended with the Text composable rendering as a single one
+    instead of what we did before (where it rendered a new composable per style)
+    This function just returns an AnnotatedString which has the correct styles applied (after checking the AST)
+    Documentation: https://developer.android.com/reference/kotlin/androidx/compose/ui/text/SpanStyle
+    */
 
     private fun extractStyledText(node: ASTNode): AnnotatedString {
         fun AnnotatedString.Builder.appendStyledText(node: ASTNode, styles: List<SpanStyle>) {

@@ -95,7 +95,7 @@ fun ArticleCompose(board: Board, article: Note) {
     var debugState by remember { mutableStateOf(false) }
 
     fun changeSelectedBlock(selectedBlock: Int?) {
-        println("Moved from block $prevSelectedBlock to block $selectedBlock")
+        // println("Moved from block $prevSelectedBlock to block $selectedBlock")
         if (prevSelectedBlock != selectedBlock) {
             if (prevSelectedBlock != null && currEditedText.value != null) {
                 val currBlock = articleViewModel.contentBlocksList[prevSelectedBlock!!]
@@ -122,7 +122,7 @@ fun ArticleCompose(board: Board, article: Note) {
     }
 
     // detect when we change blocks (i.e, change focus)
-    // we will only push to the db when focus shifts, so that we don't spam the db with each character change
+    // we will only push to the db when focus shifts, so that we don't spam the DB with each character change
     LaunchedEffect(selectedBlock) {
         changeSelectedBlock(selectedBlock)
     }
@@ -202,7 +202,6 @@ fun ArticleCompose(board: Board, article: Note) {
             )
 
             // row containing any useful functionality (as buttons)
-            // so far, "return to previous course" and "DEBUG" buttons
             Row(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
@@ -214,46 +213,6 @@ fun ArticleCompose(board: Board, article: Note) {
                         ScreenManager.push(navigator, IndividualBoardScreen(board))
                     }
                 ) { Text("Back to ${board.name} Board") }
-
-                Button(
-                    colors = textButtonColours(),
-                    onClick = {
-                        println("DEBUG (THE BLOCKS):")
-                        // println("FROM MODEL: ${articleModel.contentBlockDict}")
-                        println("FROM MODEL:")
-                        articleModel.contentBlockDict[article.id]?.let {articleContentBlocks ->
-                            for (contentBlock in articleContentBlocks) {
-                                println("-----------------------------------------------")
-                                println("Glued Above? ${contentBlock.gluedAbove}")
-                                if (contentBlock.blockType == BlockType.CANVAS) {
-                                    println()
-                                    println("\tCANVAS HAS ${(contentBlock as CanvasBlock).bList.size} PATHS")
-                                } else if (contentBlock.blockType == BlockType.MEDIA) {
-                                    println("\tMEDIA HAS ${((contentBlock as MediaBlock).bList.size)} BYTE ARRAY")
-                                }
-                                else {
-                                    println("\t$contentBlock")
-                                }
-                                println("Glued Below? ${contentBlock.gluedBelow}")
-                            }
-                        }
-                        // println("FROM VIEWMODEL: ${contentBlocksList.contentBlocksList}")
-                        println("FROM VIEWMODEL:")
-                        for (contentBlock in articleViewModel.contentBlocksList) {
-                            println("Glued Above? ${contentBlock.gluedAbove}")
-                            if (contentBlock.blockType == BlockType.CANVAS) {
-                                println("\tCANVAS HAS ${(contentBlock as CanvasBlock).bList.size} PATHS")
-                            } else if (contentBlock.blockType == BlockType.MEDIA) {
-                                println("\tMEDIA HAS ${((contentBlock as MediaBlock).bList.size)} BYTE ARRAY")
-                            }
-                            else {
-                                println("\t$contentBlock")
-                            }
-                            println("Glued Below? ${contentBlock.gluedBelow}")
-                        }
-                        debugState = !debugState
-                    }
-                ) { Text(text = "DEBUG") }
             }
 
             // code for dropdown menu, linking to other boards
@@ -348,15 +307,13 @@ fun ArticleCompose(board: Board, article: Note) {
                         onBlockClick = {
                             // if currently selected, deselect (else, select as normal)
                             selectedBlock = if (selectedBlock == index) null else index
-                            println("DEBUG: Selecting block at index $index")
+                            // println("DEBUG: Selecting block at index $index")
                         },
                         selectAtIndex = ::selectAtIndex,
                         board = board,
                         gluedAbove = block.gluedAbove,
                         gluedBelow = block.gluedBelow,
-                        numContentBlocks = articleViewModel.contentBlocksList.size,
-                        currEditedText = currEditedText,
-                        debugState = debugState
+                        numContentBlocks = articleViewModel.contentBlocksList.size
                     )
 
                     // visually disconnect blocks if not glued
@@ -384,9 +341,7 @@ fun BlockFrame(
     board: Board,
     gluedAbove: Boolean,
     gluedBelow: Boolean,
-    numContentBlocks: Int,
-    currEditedText: MutableState<String?>,
-    debugState: Boolean,
+    numContentBlocks: Int
 ) {
     var block by remember { mutableStateOf(articleViewModel.contentBlocksList[blockIndex]) }
 
@@ -428,7 +383,6 @@ fun BlockFrame(
                 }
             }
 
-
             GluedBlockBorder(gluedAbove, "Above")
 
             Box(
@@ -458,7 +412,6 @@ fun BlockFrame(
                         AddBlockFrameButton(article, blockIndex, "UP", selectAtIndex, board)
                     }
 
-                    // TODO: replace this with generalizable code for all ContentBlocks
                     if (block.blockType in
                         listOf(
                             BlockType.PLAINTEXT,
@@ -521,7 +474,6 @@ fun BlockFrame(
                             }
                         }
                     }
-
 
                     if (block.blockType == BlockType.MARKDOWN && !isSelected) {
                         val markdownHandler = MarkdownHandler((block as MarkdownBlock).text)
@@ -624,7 +576,6 @@ fun BlockFrame(
                             }
                         )
                     }
-
                     if (isSelected) {
                         AddBlockFrameButton(article, blockIndex, "DOWN", selectAtIndex, board)
                     }
@@ -644,7 +595,7 @@ fun addGraph(
     yMin: Double = -10.0,
     yMax: Double = 10.0
 ) {
-    // Create a general expression from the MST
+    // create a general expression from the MST
     val expression = mst.compileToExpression(Float64Field)
     var unrecognized = false
 
@@ -848,10 +799,10 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int,
                 if (!state.hasFocus) {
                     if (firstOpened) {
                         firstOpened = false
-                        println("That's one warning...")
+                        // println("That's one warning...")
                     } else {
                         onCanvasUpdate(canvasToBytes(paths).toMutableList(), canvasHeight, null)
-                        println("Closing this instant")
+                        // println("Closing this instant")
                     }
                 }
             }
@@ -874,13 +825,13 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int,
                     modifier = Modifier.fillMaxWidth().background(Colors.lightGrey)
 
                 ) {
-                    // Top control bar
+                    // top control bar
                     Row(
                         modifier = Modifier.align(Alignment.Center),
                         horizontalArrangement = Arrangement.spacedBy(20.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Column() {
+                        Column {
                             Row(
                                 modifier = Modifier.defaultMinSize(30.dp),
                                 verticalAlignment = Alignment.CenterVertically,
@@ -888,7 +839,6 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int,
                             ) {
                                 Text("Current: ", fontSize = 14.sp)
                                 if (isErasing) {
-                                    println("I WANNA ERASE")
                                     Icon(
                                         imageVector = Icons.AutoMirrored.Filled.Backspace,
                                         contentDescription = "The best eraser icon I could find",
@@ -923,7 +873,7 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int,
                                     }
                                 }
                             }
-                            // Stroke width slider
+                            // stroke width slider
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -989,8 +939,7 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int,
                     }
                 }
 
-
-                // Drawing canvas
+                // drawing canvas
                 Box(modifier = Modifier.fillMaxWidth().height(canvasHeight.dp).clipToBounds()) {
                     Canvas(
                         modifier = Modifier
@@ -1015,7 +964,7 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int,
                                                         (point - offset).getDistance() < eraserSize
                                                     }
                                                 }
-                                                println("So tired")
+                                                // println("So tired")
                                             } else {
                                                 currentPath = listOf(offset)
                                             }
@@ -1041,7 +990,7 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int,
                                                         }
                                                     }
 
-                                                    println("wanna sleep")
+                                                    // println("wanna sleep")
                                                 } else {
                                                     currentPath = currentPath + change.position
                                                 }
@@ -1069,7 +1018,7 @@ fun EditableCanvas(block: ContentBlock, onCanvasUpdate: (MutableList<Byte>, Int,
                                 )
                             }
                     ) {
-                        // Draw all saved paths
+                        // draw all saved paths
                         paths.forEach { path ->
                             for (i in 0 until path.points.size - 1) {
                                 drawLine(
@@ -1163,7 +1112,6 @@ fun canvasToBytes(paths: List<PathData>): ByteArray {
             pathData.write(ByteBuffer.allocate(8).putFloat(point.x).putFloat(point.y).array())
         }
     }
-
     return pathData.toByteArray()
 }
 
@@ -1175,7 +1123,7 @@ fun bytesToPaths(bytes: ByteArray): MutableList<PathData> {
         val numPaths = buffer.getInt()
 
         for (i in 0 until numPaths) {
-            // Color
+
             val red = buffer.getFloat()
             val green = buffer.getFloat()
             val blue = buffer.getFloat()
@@ -1216,7 +1164,7 @@ fun EditableTextBox(
     }
 
     var textFieldValue by remember { mutableStateOf<String>(startText) }
-    val focusRequester = remember { FocusRequester() } // Controls focus
+    val focusRequester = remember { FocusRequester() } // controls focus
 
     var textStyle = when (block.blockType) {
         BlockType.CODE -> TextStyle(
@@ -1236,18 +1184,18 @@ fun EditableTextBox(
                 if (!state.hasFocus) {
                     if (firstOpened) {
                         firstOpened = false
-                        println("That's one warning...")
+                        // println("That's one warning...")
                     } else {
                         onTextChange(textFieldValue)
-                        println("Closing this instant")
+                        // println("Closing this instant")
                     }
                 }
             }
             .focusable()
             .clickable(
-                interactionSource = remember { MutableInteractionSource() }, // Prevents ripple effect
+                interactionSource = remember { MutableInteractionSource() }, // prevents ripple effect
                 indication = null
-            ) { focusRequester.requestFocus() } // Ensure click brings focus
+            ) { focusRequester.requestFocus() } // ensures that click brings focus
             .padding(horizontal = 12.dp, vertical = 8.dp)
             .background(if (block.blockType == BlockType.CODE) Colors.black else Colors.white)
     ) {
@@ -1259,7 +1207,7 @@ fun EditableTextBox(
             modifier = Modifier
                 .background(if (block.blockType == BlockType.CODE) Colors.black else Colors.white)
                 .fillMaxWidth()
-                .focusRequester(focusRequester) // Attach focus requester to manage focus
+                .focusRequester(focusRequester) // attach focus requester to manage focus
                 .onKeyEvent { true }, // prevents weird visual glitch from happening
             textStyle = textStyle,
             cursorBrush = SolidColor(if (block.blockType == BlockType.CODE) Color.Green else Colors.black)
@@ -1420,7 +1368,6 @@ fun BlockFrameMenu(index: Int, buttonFuncs: Map<String, (Int) -> Unit>, numConte
 
 
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun AddBlockFrameButton(article: Note, index: Int, direction: String, selectAtIndex: (Int) -> Unit, board: Board) {
     // these buttons add a new (empty) ContentBlock above/below (depends on direction) the currently selected block
@@ -1445,8 +1392,6 @@ fun AddBlockFrameButton(article: Note, index: Int, direction: String, selectAtIn
                 modifier = Modifier.size(35.dp)
             )
         }
-
-        // Tooltip text that follows the mouse cursor
         if (isHovered) {
             Box(
                 modifier = Modifier
@@ -1472,8 +1417,6 @@ fun InsertBlockTypesMenu(article: Note, index: Int, direction: String, selectAtI
         "UP" -> index
         else -> index + 1 // the "DOWN" case
     }
-
-    println("DEBUG: CLICKED for index $index, direction $direction")
 
     Row(
         horizontalArrangement = Arrangement.spacedBy(5.dp),

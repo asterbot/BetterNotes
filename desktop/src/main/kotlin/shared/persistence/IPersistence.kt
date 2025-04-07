@@ -5,10 +5,14 @@ import boards.entities.Board
 import individual_board.entities.Note
 import login.entities.User
 import org.bson.types.ObjectId
+import shared.loginModel
 
 interface IPersistence {
     // Connects and returns whether it was successful
     fun connect(): Boolean
+
+    // Clears the entire database except for users
+    suspend fun clearDB()
 
     // Pings DB to check if connection is active or not, and updates global state
     suspend fun pingDB(): Boolean
@@ -16,8 +20,9 @@ interface IPersistence {
     // Users
     fun addUser(user: User): Boolean
     fun authenticate(username: String, password: String): Boolean
-    fun updatePassword(oldPassword: String, newPassword: String): Boolean
-    fun deleteUser(password: String): Boolean
+    fun updatePassword(oldPassword: String, newPassword: String, username: String = loginModel.currentUser): Boolean
+    fun deleteUser(password: String, username: String = loginModel.currentUser): Boolean
+    fun readUsers(): List<User>
 
     // Boards
     fun readBoards(): List<Board>

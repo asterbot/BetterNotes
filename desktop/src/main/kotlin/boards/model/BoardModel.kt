@@ -1,5 +1,8 @@
 package boards.model;
-import boards.entities.*
+import boards.entities.Board
+import boards.entities.addBoard
+import boards.entities.removeBoard
+import boards.entities.updateBoard
 import shared.ConnectionManager
 import shared.IPublisher
 import shared.dbQueue
@@ -21,7 +24,7 @@ class BoardModel(val persistence: IPersistence) : IPublisher(){
     }
 
     fun initialize(){
-        // Called when there is a reconnection
+        // called when there is a reconnection
         persistence.connect()
         if (ConnectionManager.isConnected) {
             boardList = persistence.readBoards().toMutableList()
@@ -29,7 +32,7 @@ class BoardModel(val persistence: IPersistence) : IPublisher(){
         }
     }
 
-    // Sorting functions
+    // sorting functions
     private fun sortBoardList() {
         boardList.sortWith(sortFunc)
         if (currentIsReversed) boardList.reverse()
@@ -67,10 +70,7 @@ class BoardModel(val persistence: IPersistence) : IPublisher(){
         notifySubscribers()
     }
 
-
-    /*
-    For all the functions below, first modify local data structures, then do same on DB and then notifySubscribers()
-    */
+    // for all the functions below, first modify local data structures, then do same on DB and then notifySubscribers()
 
     fun add(board: Board) {
         boardList.addBoard(board);
@@ -82,7 +82,6 @@ class BoardModel(val persistence: IPersistence) : IPublisher(){
         else{
             dbQueue.addToQueue(Create(persistence, board))
         }
-
         sortBoardList()
         notifySubscribers();
     }
@@ -98,7 +97,6 @@ class BoardModel(val persistence: IPersistence) : IPublisher(){
             dbQueue.addToQueue(Delete(persistence, board, noteListDependency = board.notes))
         }
         sortBoardList()
-
         notifySubscribers();
     }
 
@@ -113,7 +111,6 @@ class BoardModel(val persistence: IPersistence) : IPublisher(){
                 mutableMapOf("name" to name, "desc" to desc, "notes" to board.notes)))
         }
         sortBoardList()
-
         notifySubscribers();
     }
 

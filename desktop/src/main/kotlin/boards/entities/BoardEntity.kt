@@ -1,14 +1,14 @@
 package boards.entities
 
-import individual_board.entities.Note
-import kotlinx.serialization.*
-import kotlinx.serialization.json.Json
+import kotlinx.serialization.Contextual
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import org.bson.codecs.kotlinx.ObjectIdSerializer
-import org.bson.codecs.pojo.annotations.BsonProperty
 import org.bson.types.ObjectId
 import java.time.Instant
 
-// Entities holds the main data for the class and provides manipulator functions
+// entities holds the main data for the class and provides manipulator functions
 
 @Serializable
 data class Board @OptIn(ExperimentalSerializationApi::class) constructor(
@@ -16,7 +16,7 @@ data class Board @OptIn(ExperimentalSerializationApi::class) constructor(
     @Contextual var id: ObjectId,
     var name: String,
     var desc: String,
-    // For some reason we need to serialize each objectId independently when storing in lists?
+    // for some reason we need to serialize each objectId independently when storing in lists?
     @Contextual var notes: List<@Serializable(with = ObjectIdSerializer::class) ObjectId> = mutableListOf(),
     var datetimeCreated: String = Instant.now().toString(),
     var datetimeUpdated: String = Instant.now().toString(),

@@ -11,7 +11,7 @@ class LoginModel(val persistence: IPersistence) {
 
     var currentUser = "dummy-user"
 
-    // For password verification
+    // for password verification
     val uwRegex = """.*U.*W""".toRegex()
     val passwordCriteria = listOf(
         Pair("At least 8 characters",
@@ -31,7 +31,7 @@ class LoginModel(val persistence: IPersistence) {
         )
     )
 
-    // For the directory to store credentials
+    // for the directory to store credentials
     val homeDir = System.getProperty("user.home")
     val credentialsFilePath = "$homeDir/.note_taking_credentials"
     val credentialsFile = File(credentialsFilePath)
@@ -41,7 +41,7 @@ class LoginModel(val persistence: IPersistence) {
     }
 
     fun initialize() {
-        // Called when there is a reconnection
+        // called when there is a reconnection
         persistence.connect()
     }
 
@@ -51,7 +51,7 @@ class LoginModel(val persistence: IPersistence) {
 
     fun addUser(username: String, password: String): Boolean{
         if (ConnectionManager.isConnected) {
-            // Hash pwd and send to DB
+            // hash pwd and send to DB
             return persistence.addUser(User(ObjectId(), username, BCrypt.hashpw(password, BCrypt.gensalt())))
         }
         else{
@@ -85,7 +85,6 @@ class LoginModel(val persistence: IPersistence) {
         for (i in 0..<passwordCriteria.size){
             toRet.add(passwordCriteria[i].second(password))
         }
-
         return toRet
     }
 

@@ -17,7 +17,6 @@ class BoardViewModel(private val model: BoardModel): ISubscriber {
     }
 
     override fun update(){
-        println("DEBUG: ViewModel update")
         boardList.clear()
         for (board in model.boardList){
             boardList.add(board)

@@ -28,7 +28,7 @@ class IPublisherTest() {
     fun addSubscriber() {
         val oldCount = publisher.subscribers.size
         publisher.subscribe(subscriber)
-        assertEquals(oldCount + 2, publisher.subscribers.size)
+        assertEquals(oldCount + 1, publisher.subscribers.size)
     }
 
     @Test
@@ -52,8 +52,4 @@ class IPublisherTest() {
     fun teardown() {
         publisher.subscribers.clear()
     }
-
-
-
-
 }

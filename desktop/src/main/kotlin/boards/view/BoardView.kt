@@ -33,7 +33,6 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import individual_board.view.IndividualBoardScreen
-import kotlinx.coroutines.launch
 import org.bson.types.ObjectId
 import shared.*
 
@@ -58,7 +57,6 @@ fun BoardButton(
     ) {
         Button(
             onClick = {
-                println("DEBUG: Clicked ${board.name}")
                 boardModel.updateAccessed(board)
                 ScreenManager.push(navigator, IndividualBoardScreen(board))
             },
@@ -102,8 +100,6 @@ fun BoardButton(
 
 @Composable
 fun BoardsView() {
-    // NOTE: you technically can directly access boardViewModel because it's global right now
-    // however, i'm not sure if that'll still be the case after database integration
     var boardViewModel by remember { mutableStateOf(boardViewModel) }
     val navigator = LocalNavigator.currentOrThrow
 
@@ -130,7 +126,7 @@ fun BoardsView() {
         applySorting(selectedSort, reverseOrder)
     }
 
-    // Searching
+    // searching
     var query by remember { mutableStateOf("") }
 
     val searchFocusRequester = remember { FocusRequester() }
@@ -138,22 +134,19 @@ fun BoardsView() {
         searchFocusRequester.requestFocus()
     }
 
-    // Compute the filtered board list based on the query.
+    // compute the filtered board list based on the query
     val filteredBoards = if (query.isBlank()) {
         boardViewModel.boardList
     } else {
         boardViewModel.boardList.filter { it.name.contains(query, ignoreCase = true) or it.desc.contains(query, ignoreCase = true) }
     }
 
-
     fun addBoard(name: String, desc: String) {
         boardModel.add(Board(ObjectId(), name, desc))
     }
-
     fun deleteBoard(board: Board) {
         boardModel.del(board)
     }
-
     fun editBoard(board: Board, name: String, desc: String) {
         boardModel.update(board, name, desc)
     }
@@ -166,7 +159,6 @@ fun BoardsView() {
                         openAddDialog.value = true
                         true
                     }
-
                     else -> false
                 }
     },
@@ -174,7 +166,7 @@ fun BoardsView() {
     ) {
         Text(text = "Boards", style = MaterialTheme.typography.h2)
 
-        // Search bar
+        // search bar
         OutlinedTextField(
             value = query,
             onValueChange = { newQuery -> query = newQuery },
@@ -194,7 +186,7 @@ fun BoardsView() {
             colors = outlinedTextFieldColours()
         )
 
-        // Sorting
+        // sorting
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -233,7 +225,6 @@ fun BoardsView() {
             }
 
             Spacer(modifier = Modifier.width(16.dp))
-
             Text("Reverse: ")
 
             Switch(
@@ -288,7 +279,6 @@ fun BoardsView() {
                     .padding(16.dp)
             )
         }
-
     }
 
     when {
@@ -321,7 +311,7 @@ fun BoardsView() {
 
         boardToDelete.value != null -> {
             ConfirmationDialog(
-                onDismissRequest = { boardToDelete.value = null }, // Cancel deletion
+                onDismissRequest = { boardToDelete.value = null }, // cancel deletion
                 onConfirmation = {
                     deleteBoard(boardToDelete.value!!)
                     boardToDelete.value = null
@@ -332,5 +322,3 @@ fun BoardsView() {
         }
     }
 }
-
-

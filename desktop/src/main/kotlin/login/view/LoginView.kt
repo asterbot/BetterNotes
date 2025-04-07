@@ -2,7 +2,6 @@ package login.view
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
@@ -17,7 +16,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.*
@@ -58,7 +56,7 @@ fun LoginView(){
 
     val keepSignedIn = remember { mutableStateOf(false) }
 
-    // Focus management
+    // focus management
     val usernameFocusRequester = remember { FocusRequester() }
     val passwordFocusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) {
@@ -124,7 +122,6 @@ fun LoginView(){
                     colors = outlinedTextFieldColours()
                 )
 
-
                 Spacer(modifier = Modifier.height(16.dp))
 
                 OutlinedTextField(
@@ -169,7 +166,6 @@ fun LoginView(){
                     Text("Stay logged in")
                 }
 
-
                 Button(
                     onClick = { loginAction() },
                     modifier = Modifier.fillMaxWidth(),
@@ -194,7 +190,7 @@ fun LoginView(){
                         openSignUpDialog.value = false
                     },
                     onConfirmation = { username, password ->
-                        // Add to DB here
+                        // add to DB here
                         if (false in loginModel.passwordCriteriaMet(password)){
                             openSignUpDialog.value = false
                             openUnsafePasswordWarning.value = true
@@ -248,7 +244,6 @@ fun LoginView(){
                     dialogText = "Username must not be empty"
                 )
             }
-
         }
     }
 }
