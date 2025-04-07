@@ -62,7 +62,7 @@ and have executables for all of the following
 ## Documentation
 * [Project proposal](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/project-proposal)
 * [Design proposal](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/design-proposal)
-* [User documentation](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/User-Guide)
+* [User Documentation](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/User-Guide)
 * [Design diagrams](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/Design-Diagrams)
 
 ## Project Information
