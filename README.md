@@ -12,7 +12,7 @@ canvases—making it easy to capture complex ideas.
 To help students stay organized, BetterNotes presents their notes in a structured, 
 mind map–like view that reflects the flow and hierarchy of their thoughts.
 
-## Video/Screenshots
+## Screenshots
 Here are the different pages of BetterNotes!
 ![image](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/raw/eraser-fix-2/desktop/src/main/resources/1.png?ref_type=heads)
 ![image](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/raw/eraser-fix-2/desktop/src/main/resources/2.png?ref_type=heads)
