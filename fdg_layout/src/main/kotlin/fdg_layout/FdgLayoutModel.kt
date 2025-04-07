@@ -108,9 +108,6 @@ class FdgLayoutModel<NodeDataType>: IPublisher() {
         }
     }
 
-    /**
-     * Runs the physics simulation loop.
-     */
     suspend fun runSimulationLoop() {
         while (true) {
             if (nodes.isEmpty()) {
@@ -122,7 +119,6 @@ class FdgLayoutModel<NodeDataType>: IPublisher() {
 
                 var nodesCopy = nodes.toMutableList()
 
-                // Update node positions
                 nodesCopy.forEach { node ->
                     val velocity = node.force.copy().div(node.mass)
                     node.pos.add(velocity)
@@ -132,7 +128,6 @@ class FdgLayoutModel<NodeDataType>: IPublisher() {
                 nodes.addAll(nodesCopy)
             }
 
-            // If dragging, LERP closest node to mousePos
             if (mouseClicked && closeNodeIndex in nodes.indices && nodes.isNotEmpty()) {
                 val targetNode = nodes[closeNodeIndex]
                 targetNode.pos.lerp(mousePos, lerpValue)
@@ -153,7 +148,6 @@ class FdgLayoutModel<NodeDataType>: IPublisher() {
         mouseClicked = true
 
         val relativeMousePos = mousePos.copy()
-        var closestNode: Node<NodeDataType>? = null
         var minDist = Float.MAX_VALUE
         var closestIndex = -1
 
