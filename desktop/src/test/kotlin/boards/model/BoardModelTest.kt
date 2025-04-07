@@ -69,4 +69,19 @@ class BoardModelTest() {
         assertEquals("newName", mockDB.readBoards()[2].name)
         assertEquals("newDesc", mockDB.readBoards()[2].desc)
     }
+
+    @Test
+    fun sort() {
+        val board1 = Board(ObjectId(), name="name1", desc="desc2")
+        val board2 = Board(ObjectId(), name="name2", desc="desc2")
+        boardModel.add(board1)
+        boardModel.add(board2)
+
+        boardModel.sortByTitle(false)
+
+        assertEquals(boardModel.boardList[0].name, "name1")
+
+        boardModel.sortByTitle(true)
+        assertEquals(boardModel.boardList[0].name, "name2")
+    }
 }
