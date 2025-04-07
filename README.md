@@ -31,8 +31,8 @@ that they can connect to your database and so on).
 ## Documentation
 * [Project proposal](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/project-proposal)
 * [Design proposal](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/design-proposal)
-* User documentation (new, **see below**)
-* Design diagrams (new, **see below**)
+* [User documentation](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/User-Guide)
+* [Design diagrams](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/Design-Diagrams)
 
 ## Project Information
 * [Team contract](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/team-contract)
