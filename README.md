@@ -3,7 +3,7 @@
 A desktop note-taking app specialized for Math and Computer Science notes.
 
 
-![image](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/raw/main/desktop/src/main/resources/betternotes_logo.png?ref_type=heads)
+![image](https://github.com/user-attachments/assets/7a17032e-7bcb-4321-a62c-4688eeac3c46)
 
 ## Project Description
 BetterNotes is a note-taking platform designed for students in math and computer science courses who take notes virtually. 
@@ -12,73 +12,41 @@ canvases—making it easy to capture complex ideas.
 To help students stay organized, BetterNotes presents their notes in a structured, 
 mind map–like view that reflects the flow and hierarchy of their thoughts.
 
-## Screenshots
-Here are the different pages of BetterNotes!
-![image](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/raw/eraser-fix-2/desktop/src/main/resources/1.png?ref_type=heads)
-![image](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/raw/eraser-fix-2/desktop/src/main/resources/2.png?ref_type=heads)
-![image](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/raw/eraser-fix-2/desktop/src/main/resources/3.png?ref_type=heads)
-![image](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/raw/eraser-fix-2/desktop/src/main/resources/4.png?ref_type=heads)
-![image](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/raw/eraser-fix-2/desktop/src/main/resources/5.png?ref_type=heads)
-![image](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/raw/eraser-fix-2/desktop/src/main/resources/6.png?ref_type=heads)
-![image](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/raw/eraser-fix-2/desktop/src/main/resources/7.png?ref_type=heads)
-![image](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/raw/eraser-fix-2/desktop/src/main/resources/8.png?ref_type=heads)
-![image](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/raw/eraser-fix-2/desktop/src/main/resources/9.png?ref_type=heads)
-![image](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/raw/eraser-fix-2/desktop/src/main/resources/10.png?ref_type=heads)
-![image](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/raw/eraser-fix-2/desktop/src/main/resources/11.png?ref_type=heads)
-![image](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/raw/eraser-fix-2/desktop/src/main/resources/12.png?ref_type=heads)
-![image](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/raw/eraser-fix-2/desktop/src/main/resources/13.png?ref_type=heads)
-For a detailed walk-through of the app, please see [User documentation](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/User-Guide)
+## Building from source
+We use MongoDB to store data for this project. \
+To recreate the database, ensure the your cluster has a database with the name `cs346-users-db` which has 4 collections: `boards`, `contentblocks`, `notes`, `users` (they can start out empty).
 
-## Getting Started
+### .env file
+To run the project locally from source, you will need a `.env` file, which should contain a variable named `CONNECTION_STRING` which is the full connection string given by MongoDB. \
+To build from source using IntelliJ, please run it from the desktop folder!
+
+## Binaries 
 Find our latest release and install the executable for your Operating System.
-
-To run the project locally from source, you will need a [.env](https://uofwaterloo-my.sharepoint.com/:u:/r/personal/as5sodhi_uwaterloo_ca/Documents/CS346%20execs/.env?csf=1&web=1&e=yBzsIH) file.
-Place the file in the desktop folder in the root, and the project should be able to run.
-- The file may get downloaded with the name `env`, not `.env`, so please rename it appropriately if it gets downloaded with the wrong name.
-
-> PS: If the link to download the .env file does not work, please email as5sodhi@uwaterloo.ca.
-
-The executables have the connection string encoded in them, so the .env file is only required if you are building from source! To build from source using IntelliJ, please run it from the desktop folder!
-
-You may log in with the following account which has been created, or you can create your own!
-- Username: `sample_user`
-- Password: `sample_password`
-
-This user contains *demo* data to demonstrate the various features our app has to offer!
 
 We currently support:
 - Linux (Debian)
 - MacOS
 - Windows
 
-and have executables for all of the following
+and have executables for all of the following in our [releases](https://github.com/asterbot/BetterNotes/releases)
 
-## Team Details
-* Team number: 12
-* Team members:
-  * Arjun Sodhi: as5sodhi@uwaterloo.ca
-  * Cindy Li: c52li@uwaterloo.ca
-  * Derek Yuan: d5yuan@uwaterloo.ca
-  * Jeri Fan: j22fan@uwaterloo.ca
 
-## Documentation
-* [Project proposal](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/project-proposal)
-* [Design proposal](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/design-proposal)
-* [User Documentation](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/User-Guide)
-* [Design diagrams](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/Design-Diagrams)
+## Screenshots
+Here are the different pages of BetterNotes!
+| ![image](https://github.com/user-attachments/assets/8d465b04-b71c-4289-b04f-8312bc2356e7)|![image](https://github.com/user-attachments/assets/ab9a2cc2-3fe7-4b2b-83fe-c10ee747f9bc) | ![image](https://github.com/user-attachments/assets/1e9d260a-001d-4cdc-8982-42b747a8b56d) |
+|-|-|-|
+| ![image](https://github.com/user-attachments/assets/be3055df-3979-49ca-ae2d-5f9883d08000) |![image](https://github.com/user-attachments/assets/b7b71a86-bc93-4882-bad4-82ba0704f178) |![image](https://github.com/user-attachments/assets/f6744716-481b-4820-9a51-f345bb832fd3)
+|![image](https://github.com/user-attachments/assets/86f4b85f-d4dc-4101-b317-bf798aa4f060) |![image](https://github.com/user-attachments/assets/217dbb1e-aa83-4ffe-be98-afa877698061) | ![image](https://github.com/user-attachments/assets/744dfc40-8ef6-45e3-8de9-1d68407cdc7d)
+|![image](https://github.com/user-attachments/assets/e8858b99-f1c3-4c76-87e2-0db0aabfb7dc) |![image](https://github.com/user-attachments/assets/9c8c32bf-febb-4fbf-8637-48979e6ae37a) |![image](https://github.com/user-attachments/assets/81831e50-5f82-417d-9360-5510e0676099)
 
-## Project Information
-* [Team contract](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/team-contract)
-* [Meeting minutes](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/meeting-minutes)
 
-## Releases
-* [v1.1.0](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/Releases/v1.1.0)
-* [v1.0.0](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/Releases/v1.0.0)
-* [v0.3.0](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/Releases/v0.3.0)
-* [v0.2.0](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/Releases/v0.2.0)
-* [v0.1.0](https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/wikis/Releases/v0.1.0)
-
-Release assets found here: https://git.uwaterloo.ca/as5sodhi/cs-346-project/-/releases
+## Contributors
+  |Name|GitHub|
+  |-|-|
+  |Arjun Sodhi| [asterbot](https://github.com/asterbot/) 
+  |Cindy Li| [cindehaa](https://github.com/cindehaa)
+  |Derek Yuan| [InvertedCarrot](https://github.com/InvertedCarrot/)
+  |Jeri Fan| [jerifanx](https://github.com/jerifanx/)
 
 ## Additional Information
 
